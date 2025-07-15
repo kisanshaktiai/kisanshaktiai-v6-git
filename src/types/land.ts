@@ -1,4 +1,6 @@
 
+import { Json } from '@/integrations/supabase/types';
+
 export interface Land {
   id: string;
   farmer_id: string;
@@ -6,8 +8,8 @@ export interface Land {
   name: string;
   survey_number?: string;
   area_acres: number;
-  boundary_polygon?: GeoJSONPolygon;
-  center_point?: GeoJSONPoint;
+  boundary_polygon?: Json;
+  center_point?: Json;
   ownership_type: 'owned' | 'leased' | 'shared' | 'rented';
   irrigation_source?: string;
   created_at: string;
@@ -88,4 +90,27 @@ export interface LandWithDetails extends Land {
   recent_ndvi?: NDVIData;
   recent_activities?: LandActivity[];
   health_score?: number;
+}
+
+// Helper types for creating lands
+export interface LandCreateInput {
+  name: string;
+  farmer_id: string;
+  tenant_id: string;
+  area_acres: number;
+  survey_number?: string;
+  boundary_polygon?: Json;
+  center_point?: Json;
+  ownership_type?: 'owned' | 'leased' | 'shared' | 'rented';
+  irrigation_source?: string;
+}
+
+export interface LandUpdateInput {
+  name?: string;
+  area_acres?: number;
+  survey_number?: string;
+  boundary_polygon?: Json;
+  center_point?: Json;
+  ownership_type?: 'owned' | 'leased' | 'shared' | 'rented';
+  irrigation_source?: string;
 }
