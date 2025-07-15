@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "ಸ್ವಾಗತ",
+    "continue": "ಮುಂದುವರಿಸು",
+    "cancel": "ರದ್ದುಮಾಡು",
+    "save": "ಉಳಿಸು",
+    "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+    "error": "ದೋಷ",
+    "success": "ಯಶಸ್ಸು",
+    "offline": "ಆಫ್‌ಲೈನ್",
+    "online": "ಆನ್‌ಲೈನ್"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShaktiAI ಗೆ ಸ್ವಾಗತ",
+    "welcome_subtitle": "ನಿಮ್ಮ AI-ಚಾಲಿತ ಕೃಷಿ ಸಹಾಯಕ",
+    "location_title": "ನಿಮ್ಮ ಸ್ಥಳ",
+    "location_subtitle": "ಉತ್ತಮ ಸಲಹೆಗಾಗಿ ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಹಂಚಿಕೊಳ್ಳಿ",
+    "language_title": "ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ",
+    "language_subtitle": "ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+  },
+  "auth": {
+    "phone_number": "ಫೋನ್ ಸಂಖ್ಯೆ",
+    "enter_phone": "ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ",
+    "login": "ಲಾಗಿನ್",
+    "register": "ನೋಂದಾಯಿಸಿ"
+  },
+  "navigation": {
+    "home": "ಮುಖ್ಯಪುಟ",
+    "my_lands": "ನನ್ನ ಭೂಮಿ",
+    "ai_chat": "AI ಚಾಟ್",
+    "crop_schedule": "ಬೆಳೆ ವೇಳಾಪಟ್ಟಿ",
+    "market": "ಮಾರುಕಟ್ಟೆ",
+    "community": "ಸಮುದಾಯ",
+    "profile": "ಪ್ರೊಫೈಲ್"
+  }
+}

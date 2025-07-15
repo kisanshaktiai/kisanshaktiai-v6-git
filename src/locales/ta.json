@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "வரவேற்கிறோம்",
+    "continue": "தொடரவும்",
+    "cancel": "ரத்து செய்",
+    "save": "சேமி",
+    "loading": "ஏற்றப்படுகிறது...",
+    "error": "பிழை",
+    "success": "வெற்றி",
+    "offline": "ஆஃப்லைன்",
+    "online": "ஆன்லைன்"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShaktiAI க்கு வரவேற்கிறோம்",
+    "welcome_subtitle": "உங்கள் AI-இயங்கும் விவசாய உதவியாளர்",
+    "location_title": "உங்கள் இடம்",
+    "location_subtitle": "சிறந்த ஆலோசனைக்காக உங்கள் இடத்தை பகிரவும்",
+    "language_title": "மொழியை தேர்வு செய்யவும்",
+    "language_subtitle": "உங்கள் விருப்பமான மொழியை தேர்வு செய்யவும்"
+  },
+  "auth": {
+    "phone_number": "தொலைபேசி எண்",
+    "enter_phone": "உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்",
+    "login": "உள்நுழை",
+    "register": "பதிவு செய்"
+  },
+  "navigation": {
+    "home": "முகப்பு",
+    "my_lands": "என் நிலங்கள்",
+    "ai_chat": "AI அரட்டை",
+    "crop_schedule": "பயிர் அட்டவணை",
+    "market": "சந்தை",
+    "community": "சமூகம்",
+    "profile": "சுயவிவரம்"
+  }
+}

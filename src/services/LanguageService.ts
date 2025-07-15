@@ -59,7 +59,8 @@ export class LanguageService {
   }
 
   translate(key: string, options?: any): string {
-    return i18n.t(key, options);
+    const result = i18n.t(key, options);
+    return typeof result === 'string' ? result : String(result);
   }
 
   getSupportedLanguages() {

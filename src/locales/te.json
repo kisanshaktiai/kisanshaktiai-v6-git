@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "స్వాగతం",
+    "continue": "కొనసాగించు",
+    "cancel": "రద్దు చేయి",
+    "save": "సేవ్ చేయి",
+    "loading": "లోడ్ అవుతోంది...",
+    "error": "లోపం",
+    "success": "విజయం",
+    "offline": "ఆఫ్‌లైన్",
+    "online": "ఆన్‌లైన్"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShaktiAI కి స్వాగతం",
+    "welcome_subtitle": "మీ AI-శక్తితో కూడిన వ్యవసాయ సహాయకుడు",
+    "location_title": "మీ స్థానం",
+    "location_subtitle": "మంచి సలహా కోసం మీ స్థానాన్ని భాగస్వామ్యం చేయండి",
+    "language_title": "భాష ఎంచుకోండి",
+    "language_subtitle": "మీకు నచ్చిన భాషను ఎంచుకోండి"
+  },
+  "auth": {
+    "phone_number": "ఫోన్ నంబర్",
+    "enter_phone": "మీ ఫోన్ నంబర్ నమోదు చేయండి",
+    "login": "లాగిన్",
+    "register": "రిజిస్టర్"
+  },
+  "navigation": {
+    "home": "హోమ్",
+    "my_lands": "నా భూములు",
+    "ai_chat": "AI చాట్",
+    "crop_schedule": "పంట షెడ్యూల్",
+    "market": "మార్కెట్",
+    "community": "కమ్యూనిటీ",
+    "profile": "ప్రొఫైల్"
+  }
+}

@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "स्वागत",
+    "continue": "पुढे",
+    "cancel": "रद्द करा",
+    "save": "जतन करा",
+    "loading": "लोड होत आहे...",
+    "error": "त्रुटी",
+    "success": "यश",
+    "offline": "ऑफलाइन",
+    "online": "ऑनलाइन"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShaktiAI मध्ये आपले स्वागत आहे",
+    "welcome_subtitle": "आपला AI-चालित शेती सहाय्यक",
+    "location_title": "आपले स्थान",
+    "location_subtitle": "चांगल्या सल्ल्यासाठी आपले स्थान सामायिक करा",
+    "language_title": "भाषा निवडा",
+    "language_subtitle": "आपली पसंतीची भाषा निवडा"
+  },
+  "auth": {
+    "phone_number": "फोन नंबर",
+    "enter_phone": "आपला फोन नंबर टाका",
+    "login": "लॉगिन",
+    "register": "नोंदणी"
+  },
+  "navigation": {
+    "home": "मुख्यपृष्ठ",
+    "my_lands": "माझी जमीन",
+    "ai_chat": "AI चॅट",
+    "crop_schedule": "पिक वेळापत्रक",
+    "market": "बाजार",
+    "community": "समुदाय",
+    "profile": "प्रोफाइल"
+  }
+}

@@ -53,5 +53,10 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-export type RootState = ReturnType<typeof store.getState>;
+export type RootState = {
+  auth: ReturnType<typeof authSlice>;
+  farmer: ReturnType<typeof farmerSlice>;
+  sync: ReturnType<typeof syncSlice>;
+  offline: ReturnType<typeof offlineSlice>;
+};
 export type AppDispatch = typeof store.dispatch;
