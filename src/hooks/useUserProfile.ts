@@ -3,6 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/tenant';
 
+// Helper function to safely parse JSON
+const safeJsonParse = (value: any, fallback: any = null) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+};
+
 export const useUserProfile = (userId?: string) => {
   const queryClient = useQueryClient();
 
@@ -24,24 +37,18 @@ export const useUserProfile = (userId?: string) => {
       // Type cast JSON fields properly
       return {
         ...data,
-        notification_preferences: typeof data.notification_preferences === 'string'
-          ? JSON.parse(data.notification_preferences)
-          : data.notification_preferences || {
-              sms: true,
-              push: true,
-              email: false,
-              whatsapp: true,
-              calls: false
-            },
-        device_tokens: Array.isArray(data.device_tokens)
-          ? data.device_tokens
-          : JSON.parse(data.device_tokens || '[]'),
+        notification_preferences: safeJsonParse(data.notification_preferences, {
+          sms: true,
+          push: true,
+          email: false,
+          whatsapp: true,
+          calls: false
+        }),
+        device_tokens: safeJsonParse(data.device_tokens, []),
         expertise_areas: Array.isArray(data.expertise_areas)
           ? data.expertise_areas
           : [],
-        metadata: typeof data.metadata === 'string'
-          ? JSON.parse(data.metadata)
-          : data.metadata || {}
+        metadata: safeJsonParse(data.metadata, {})
       };
     },
     enabled: !!userId,

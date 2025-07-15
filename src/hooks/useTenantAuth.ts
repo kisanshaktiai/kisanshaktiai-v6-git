@@ -15,6 +15,19 @@ interface TenantAuthState {
   error: string | null;
 }
 
+// Helper function to safely parse JSON
+const safeJsonParse = (value: any, fallback: any = null) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+};
+
 export const useTenantAuth = () => {
   const [state, setState] = useState<TenantAuthState>({
     user: null,
@@ -79,24 +92,18 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
-          notification_preferences: typeof profileData.notification_preferences === 'string'
-            ? JSON.parse(profileData.notification_preferences)
-            : profileData.notification_preferences || {
-                sms: true,
-                push: true,
-                email: false,
-                whatsapp: true,
-                calls: false
-              },
-          device_tokens: Array.isArray(profileData.device_tokens)
-            ? profileData.device_tokens
-            : JSON.parse(profileData.device_tokens || '[]'),
+          notification_preferences: safeJsonParse(profileData.notification_preferences, {
+            sms: true,
+            push: true,
+            email: false,
+            whatsapp: true,
+            calls: false
+          }),
+          device_tokens: safeJsonParse(profileData.device_tokens, []),
           expertise_areas: Array.isArray(profileData.expertise_areas)
             ? profileData.expertise_areas
             : [],
-          metadata: typeof profileData.metadata === 'string'
-            ? JSON.parse(profileData.metadata)
-            : profileData.metadata || {}
+          metadata: safeJsonParse(profileData.metadata, {})
         };
       }
 
@@ -114,9 +121,7 @@ export const useTenantAuth = () => {
 
       const userTenants: UserTenant[] = userTenantsData?.map(ut => ({
         ...ut,
-        permissions: Array.isArray(ut.permissions)
-          ? ut.permissions
-          : JSON.parse(ut.permissions || '[]')
+        permissions: safeJsonParse(ut.permissions, [])
       })) || [];
 
       // Get current tenant (primary or first available)

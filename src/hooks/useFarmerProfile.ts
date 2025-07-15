@@ -3,6 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { FarmerProfile } from '@/types/farmer';
 
+// Helper function to safely parse JSON
+const safeJsonParse = (value: any, fallback: any = null) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+};
+
 export const useFarmerProfile = (farmerId?: string) => {
   const queryClient = useQueryClient();
 
@@ -24,9 +37,7 @@ export const useFarmerProfile = (farmerId?: string) => {
       // Type cast JSON fields properly
       return {
         ...data,
-        verification_documents: Array.isArray(data.verification_documents) 
-          ? data.verification_documents 
-          : JSON.parse(data.verification_documents || '[]'),
+        verification_documents: safeJsonParse(data.verification_documents, []),
         associated_tenants: Array.isArray(data.associated_tenants)
           ? data.associated_tenants
           : [],

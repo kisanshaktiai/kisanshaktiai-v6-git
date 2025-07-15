@@ -16,6 +16,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to safely parse JSON
+const safeJsonParse = (value: any, fallback: any = null) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [farmer, setFarmer] = useState<FarmerProfile | null>(null);
@@ -64,9 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Type cast the JSON fields properly
         const farmerProfile: FarmerProfile = {
           ...farmerData,
-          verification_documents: Array.isArray(farmerData.verification_documents) 
-            ? farmerData.verification_documents 
-            : JSON.parse(farmerData.verification_documents || '[]'),
+          verification_documents: safeJsonParse(farmerData.verification_documents, []),
           associated_tenants: Array.isArray(farmerData.associated_tenants)
             ? farmerData.associated_tenants
             : [],
@@ -88,9 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (tenantAssociations && tenantAssociations.length > 0) {
         const association: UserTenant = {
           ...tenantAssociations[0],
-          permissions: Array.isArray(tenantAssociations[0].permissions)
-            ? tenantAssociations[0].permissions
-            : JSON.parse(tenantAssociations[0].permissions || '[]')
+          permissions: safeJsonParse(tenantAssociations[0].permissions, [])
         };
         setCurrentAssociation(association);
       }
