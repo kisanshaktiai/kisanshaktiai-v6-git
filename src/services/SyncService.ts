@@ -50,7 +50,7 @@ export class SyncService {
 
   private async syncPendingActions(): Promise<void> {
     const state = store.getState();
-    const pendingActions = state.sync.pendingActions;
+    const pendingActions = state.offline.pendingActions;
 
     for (const action of pendingActions) {
       try {
