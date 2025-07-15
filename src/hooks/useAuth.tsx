@@ -55,9 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchFarmerData = async (userId: string) => {
     try {
-      // Fetch farmer profile using any type as workaround
+      // Fetch farmer profile
       const { data: farmerData } = await supabase
-        .from('farmers' as any)
+        .from('farmers')
         .select('*')
         .eq('id', userId)
         .single();
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Fetch tenant associations
       const { data: associationsData } = await supabase
-        .from('farmer_tenant_associations' as any)
+        .from('farmer_tenant_associations')
         .select(`
           *,
           tenant:tenant_id (name, slug, type)

@@ -20,9 +20,9 @@ export const useTenant = (slug?: string) => {
       try {
         setLoading(true);
         
-        // Fetch tenant data using raw SQL query as a workaround
+        // Fetch tenant data
         const { data: tenantData, error: tenantError } = await supabase
-          .from('tenants' as any)
+          .from('tenants')
           .select('*')
           .eq('slug', slug)
           .single();
@@ -34,7 +34,7 @@ export const useTenant = (slug?: string) => {
 
           // Fetch branding
           const { data: brandingData } = await supabase
-            .from('tenant_branding' as any)
+            .from('tenant_branding')
             .select('*')
             .eq('tenant_id', tenantData.id)
             .single();
@@ -43,7 +43,7 @@ export const useTenant = (slug?: string) => {
 
           // Fetch features
           const { data: featuresData } = await supabase
-            .from('tenant_features' as any)
+            .from('tenant_features')
             .select('*')
             .eq('tenant_id', tenantData.id)
             .single();
