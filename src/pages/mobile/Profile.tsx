@@ -57,7 +57,7 @@ export const Profile: React.FC = () => {
     <div className="p-4 space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          {String(t('navigation.profile'))}
+          {t('navigation.profile')?.toString() || 'Profile'}
         </h1>
       </div>
 
