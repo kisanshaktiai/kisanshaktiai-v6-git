@@ -44,11 +44,11 @@ export const MobileHome: React.FC = () => {
       {/* Welcome Section */}
       <div className="text-center py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {t('common.welcome')?.toString() || 'Welcome'}, {profile?.name || 'Farmer'}!
+          {String(t('common.welcome') || 'Welcome')}, {profile?.name || 'Farmer'}!
         </h1>
         <div className="flex items-center justify-center space-x-2">
           <Badge variant={isOnline ? 'default' : 'secondary'}>
-            {isOnline ? (t('common.online')?.toString() || 'Online') : (t('common.offline')?.toString() || 'Offline')}
+            {isOnline ? String(t('common.online') || 'Online') : String(t('common.offline') || 'Offline')}
           </Badge>
         </div>
       </div>
