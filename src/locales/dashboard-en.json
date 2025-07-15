@@ -1,0 +1,97 @@
+
+{
+  "dashboard": {
+    "defaultFarmerName": "Farmer",
+    "goodMorning": "Good Morning",
+    "goodAfternoon": "Good Afternoon", 
+    "goodEvening": "Good Evening",
+    "welcomeMessage": "Welcome back to your dashboard",
+    "quickOverview": "Quick Overview",
+    "totalLand": "Total Land",
+    "acres": "acres",
+    "activeCrops": "Active Crops",
+    "varieties": "varieties",
+    "lastYield": "Last Yield",
+    "perAcre": "per acre",
+    "netIncome": "Net Income",
+    "lastMonth": "last 30 days",
+    "features": "Features",
+    "recommendations": "Recommendations",
+    "seasonalCalendar": "This Week's Tasks"
+  },
+  "features": {
+    "myLands": "My Lands",
+    "myLandsDesc": "Manage your fields",
+    "cropSchedule": "Crop Calendar",
+    "cropScheduleDesc": "AI-powered schedule",
+    "aiChat": "AI Assistant",
+    "aiChatDesc": "Get farming advice",
+    "weather": "Weather",
+    "weatherDesc": "Hyperlocal forecast",
+    "marketplace": "Marketplace",
+    "marketplaceDesc": "Buy & Sell",
+    "analytics": "Analytics",
+    "analyticsDesc": "Insights & reports",
+    "community": "Community",
+    "communityDesc": "Connect with farmers",
+    "satellite": "Satellite Data",
+    "satelliteDesc": "NDVI & crop health",
+    "reports": "Reports",
+    "reportsDesc": "Yield logs & documents",
+    "schemes": "Schemes",
+    "schemesDesc": "Govt subsidies & insurance"
+  },
+  "recommendations": {
+    "weatherAlert": "Heavy Rain Expected",
+    "weatherAlertDesc": "Protect your crops from flooding. Check drainage systems.",
+    "marketTrend": "Wheat Prices Rising",
+    "marketTrendDesc": "Consider selling stored wheat. Prices up 15% this week.",
+    "upcomingTask": "Fertilizer Application Due",
+    "upcomingTaskDesc": "Apply NPK fertilizer to Field 1 this week.",
+    "soilHealth": "Soil Test Recommended",
+    "soilHealthDesc": "Last test was 6 months ago. Check nutrient levels.",
+    "promotion": "Special Offer: Premium Seeds",
+    "promotionDesc": "20% off on hybrid seeds. Limited time offer."
+  },
+  "calendar": {
+    "sowing": "Wheat Sowing",
+    "sowingDesc": "Plant wheat seeds in Field 1",
+    "fertilizer": "NPK Application",
+    "fertilizerDesc": "Apply NPK fertilizer to tomato crop",
+    "pestControl": "Pest Control",
+    "pestControlDesc": "Spray for aphids prevention",
+    "harvest": "Rice Harvest",
+    "harvestDesc": "Harvest ready rice crop",
+    "noEvents": "No upcoming tasks this week"
+  },
+  "navigation": {
+    "home": "Home",
+    "search": "Search",
+    "schedule": "Schedule",
+    "aiChat": "AI Chat",
+    "settings": "Settings"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "offline": {
+    "workingOffline": "Working offline - Data will sync when connected"
+  },
+  "priority": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "common": {
+    "new": "New",
+    "comingSoon": "Coming Soon",
+    "viewDetails": "View Details",
+    "checkPrices": "Check Prices",
+    "addToSchedule": "Add to Schedule",
+    "bookTest": "Book Test",
+    "shopNow": "Shop Now",
+    "viewAll": "View All",
+    "viewCalendar": "View Calendar"
+  }
+}

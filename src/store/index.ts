@@ -6,6 +6,7 @@ import authSlice from './slices/authSlice';
 import farmerSlice from './slices/farmerSlice';
 import syncSlice from './slices/syncSlice';
 import offlineSlice from './slices/offlineSlice';
+import tenantSlice from './slices/tenantSlice';
 
 // Custom storage for Capacitor
 const capacitorStorage = {
@@ -24,7 +25,7 @@ const capacitorStorage = {
 const persistConfig = {
   key: 'root',
   storage: capacitorStorage,
-  whitelist: ['auth', 'farmer', 'offline'],
+  whitelist: ['auth', 'farmer', 'offline', 'tenant'],
 };
 
 const rootReducer = {
@@ -32,6 +33,7 @@ const rootReducer = {
   farmer: farmerSlice,
   sync: syncSlice,
   offline: offlineSlice,
+  tenant: tenantSlice,
 };
 
 const persistedReducer = persistReducer(persistConfig, (state = {}, action) => {
@@ -58,5 +60,6 @@ export type RootState = {
   farmer: ReturnType<typeof farmerSlice>;
   sync: ReturnType<typeof syncSlice>;
   offline: ReturnType<typeof offlineSlice>;
+  tenant: ReturnType<typeof tenantSlice>;
 };
 export type AppDispatch = typeof store.dispatch;

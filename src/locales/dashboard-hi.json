@@ -1,0 +1,44 @@
+
+{
+  "dashboard": {
+    "defaultFarmerName": "किसान",
+    "goodMorning": "सुप्रभात",
+    "goodAfternoon": "नमस्कार",
+    "goodEvening": "शुभ संध्या",
+    "welcomeMessage": "आपके डैशबोर्ड में वापस स्वागत है",
+    "quickOverview": "त्वरित अवलोकन",
+    "totalLand": "कुल भूमि",
+    "acres": "एकड़",
+    "activeCrops": "सक्रिय फसलें",
+    "varieties": "किस्में",
+    "lastYield": "पिछली उपज",
+    "perAcre": "प्रति एकड़",
+    "netIncome": "शुद्ध आय",
+    "lastMonth": "पिछले 30 दिन",
+    "features": "सुविधाएं",
+    "recommendations": "सुझाव",
+    "seasonalCalendar": "इस सप्ताह के कार्य"
+  },
+  "features": {
+    "myLands": "मेरी भूमि",
+    "myLandsDesc": "अपने खेतों का प्रबंधन करें",
+    "cropSchedule": "फसल कैलेंडर",
+    "cropScheduleDesc": "AI-संचालित कार्यक्रम",
+    "aiChat": "AI सहायक",
+    "aiChatDesc": "खेती की सलाह लें",
+    "weather": "मौसम",
+    "weatherDesc": "स्थानीय पूर्वानुमान",
+    "marketplace": "बाज़ार",
+    "marketplaceDesc": "खरीदें और बेचें",
+    "analytics": "विश्लेषण",
+    "analyticsDesc": "अंतर्दृष्टि और रिपोर्ट",
+    "community": "समुदाय",
+    "communityDesc": "किसानों से जुड़ें",
+    "satellite": "उपग्रह डेटा",
+    "satelliteDesc": "NDVI और फसल स्वास्थ्य",
+    "reports": "रिपोर्ट",
+    "reportsDesc": "उपज लॉग और दस्तावेज़",
+    "schemes": "योजनाएं",
+    "schemesDesc": "सरकारी सब्सिडी और बीमा"
+  }
+}
