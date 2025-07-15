@@ -2,7 +2,6 @@
 import { Network } from '@capacitor/network';
 import { store } from '@/store';
 import { setOnlineStatus, setSyncInProgress, setLastSyncTime } from '@/store/slices/syncSlice';
-import { RootState } from '@/store';
 
 export class SyncService {
   private static instance: SyncService;
@@ -50,8 +49,9 @@ export class SyncService {
   }
 
   private async syncPendingActions(): Promise<void> {
-    const state = store.getState() as RootState;
-    const pendingActions = state.offline?.queuedActions || [];
+    const state = store.getState();
+    // Safely access the offline state with optional chaining
+    const pendingActions = (state as any)?.offline?.queuedActions || [];
 
     for (const action of pendingActions) {
       try {

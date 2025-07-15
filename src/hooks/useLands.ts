@@ -36,20 +36,24 @@ export const useLands = () => {
 
       // Process the data to get the most recent related records
       const landsWithDetails: LandWithDetails[] = lands?.map(land => {
-        const soilHealth = Array.isArray(land.soil_health) && land.soil_health.length > 0 
-          ? land.soil_health[0] as SoilHealth
+        const soilHealthArray = land.soil_health as any[];
+        const soilHealth = soilHealthArray && soilHealthArray.length > 0 
+          ? soilHealthArray[0] as SoilHealth
           : undefined;
         
-        const currentCrop = Array.isArray(land.crop_history) 
-          ? land.crop_history.find((crop: any) => crop.status === 'active') as CropHistory | undefined
+        const cropHistoryArray = land.crop_history as any[];
+        const currentCrop = cropHistoryArray 
+          ? cropHistoryArray.find((crop: any) => crop.status === 'active') as CropHistory | undefined
           : undefined;
         
-        const recentNdvi = Array.isArray(land.ndvi_data) && land.ndvi_data.length > 0 
-          ? land.ndvi_data[0] as NDVIData
+        const ndviDataArray = land.ndvi_data as any[];
+        const recentNdvi = ndviDataArray && ndviDataArray.length > 0 
+          ? ndviDataArray[0] as NDVIData
           : undefined;
         
-        const recentActivities = Array.isArray(land.land_activities) 
-          ? (land.land_activities as LandActivity[]).slice(0, 5)
+        const activitiesArray = land.land_activities as any[];
+        const recentActivities = activitiesArray 
+          ? (activitiesArray as LandActivity[]).slice(0, 5)
           : [];
 
         return {
