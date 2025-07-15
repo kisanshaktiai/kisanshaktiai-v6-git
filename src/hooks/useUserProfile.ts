@@ -18,7 +18,31 @@ export const useUserProfile = (userId?: string) => {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      
+      if (!data) return null;
+
+      // Type cast JSON fields properly
+      return {
+        ...data,
+        notification_preferences: typeof data.notification_preferences === 'string'
+          ? JSON.parse(data.notification_preferences)
+          : data.notification_preferences || {
+              sms: true,
+              push: true,
+              email: false,
+              whatsapp: true,
+              calls: false
+            },
+        device_tokens: Array.isArray(data.device_tokens)
+          ? data.device_tokens
+          : JSON.parse(data.device_tokens || '[]'),
+        expertise_areas: Array.isArray(data.expertise_areas)
+          ? data.expertise_areas
+          : [],
+        metadata: typeof data.metadata === 'string'
+          ? JSON.parse(data.metadata)
+          : data.metadata || {}
+      };
     },
     enabled: !!userId,
   });

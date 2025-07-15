@@ -2,10 +2,13 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { useTenant } from '@/context/TenantContext';
+import { FarmerProfile } from '@/types/farmer';
+import { UserTenant } from '@/types/tenant';
 
 interface AuthContextType {
   user: User | null;
+  farmer: FarmerProfile | null;
+  currentAssociation: UserTenant | null;
   loading: boolean;
   signIn: (phone: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -15,25 +18,86 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [farmer, setFarmer] = useState<FarmerProfile | null>(null);
+  const [currentAssociation, setCurrentAssociation] = useState<UserTenant | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        setUser(session.user);
+        loadUserData(session.user);
+      } else {
+        setLoading(false);
+      }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
+        if (session?.user) {
+          setUser(session.user);
+          await loadUserData(session.user);
+        } else {
+          setUser(null);
+          setFarmer(null);
+          setCurrentAssociation(null);
+        }
         setLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserData = async (user: User) => {
+    try {
+      // Load farmer profile if exists
+      const { data: farmerData } = await supabase
+        .from('farmers')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (farmerData) {
+        // Type cast the JSON fields properly
+        const farmerProfile: FarmerProfile = {
+          ...farmerData,
+          verification_documents: Array.isArray(farmerData.verification_documents) 
+            ? farmerData.verification_documents 
+            : JSON.parse(farmerData.verification_documents || '[]'),
+          associated_tenants: Array.isArray(farmerData.associated_tenants)
+            ? farmerData.associated_tenants
+            : [],
+          primary_crops: Array.isArray(farmerData.primary_crops)
+            ? farmerData.primary_crops
+            : []
+        };
+        setFarmer(farmerProfile);
+      }
+
+      // Load user tenant associations
+      const { data: tenantAssociations } = await supabase
+        .from('user_tenants')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (tenantAssociations && tenantAssociations.length > 0) {
+        const association: UserTenant = {
+          ...tenantAssociations[0],
+          permissions: Array.isArray(tenantAssociations[0].permissions)
+            ? tenantAssociations[0].permissions
+            : JSON.parse(tenantAssociations[0].permissions || '[]')
+        };
+        setCurrentAssociation(association);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
 
   const signIn = async (phone: string) => {
     try {
@@ -57,6 +121,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={{
       user,
+      farmer,
+      currentAssociation,
       loading,
       signIn,
       signOut,

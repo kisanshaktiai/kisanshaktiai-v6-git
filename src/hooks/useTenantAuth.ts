@@ -65,7 +65,7 @@ export const useTenantAuth = () => {
       setState(prev => ({ ...prev, user, loading: true, error: null }));
 
       // Load user profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
@@ -75,8 +75,33 @@ export const useTenantAuth = () => {
         throw profileError;
       }
 
+      let profile: UserProfile | null = null;
+      if (profileData) {
+        profile = {
+          ...profileData,
+          notification_preferences: typeof profileData.notification_preferences === 'string'
+            ? JSON.parse(profileData.notification_preferences)
+            : profileData.notification_preferences || {
+                sms: true,
+                push: true,
+                email: false,
+                whatsapp: true,
+                calls: false
+              },
+          device_tokens: Array.isArray(profileData.device_tokens)
+            ? profileData.device_tokens
+            : JSON.parse(profileData.device_tokens || '[]'),
+          expertise_areas: Array.isArray(profileData.expertise_areas)
+            ? profileData.expertise_areas
+            : [],
+          metadata: typeof profileData.metadata === 'string'
+            ? JSON.parse(profileData.metadata)
+            : profileData.metadata || {}
+        };
+      }
+
       // Load user tenant associations
-      const { data: userTenants, error: tenantsError } = await supabase
+      const { data: userTenantsData, error: tenantsError } = await supabase
         .from('user_tenants')
         .select(`
           *,
@@ -86,6 +111,13 @@ export const useTenantAuth = () => {
         .eq('is_active', true);
 
       if (tenantsError) throw tenantsError;
+
+      const userTenants: UserTenant[] = userTenantsData?.map(ut => ({
+        ...ut,
+        permissions: Array.isArray(ut.permissions)
+          ? ut.permissions
+          : JSON.parse(ut.permissions || '[]')
+      })) || [];
 
       // Get current tenant (primary or first available)
       const savedTenantId = localStorage.getItem('currentTenantId');
@@ -123,7 +155,7 @@ export const useTenantAuth = () => {
         user,
         profile,
         currentTenant,
-        userTenants: userTenants || [],
+        userTenants,
         tenantBranding,
         tenantFeatures,
         loading: false,

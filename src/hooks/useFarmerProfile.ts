@@ -18,7 +18,22 @@ export const useFarmerProfile = (farmerId?: string) => {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      
+      if (!data) return null;
+
+      // Type cast JSON fields properly
+      return {
+        ...data,
+        verification_documents: Array.isArray(data.verification_documents) 
+          ? data.verification_documents 
+          : JSON.parse(data.verification_documents || '[]'),
+        associated_tenants: Array.isArray(data.associated_tenants)
+          ? data.associated_tenants
+          : [],
+        primary_crops: Array.isArray(data.primary_crops)
+          ? data.primary_crops
+          : []
+      };
     },
     enabled: !!farmerId,
   });

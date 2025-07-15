@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useTenant } from '@/hooks/useTenant';
+import { useTenant } from '@/context/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, Wheat, ShoppingCart, TrendingUp, MapPin } from 'lucide-react';
 
@@ -10,7 +9,7 @@ interface TenantDashboardProps {
 }
 
 export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
-  const { tenant, branding, features, loading } = useTenant(tenantSlug);
+  const { currentTenant, tenantBranding, tenantFeatures, loading } = useTenant();
   const { farmer, currentAssociation } = useAuth();
 
   if (loading) {
@@ -21,7 +20,7 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
     );
   }
 
-  if (!tenant) {
+  if (!currentTenant) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -32,8 +31,8 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
     );
   }
 
-  const appName = branding?.app_name || 'KisanShakti';
-  const primaryColor = branding?.primary_color || '#10B981';
+  const appName = tenantBranding?.app_name || 'KisanShakti';
+  const primaryColor = tenantBranding?.primary_color || '#10B981';
 
   const dashboardCards = [
     {
@@ -87,9 +86,9 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-4">
-              {branding?.app_logo_url && (
+              {tenantBranding?.logo_url && (
                 <img 
-                  src={branding.app_logo_url} 
+                  src={tenantBranding.logo_url} 
                   alt={appName}
                   className="h-10 w-10 rounded-lg"
                 />
@@ -99,21 +98,21 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
                   {appName}
                 </h1>
                 <p className="text-sm text-gray-600 capitalize">
-                  {tenant.type} Dashboard
+                  {currentTenant.type} Dashboard
                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <Badge variant="outline" className="text-sm">
-                {tenant.type}
+                {currentTenant.type}
               </Badge>
               {farmer && (
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">
-                    {farmer.name.en || farmer.name.hi}
+                    Farmer Profile
                   </p>
-                  <p className="text-xs text-gray-500">{farmer.phone}</p>
+                  <p className="text-xs text-gray-500">ID: {farmer.id}</p>
                 </div>
               )}
             </div>
@@ -129,24 +128,21 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
             Welcome to {appName}
           </h2>
           <p className="text-gray-600 max-w-2xl">
-            {tenant.description || 'Your complete AgriTech solution for modern farming, connecting farmers with cutting-edge technology and expert guidance.'}
+            {currentTenant.name || 'Your complete AgriTech solution for modern farming, connecting farmers with cutting-edge technology and expert guidance.'}
           </p>
         </div>
 
         {/* Feature Badges */}
-        {features && (
+        {tenantFeatures && (
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Features</h3>
             <div className="flex flex-wrap gap-2">
-              {features.ai_chat && <Badge variant="secondary">AI Chat Assistant</Badge>}
-              {features.weather_forecasts && <Badge variant="secondary">Weather Forecasts</Badge>}
-              {features.crop_advisory && <Badge variant="secondary">Crop Advisory</Badge>}
-              {features.marketplace && <Badge variant="secondary">Marketplace</Badge>}
-              {features.dealer_network && <Badge variant="secondary">Dealer Network</Badge>}
-              {features.analytics_dashboard && <Badge variant="secondary">Analytics</Badge>}
-              {features.soil_testing && <Badge variant="secondary">Soil Testing</Badge>}
-              {features.satellite_imagery && <Badge variant="secondary">Satellite Imagery</Badge>}
-              {features.precision_farming && <Badge variant="secondary">Precision Farming</Badge>}
+              {tenantFeatures.ai_chat && <Badge variant="secondary">AI Chat Assistant</Badge>}
+              {tenantFeatures.weather_forecast && <Badge variant="secondary">Weather Forecasts</Badge>}
+              {tenantFeatures.marketplace && <Badge variant="secondary">Marketplace</Badge>}
+              {tenantFeatures.satellite_imagery && <Badge variant="secondary">Satellite Imagery</Badge>}
+              {tenantFeatures.soil_testing && <Badge variant="secondary">Soil Testing</Badge>}
+              {tenantFeatures.basic_analytics && <Badge variant="secondary">Analytics</Badge>}
             </div>
           </div>
         )}
@@ -180,28 +176,22 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {features?.ai_chat && (
+                {tenantFeatures?.ai_chat && (
                   <button className="p-4 border rounded-lg hover:bg-gray-50 text-left">
                     <div className="font-medium">AI Assistant</div>
                     <div className="text-sm text-gray-600">Get farming advice</div>
                   </button>
                 )}
-                {features?.weather_forecasts && (
+                {tenantFeatures?.weather_forecast && (
                   <button className="p-4 border rounded-lg hover:bg-gray-50 text-left">
                     <div className="font-medium">Weather</div>
                     <div className="text-sm text-gray-600">Check forecasts</div>
                   </button>
                 )}
-                {features?.marketplace && (
+                {tenantFeatures?.marketplace && (
                   <button className="p-4 border rounded-lg hover:bg-gray-50 text-left">
                     <div className="font-medium">Marketplace</div>
                     <div className="text-sm text-gray-600">Buy/sell products</div>
-                  </button>
-                )}
-                {features?.crop_advisory && (
-                  <button className="p-4 border rounded-lg hover:bg-gray-50 text-left">
-                    <div className="font-medium">Crop Advisory</div>
-                    <div className="text-sm text-gray-600">Expert guidance</div>
                   </button>
                 )}
               </div>

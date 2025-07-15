@@ -28,15 +28,15 @@ export const useAI = () => {
         tenantId: currentAssociation.tenant_id,
         language,
         sessionId: `session-${Date.now()}`,
-        location: farmer.coordinates ? {
-          latitude: 0, // Extract from coordinates
+        location: {
+          latitude: 0,
           longitude: 0,
-          district: farmer.district?.en || farmer.district?.hi,
-          state: farmer.state?.en || farmer.state?.hi,
-        } : undefined,
+          district: 'Unknown',
+          state: 'Unknown',
+        },
         farmingProfile: {
-          crops: [], // Would come from farmer's land data
-          landArea: 0, // Sum of all land areas
+          crops: farmer.primary_crops || [],
+          landArea: farmer.total_land_acres || 0,
           experience: farmer.farming_experience_years || 0,
         },
       };
