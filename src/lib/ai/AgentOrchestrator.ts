@@ -82,8 +82,8 @@ export class AgentOrchestrator {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Fetch tenant-specific agent configurations
-      const { data: tenantFeatures } = await supabase
+      // Fetch tenant-specific agent configurations with type assertion
+      const { data: tenantFeatures } = await (supabase as any)
         .from('tenant_features')
         .select('*')
         .eq('tenant_id', tenantId)

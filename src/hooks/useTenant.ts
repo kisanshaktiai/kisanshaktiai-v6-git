@@ -20,8 +20,8 @@ export const useTenant = (slug?: string) => {
       try {
         setLoading(true);
         
-        // Fetch tenant data
-        const { data: tenantData, error: tenantError } = await supabase
+        // Fetch tenant data with type assertion
+        const { data: tenantData, error: tenantError } = await (supabase as any)
           .from('tenants')
           .select('*')
           .eq('slug', slug)
@@ -32,8 +32,8 @@ export const useTenant = (slug?: string) => {
         if (tenantData) {
           setTenant(tenantData);
 
-          // Fetch branding
-          const { data: brandingData } = await supabase
+          // Fetch branding with type assertion
+          const { data: brandingData } = await (supabase as any)
             .from('tenant_branding')
             .select('*')
             .eq('tenant_id', tenantData.id)
@@ -41,8 +41,8 @@ export const useTenant = (slug?: string) => {
 
           setBranding(brandingData);
 
-          // Fetch features
-          const { data: featuresData } = await supabase
+          // Fetch features with type assertion
+          const { data: featuresData } = await (supabase as any)
             .from('tenant_features')
             .select('*')
             .eq('tenant_id', tenantData.id)

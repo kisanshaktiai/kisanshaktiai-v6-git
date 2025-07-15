@@ -60,11 +60,11 @@ export abstract class BaseAgent {
     response: AgentResponse,
     context: AgentContext
   ): Promise<void> {
-    // Implementation for logging to Supabase
+    // Implementation for logging to Supabase with type assertion
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      await supabase.from('ai_interactions').insert({
+      await (supabase as any).from('ai_interactions').insert({
         farmer_id: context.farmerId,
         tenant_id: context.tenantId,
         session_id: context.sessionId,
