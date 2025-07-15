@@ -8,7 +8,7 @@ import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
 import { MobileLayout } from './MobileLayout';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
-import { MobileHome } from '@/pages/mobile/MobileHome';
+import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
@@ -30,6 +30,7 @@ export const MobileApp: React.FC = () => {
     initializeApp();
   }, []);
 
+  // Show onboarding if user is not authenticated or hasn't completed onboarding
   if (!isAuthenticated || !onboardingCompleted) {
     return <OnboardingFlow />;
   }
@@ -37,14 +38,14 @@ export const MobileApp: React.FC = () => {
   return (
     <MobileLayout>
       <Routes>
-        <Route path="/" element={<MobileHome />} />
+        <Route path="/" element={<DashboardHome />} />
         <Route path="/my-lands" element={<MyLands />} />
         <Route path="/ai-chat" element={<AiChat />} />
         <Route path="/crop-schedule" element={<CropSchedule />} />
         <Route path="/market" element={<Market />} />
         <Route path="/community" element={<Community />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<MobileHome />} />
+        <Route path="*" element={<DashboardHome />} />
       </Routes>
     </MobileLayout>
   );

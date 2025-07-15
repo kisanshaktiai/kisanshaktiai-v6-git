@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -15,6 +14,8 @@ interface AuthScreenProps {
   isLastStep: boolean;
 }
 
+// This component is now deprecated in favor of MobileNumberScreen
+// Keeping for backward compatibility but redirecting to new flow
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext, onPrev }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
