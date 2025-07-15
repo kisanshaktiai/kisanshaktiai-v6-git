@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "Welcome",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "offline": "Offline",
+    "online": "Online"
+  },
+  "onboarding": {
+    "welcome_title": "Welcome to KisanShaktiAI",
+    "welcome_subtitle": "Your AI-Powered Farming Assistant",
+    "location_title": "Your Location",
+    "location_subtitle": "Share your location for better advice",
+    "language_title": "Choose Language",
+    "language_subtitle": "Select your preferred language"
+  },
+  "auth": {
+    "phone_number": "Phone Number",
+    "enter_phone": "Enter your phone number",
+    "login": "Login",
+    "register": "Register"
+  },
+  "navigation": {
+    "home": "Home",
+    "my_lands": "My Lands",
+    "ai_chat": "AI Chat",
+    "crop_schedule": "Crop Schedule",
+    "market": "Market",
+    "community": "Community",
+    "profile": "Profile"
+  }
+}

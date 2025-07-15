@@ -1,0 +1,37 @@
+
+{
+  "common": {
+    "welcome": "स्वागत है",
+    "continue": "जारी रखें",
+    "cancel": "रद्द करें",
+    "save": "सेव करें",
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "offline": "ऑफलाइन",
+    "online": "ऑनलाइन"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShaktiAI में आपका स्वागत है",
+    "welcome_subtitle": "आपका AI-पावर्ड कृषि सहायक",
+    "location_title": "आपका स्थान",
+    "location_subtitle": "बेहतर सलाह के लिए अपना स्थान साझा करें",
+    "language_title": "भाषा चुनें",
+    "language_subtitle": "अपनी पसंदीदा भाषा का चयन करें"
+  },
+  "auth": {
+    "phone_number": "फोन नंबर",
+    "enter_phone": "अपना फोन नंबर दर्ज करें",
+    "login": "लॉगिन",
+    "register": "पंजीकरण"
+  },
+  "navigation": {
+    "home": "होम",
+    "my_lands": "मेरी जमीन",
+    "ai_chat": "AI चैट",
+    "crop_schedule": "फसल कार्यक्रम",
+    "market": "बाजार",
+    "community": "समुदाय",
+    "profile": "प्रोफाइल"
+  }
+}
