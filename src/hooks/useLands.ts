@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Land, LandWithDetails, SoilHealth, CropHistory, LandCreateInput, LandUpdateInput } from '@/types/land';
+import { Land, LandWithDetails, SoilHealth, CropHistory, NDVIData, LandActivity, LandCreateInput, LandUpdateInput } from '@/types/land';
 
 export const useLands = () => {
   return useQuery({
