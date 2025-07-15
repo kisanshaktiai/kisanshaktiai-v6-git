@@ -108,15 +108,16 @@ export const DashboardHome: React.FC = () => {
   const getFarmerName = (): string => {
     if (!profile?.name) return 'Farmer';
     
+    // Handle string name
     if (typeof profile.name === 'string') {
       return profile.name.split(' ')[0];
     }
     
     // Handle multilingual name object
     if (typeof profile.name === 'object' && profile.name !== null) {
-      const nameObj = profile.name as any;
+      const nameObj = profile.name as Record<string, any>;
       const nameValue = nameObj.en || nameObj.hi || Object.values(nameObj)[0];
-      if (nameValue && typeof nameValue === 'string') {
+      if (typeof nameValue === 'string') {
         return nameValue.split(' ')[0];
       }
     }
