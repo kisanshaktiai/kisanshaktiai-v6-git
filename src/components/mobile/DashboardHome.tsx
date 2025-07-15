@@ -104,13 +104,30 @@ export const DashboardHome: React.FC = () => {
     navigate(route);
   };
 
+  // Helper function to safely get farmer name
+  const getFarmerName = () => {
+    if (!profile?.name) return 'Farmer';
+    
+    if (typeof profile.name === 'string') {
+      return profile.name.split(' ')[0];
+    }
+    
+    // Handle multilingual name object
+    if (typeof profile.name === 'object' && profile.name !== null) {
+      const nameObj = profile.name as any;
+      return (nameObj.en || nameObj.hi || Object.values(nameObj)[0] || 'Farmer').toString().split(' ')[0];
+    }
+    
+    return 'Farmer';
+  };
+
   return (
     <div className="p-4 space-y-6 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Namaste, {profile?.name?.split(' ')[0] || 'Farmer'}! 🙏
+            Namaste, {getFarmerName()}! 🙏
           </h1>
           <p className="text-gray-600">Welcome back to your dashboard</p>
         </div>
