@@ -143,7 +143,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onSave, onSha
                 <span>{format(message.timestamp, 'HH:mm')}</span>
                 
                 {message.isOffline && (
-                  <WifiOff className="h-3 w-3" title={t('Offline message')} />
+                  <div title={t('Offline message')}>
+                    <WifiOff className="h-3 w-3" />
+                  </div>
                 )}
                 
                 {message.isSyncing && (
