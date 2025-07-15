@@ -29,6 +29,20 @@ export const Profile: React.FC = () => {
     dispatch(logout());
   };
 
+  // Helper function to safely convert translation result to string
+  const getTranslation = (key: string, fallback: string): string => {
+    const result = t(key);
+    if (typeof result === 'string') return result;
+    return fallback;
+  };
+
+  // Helper function to get profile name as string
+  const getProfileName = (): string => {
+    if (!profile?.name) return 'Farmer';
+    if (typeof profile.name === 'string') return profile.name;
+    return profile.name.en || profile.name.hi || 'Farmer';
+  };
+
   const menuItems = [
     {
       icon: Settings,
@@ -57,7 +71,7 @@ export const Profile: React.FC = () => {
     <div className="p-4 space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          {String(t('navigation.profile') || 'Profile')}
+          {getTranslation('navigation.profile', 'Profile')}
         </h1>
       </div>
 
@@ -66,11 +80,11 @@ export const Profile: React.FC = () => {
         <CardContent className="p-6 text-center">
           <Avatar className="w-20 h-20 mx-auto mb-4">
             <AvatarFallback className="bg-green-100 text-green-800 text-xl">
-              {profile?.name?.charAt(0)?.toUpperCase() || 'F'}
+              {getProfileName().charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {profile?.name || 'Farmer'}
+            {getProfileName()}
           </h2>
           <p className="text-gray-600 mb-3">{phoneNumber}</p>
           <Badge variant="outline" className="mb-4">Verified Account</Badge>

@@ -39,16 +39,23 @@ export const MobileHome: React.FC = () => {
     },
   ];
 
+  // Helper function to safely convert translation result to string
+  const getTranslation = (key: string, fallback: string): string => {
+    const result = t(key);
+    if (typeof result === 'string') return result;
+    return fallback;
+  };
+
   return (
     <div className="p-4 space-y-6">
       {/* Welcome Section */}
       <div className="text-center py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {String(t('common.welcome') || 'Welcome')}, {profile?.name || 'Farmer'}!
+          {getTranslation('common.welcome', 'Welcome')}, {typeof profile?.name === 'string' ? profile.name : profile?.name?.en || 'Farmer'}!
         </h1>
         <div className="flex items-center justify-center space-x-2">
           <Badge variant={isOnline ? 'default' : 'secondary'}>
-            {isOnline ? String(t('common.online') || 'Online') : String(t('common.offline') || 'Offline')}
+            {isOnline ? getTranslation('common.online', 'Online') : getTranslation('common.offline', 'Offline')}
           </Badge>
         </div>
       </div>

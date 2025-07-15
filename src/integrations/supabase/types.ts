@@ -14,13 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      crop_history: {
+        Row: {
+          created_at: string
+          crop_name: string
+          growth_stage: string | null
+          harvest_date: string | null
+          id: string
+          land_id: string
+          notes: string | null
+          planting_date: string | null
+          season: string | null
+          status: string | null
+          updated_at: string
+          variety: string | null
+          yield_kg_per_acre: number | null
+        }
+        Insert: {
+          created_at?: string
+          crop_name: string
+          growth_stage?: string | null
+          harvest_date?: string | null
+          id?: string
+          land_id: string
+          notes?: string | null
+          planting_date?: string | null
+          season?: string | null
+          status?: string | null
+          updated_at?: string
+          variety?: string | null
+          yield_kg_per_acre?: number | null
+        }
+        Update: {
+          created_at?: string
+          crop_name?: string
+          growth_stage?: string | null
+          harvest_date?: string | null
+          id?: string
+          land_id?: string
+          notes?: string | null
+          planting_date?: string | null
+          season?: string | null
+          status?: string | null
+          updated_at?: string
+          variety?: string | null
+          yield_kg_per_acre?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_history_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      land_activities: {
+        Row: {
+          activity_date: string
+          activity_type: string
+          cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          land_id: string
+          notes: string | null
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          activity_date: string
+          activity_type: string
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          land_id: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          activity_date?: string
+          activity_type?: string
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          land_id?: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "land_activities_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lands: {
+        Row: {
+          area_acres: number
+          boundary_polygon: Json | null
+          center_point: Json | null
+          created_at: string
+          farmer_id: string
+          id: string
+          irrigation_source: string | null
+          name: string
+          ownership_type: string | null
+          survey_number: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          area_acres: number
+          boundary_polygon?: Json | null
+          center_point?: Json | null
+          created_at?: string
+          farmer_id: string
+          id?: string
+          irrigation_source?: string | null
+          name: string
+          ownership_type?: string | null
+          survey_number?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          area_acres?: number
+          boundary_polygon?: Json | null
+          center_point?: Json | null
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          irrigation_source?: string | null
+          name?: string
+          ownership_type?: string | null
+          survey_number?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ndvi_data: {
+        Row: {
+          cloud_cover: number | null
+          created_at: string
+          date: string
+          id: string
+          image_url: string | null
+          land_id: string
+          ndvi_value: number | null
+          satellite_source: string | null
+        }
+        Insert: {
+          cloud_cover?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          image_url?: string | null
+          land_id: string
+          ndvi_value?: number | null
+          satellite_source?: string | null
+        }
+        Update: {
+          cloud_cover?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          image_url?: string | null
+          land_id?: string
+          ndvi_value?: number | null
+          satellite_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndvi_data_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soil_health: {
+        Row: {
+          bulk_density: number | null
+          created_at: string
+          id: string
+          land_id: string
+          nitrogen_level: string | null
+          organic_carbon: number | null
+          ph_level: number | null
+          phosphorus_level: string | null
+          potassium_level: string | null
+          soil_type: string | null
+          source: string | null
+          test_date: string | null
+          test_report_url: string | null
+          texture: string | null
+          updated_at: string
+        }
+        Insert: {
+          bulk_density?: number | null
+          created_at?: string
+          id?: string
+          land_id: string
+          nitrogen_level?: string | null
+          organic_carbon?: number | null
+          ph_level?: number | null
+          phosphorus_level?: string | null
+          potassium_level?: string | null
+          soil_type?: string | null
+          source?: string | null
+          test_date?: string | null
+          test_report_url?: string | null
+          texture?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bulk_density?: number | null
+          created_at?: string
+          id?: string
+          land_id?: string
+          nitrogen_level?: string | null
+          organic_carbon?: number | null
+          ph_level?: number | null
+          phosphorus_level?: string | null
+          potassium_level?: string | null
+          soil_type?: string | null
+          source?: string | null
+          test_date?: string | null
+          test_report_url?: string | null
+          texture?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soil_health_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_land_health_score: {
+        Args: { land_uuid: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
