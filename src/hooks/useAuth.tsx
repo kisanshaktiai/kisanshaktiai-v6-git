@@ -55,9 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchFarmerData = async (userId: string) => {
     try {
-      // Fetch farmer profile
+      // Fetch farmer profile using any type as workaround
       const { data: farmerData } = await supabase
-        .from('farmers')
+        .from('farmers' as any)
         .select('*')
         .eq('id', userId)
         .single();
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Fetch tenant associations
       const { data: associationsData } = await supabase
-        .from('farmer_tenant_associations')
+        .from('farmer_tenant_associations' as any)
         .select(`
           *,
           tenant:tenant_id (name, slug, type)
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Set current association (first active one or from localStorage)
       const savedTenantId = localStorage.getItem('currentTenantId');
       const currentAssoc = associationsData?.find(
-        assoc => assoc.tenant_id === savedTenantId
+        (assoc: any) => assoc.tenant_id === savedTenantId
       ) || associationsData?.[0];
       
       setCurrentAssociation(currentAssoc || null);
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const switchTenant = (tenantId: string) => {
-    const association = associations.find(assoc => assoc.tenant_id === tenantId);
+    const association = associations.find((assoc: any) => assoc.tenant_id === tenantId);
     if (association) {
       setCurrentAssociation(association);
       localStorage.setItem('currentTenantId', tenantId);

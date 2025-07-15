@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
-import { Farmers, Wheat, Users, ShoppingCart, TrendingUp, MapPin } from 'lucide-react';
+import { Users, Wheat, ShoppingCart, TrendingUp, MapPin } from 'lucide-react';
 
 interface TenantDashboardProps {
   tenantSlug: string;
@@ -39,7 +39,7 @@ export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
     {
       title: 'Total Farmers',
       value: '12,543',
-      icon: Farmers,
+      icon: Users,
       description: 'Active registered farmers',
       color: 'text-green-600',
     },
