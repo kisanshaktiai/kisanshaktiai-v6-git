@@ -115,7 +115,10 @@ export const DashboardHome: React.FC = () => {
     // Handle multilingual name object
     if (typeof profile.name === 'object' && profile.name !== null) {
       const nameObj = profile.name as any;
-      return (nameObj.en || nameObj.hi || Object.values(nameObj)[0] || 'Farmer').toString().split(' ')[0];
+      const nameValue = nameObj.en || nameObj.hi || Object.values(nameObj)[0];
+      if (nameValue && typeof nameValue === 'string') {
+        return nameValue.split(' ')[0];
+      }
     }
     
     return 'Farmer';
