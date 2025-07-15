@@ -105,7 +105,7 @@ export const DashboardHome: React.FC = () => {
   };
 
   // Helper function to safely get farmer name
-  const getFarmerName = () => {
+  const getFarmerName = (): string => {
     if (!profile?.name) return 'Farmer';
     
     if (typeof profile.name === 'string') {
