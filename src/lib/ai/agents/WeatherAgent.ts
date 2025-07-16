@@ -34,7 +34,7 @@ export class WeatherAgent extends BaseAgent {
         suggestedActions: [
           {
             type: 'schedule',
-            label: 'Plan Irrigation',
+            label: context.language === 'hi' ? 'सिंचाई की योजना बनाएं' : 'Plan Irrigation',
             data: { type: 'irrigation', days: weatherData.dryDays },
           },
         ],

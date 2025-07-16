@@ -9,7 +9,21 @@
     "error": "Error",
     "success": "Success",
     "offline": "Offline",
-    "online": "Online"
+    "online": "Online",
+    "new": "New",
+    "comingSoon": "Coming Soon",
+    "viewDetails": "View Details",
+    "checkPrices": "Check Prices",
+    "addToSchedule": "Add to Schedule",
+    "bookTest": "Book Test",
+    "shopNow": "Shop Now",
+    "viewAll": "View All",
+    "viewCalendar": "View Calendar",
+    "back": "Back",
+    "farmer": "Farmer",
+    "initializing": "Initializing...",
+    "ready": "Ready!",
+    "tryAgain": "Try Again"
   },
   "onboarding": {
     "welcome_title": "Welcome to KisanShaktiAI",
@@ -17,7 +31,8 @@
     "location_title": "Your Location",
     "location_subtitle": "Share your location for better advice",
     "language_title": "Choose Language",
-    "language_subtitle": "Select your preferred language"
+    "language_subtitle": "Select your preferred language",
+    "autoDetected": "Auto-detected"
   },
   "auth": {
     "phone_number": "Phone Number",
@@ -33,5 +48,97 @@
     "market": "Market",
     "community": "Community",
     "profile": "Profile"
+  },
+  "features": {
+    "aiPoweredAdvice": "AI-Powered Advice",
+    "aiPoweredAdviceDesc": "Get personalized farming recommendations",
+    "communitySupport": "Community Support",
+    "communitySupportDesc": "Connect with fellow farmers"
+  },
+  "home": {
+    "quickActions": "Quick Actions",
+    "todaysSummary": "Today's Summary",
+    "weather": "Weather",
+    "tasksPending": "Tasks Pending",
+    "aiMessages": "AI Messages",
+    "newMessages": "New",
+    "getFarmingAdvice": "Get farming advice",
+    "viewUpcomingTasks": "View upcoming tasks",
+    "checkLatestRates": "Check latest rates",
+    "manageYourFields": "Manage your fields"
+  },
+  "market": {
+    "title": "Market",
+    "subtitle": "Latest crop prices and trends",
+    "updatedAgo": "Updated 2 hours ago",
+    "todaysPrices": "Today's Prices",
+    "previous": "Previous",
+    "perQuintal": "per quintal",
+    "perTon": "per ton",
+    "marketTip": "Market Tip",
+    "marketTipContent": "Wheat prices are trending upward. Consider selling your stock if you have surplus inventory."
+  },
+  "schedule": {
+    "title": "Crop Schedule",
+    "subtitle": "Manage your farming tasks",
+    "pending": "Pending",
+    "completed": "Completed",
+    "overdue": "Overdue",
+    "upcomingTasks": "Upcoming Tasks",
+    "crop": "Crop",
+    "field": "Field",
+    "dueDate": "Due Date",
+    "waterWheatField": "Water wheat field",
+    "applyFertilizer": "Apply fertilizer",
+    "harvestInspection": "Harvest inspection"
+  },
+  "community": {
+    "title": "Community",
+    "subtitle": "Connect with fellow farmers",
+    "members": "Members",
+    "posts": "Posts",
+    "today": "Today",
+    "recentDiscussions": "Recent Discussions",
+    "bestTimeWheatSowing": "Best time for wheat sowing in Punjab",
+    "bestTimeWheatSowingDesc": "Planning to sow wheat next month. What are your experiences with timing in this region?",
+    "organicPestControl": "Organic pest control methods",
+    "organicPestControlDesc": "Looking for natural ways to control aphids on my vegetable crops. Any suggestions?",
+    "waterConservation": "Water conservation techniques",
+    "waterConservationDesc": "Sharing my experience with drip irrigation. Reduced water usage by 40% this season.",
+    "hoursAgo": "hours ago",
+    "dayAgo": "day ago",
+    "categories": {
+      "crops": "Crops",
+      "organicFarming": "Organic Farming",
+      "waterManagement": "Water Management"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "verifiedAccount": "Verified Account",
+    "locationNotSet": "Location not set",
+    "lands": "Lands",
+    "aiChats": "AI Chats",
+    "daysActive": "Days Active",
+    "accountSettings": "Account Settings",
+    "accountSettingsDesc": "Manage your account preferences",
+    "notifications": "Notifications",
+    "notificationsDesc": "Configure notification settings",
+    "privacySecurity": "Privacy & Security",
+    "privacySecurityDesc": "Manage your privacy settings",
+    "language": "Language",
+    "languageDesc": "Change app language",
+    "logout": "Logout"
+  },
+  "errors": {
+    "pageNotFound": "Oops! Page not found",
+    "returnToHome": "Return to Home"
+  },
+  "splash": {
+    "tagline": "Intelligent Guru for Farmers",
+    "loadingServices": "Loading services...",
+    "detectingOrganization": "Detecting organization...",
+    "preparingLocationServices": "Preparing location services...",
+    "version": "v6.0.0 • Tenant Ready • Offline Capable"
   }
 }

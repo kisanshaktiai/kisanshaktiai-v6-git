@@ -14,7 +14,7 @@ export const Market: React.FC = () => {
       crop: 'Wheat',
       currentPrice: 2150,
       previousPrice: 2100,
-      unit: 'per quintal',
+      unit: t('market.perQuintal'),
       trend: 'up',
       change: 2.4,
     },
@@ -23,7 +23,7 @@ export const Market: React.FC = () => {
       crop: 'Rice',
       currentPrice: 3200,
       previousPrice: 3300,
-      unit: 'per quintal',
+      unit: t('market.perQuintal'),
       trend: 'down',
       change: -3.0,
     },
@@ -32,7 +32,7 @@ export const Market: React.FC = () => {
       crop: 'Corn',
       currentPrice: 1850,
       previousPrice: 1850,
-      unit: 'per quintal',
+      unit: t('market.perQuintal'),
       trend: 'stable',
       change: 0,
     },
@@ -41,7 +41,7 @@ export const Market: React.FC = () => {
       crop: 'Sugarcane',
       currentPrice: 350,
       previousPrice: 340,
-      unit: 'per ton',
+      unit: t('market.perTon'),
       trend: 'up',
       change: 2.9,
     },
@@ -67,16 +67,16 @@ export const Market: React.FC = () => {
     <div className="p-4 space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {t('navigation.market')}
+          {t('market.title')}
         </h1>
-        <p className="text-gray-600">Latest crop prices and trends</p>
+        <p className="text-gray-600">{t('market.subtitle')}</p>
         <Badge variant="outline" className="mt-2">
-          Updated 2 hours ago
+          {t('market.updatedAgo')}
         </Badge>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Today's Prices</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('market.todaysPrices')}</h2>
         {mockPrices.map((price) => (
           <Card key={price.id} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
@@ -99,7 +99,7 @@ export const Market: React.FC = () => {
                   <div className="text-sm text-gray-600">{price.unit}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-600">Previous</div>
+                  <div className="text-sm text-gray-600">{t('market.previous')}</div>
                   <div className="text-lg font-medium text-gray-500">
                     ₹{price.previousPrice.toLocaleString()}
                   </div>
@@ -112,9 +112,9 @@ export const Market: React.FC = () => {
 
       <Card className="bg-blue-50">
         <CardContent className="p-4 text-center">
-          <h3 className="font-semibold text-blue-900 mb-2">Market Tip</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">{t('market.marketTip')}</h3>
           <p className="text-sm text-blue-800">
-            Wheat prices are trending upward. Consider selling your stock if you have surplus inventory.
+            {t('market.marketTipContent')}
           </p>
         </CardContent>
       </Card>

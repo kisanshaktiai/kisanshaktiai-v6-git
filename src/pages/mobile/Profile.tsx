@@ -38,31 +38,31 @@ export const Profile: React.FC = () => {
 
   // Helper function to get profile name as string
   const getProfileName = (): string => {
-    if (!profile?.name) return 'Farmer';
+    if (!profile?.name) return getTranslation('common.farmer', 'Farmer');
     if (typeof profile.name === 'string') return profile.name;
-    return profile.name.en || profile.name.hi || 'Farmer';
+    return profile.name.en || profile.name.hi || getTranslation('common.farmer', 'Farmer');
   };
 
   const menuItems = [
     {
       icon: Settings,
-      title: 'Account Settings',
-      subtitle: 'Manage your account preferences',
+      title: t('profile.accountSettings'),
+      subtitle: t('profile.accountSettingsDesc'),
     },
     {
       icon: Bell,
-      title: 'Notifications',
-      subtitle: 'Configure notification settings',
+      title: t('profile.notifications'),
+      subtitle: t('profile.notificationsDesc'),
     },
     {
       icon: Shield,
-      title: 'Privacy & Security',
-      subtitle: 'Manage your privacy settings',
+      title: t('profile.privacySecurity'),
+      subtitle: t('profile.privacySecurityDesc'),
     },
     {
       icon: Languages,
-      title: 'Language',
-      subtitle: 'Change app language',
+      title: t('profile.language'),
+      subtitle: t('profile.languageDesc'),
       value: selectedLanguage?.toUpperCase(),
     },
   ];
@@ -71,7 +71,7 @@ export const Profile: React.FC = () => {
     <div className="p-4 space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          {getTranslation('navigation.profile', 'Profile')}
+          {getTranslation('profile.title', 'Profile')}
         </h1>
       </div>
 
@@ -87,13 +87,13 @@ export const Profile: React.FC = () => {
             {getProfileName()}
           </h2>
           <p className="text-gray-600 mb-3">{phoneNumber}</p>
-          <Badge variant="outline" className="mb-4">Verified Account</Badge>
+          <Badge variant="outline" className="mb-4">{t('profile.verifiedAccount')}</Badge>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center justify-center space-x-1">
               <MapPin className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">
-                {location?.district || 'Location not set'}
+                {location?.district || t('profile.locationNotSet')}
               </span>
             </div>
             <div className="flex items-center justify-center space-x-1">
@@ -111,19 +111,19 @@ export const Profile: React.FC = () => {
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-green-600">2</div>
-            <div className="text-xs text-gray-600">Lands</div>
+            <div className="text-xs text-gray-600">{t('profile.lands')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-blue-600">15</div>
-            <div className="text-xs text-gray-600">AI Chats</div>
+            <div className="text-xs text-gray-600">{t('profile.aiChats')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-orange-600">7</div>
-            <div className="text-xs text-gray-600">Days Active</div>
+            <div className="text-xs text-gray-600">{t('profile.daysActive')}</div>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +160,7 @@ export const Profile: React.FC = () => {
         className="w-full mt-6"
       >
         <LogOut className="w-4 h-4 mr-2" />
-        Logout
+        {t('profile.logout')}
       </Button>
     </div>
   );

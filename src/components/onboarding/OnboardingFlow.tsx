@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
@@ -14,6 +15,7 @@ import { OnboardingProgress } from './OnboardingProgress';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const { isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
@@ -25,11 +27,11 @@ export const OnboardingFlow: React.FC = () => {
   const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   const steps = [
-    { component: WelcomeScreen, name: 'Welcome', requiresAuth: false },
-    { component: LocationScreen, name: 'Location', requiresAuth: false },
-    { component: LanguageScreen, name: 'Language', requiresAuth: false },
-    { component: MobileNumberScreen, name: 'Mobile', requiresAuth: false },
-    { component: ProfileRegistrationScreen, name: 'Profile', requiresAuth: true },
+    { component: WelcomeScreen, name: t('onboarding.welcome_title'), requiresAuth: false },
+    { component: LocationScreen, name: t('onboarding.location_title'), requiresAuth: false },
+    { component: LanguageScreen, name: t('onboarding.language_title'), requiresAuth: false },
+    { component: MobileNumberScreen, name: t('auth.phone_number'), requiresAuth: false },
+    { component: ProfileRegistrationScreen, name: t('navigation.profile'), requiresAuth: true },
   ];
 
   const handleSplashComplete = () => {
@@ -86,7 +88,7 @@ export const OnboardingFlow: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing...</p>
+          <p className="text-gray-600">{t('common.initializing')}</p>
         </div>
       </div>
     );

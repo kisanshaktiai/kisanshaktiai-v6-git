@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -79,7 +80,7 @@ export const LanguageScreen: React.FC<LanguageScreenProps> = ({ onNext, onPrev }
           </p>
           {autoDetected && (
             <p className="text-sm text-blue-600 mt-2">
-              Auto-detected: {languages.find(l => l.code === autoDetected)?.nativeName}
+              {t('onboarding.autoDetected')}: {languages.find(l => l.code === autoDetected)?.nativeName}
             </p>
           )}
         </div>
@@ -118,7 +119,7 @@ export const LanguageScreen: React.FC<LanguageScreenProps> = ({ onNext, onPrev }
             onClick={onPrev}
             className="w-full"
           >
-            Back
+            {t('common.back')}
           </Button>
         </div>
       </div>

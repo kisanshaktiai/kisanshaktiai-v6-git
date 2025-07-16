@@ -15,26 +15,26 @@ export const MobileHome: React.FC = () => {
   const quickActions = [
     {
       icon: MessageCircle,
-      title: 'AI Chat',
-      description: 'Get farming advice',
+      title: t('navigation.ai_chat'),
+      description: t('home.getFarmingAdvice'),
       color: 'bg-blue-500',
     },
     {
       icon: Calendar,
-      title: 'Crop Schedule',
-      description: 'View upcoming tasks',
+      title: t('navigation.crop_schedule'),
+      description: t('home.viewUpcomingTasks'),
       color: 'bg-green-500',
     },
     {
       icon: TrendingUp,
-      title: 'Market Prices',
-      description: 'Check latest rates',
+      title: t('navigation.market'),
+      description: t('home.checkLatestRates'),
       color: 'bg-orange-500',
     },
     {
       icon: Sprout,
-      title: 'My Lands',
-      description: 'Manage your fields',
+      title: t('navigation.my_lands'),
+      description: t('home.manageYourFields'),
       color: 'bg-emerald-500',
     },
   ];
@@ -46,12 +46,18 @@ export const MobileHome: React.FC = () => {
     return fallback;
   };
 
+  const getProfileName = (): string => {
+    if (!profile?.name) return getTranslation('common.farmer', 'Farmer');
+    if (typeof profile.name === 'string') return profile.name;
+    return profile.name.en || profile.name.hi || getTranslation('common.farmer', 'Farmer');
+  };
+
   return (
     <div className="p-4 space-y-6">
       {/* Welcome Section */}
       <div className="text-center py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {getTranslation('common.welcome', 'Welcome')}, {typeof profile?.name === 'string' ? profile.name : profile?.name?.en || 'Farmer'}!
+          {getTranslation('common.welcome', 'Welcome')}, {getProfileName()}!
         </h1>
         <div className="flex items-center justify-center space-x-2">
           <Badge variant={isOnline ? 'default' : 'secondary'}>
@@ -62,7 +68,7 @@ export const MobileHome: React.FC = () => {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('home.quickActions')}</h2>
         <div className="grid grid-cols-2 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
@@ -84,20 +90,20 @@ export const MobileHome: React.FC = () => {
       {/* Today's Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Today's Summary</CardTitle>
+          <CardTitle className="text-lg">{t('home.todaysSummary')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Weather</span>
+            <span className="text-gray-600">{t('home.weather')}</span>
             <span className="font-medium">28°C, Sunny</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Tasks Pending</span>
+            <span className="text-gray-600">{t('home.tasksPending')}</span>
             <Badge variant="outline">3</Badge>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">AI Messages</span>
-            <Badge variant="outline">2 New</Badge>
+            <span className="text-gray-600">{t('home.aiMessages')}</span>
+            <Badge variant="outline">2 {t('home.newMessages')}</Badge>
           </div>
         </CardContent>
       </Card>

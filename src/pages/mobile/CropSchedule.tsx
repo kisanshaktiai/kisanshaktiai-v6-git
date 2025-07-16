@@ -11,7 +11,7 @@ export const CropSchedule: React.FC = () => {
   const mockTasks = [
     {
       id: 1,
-      title: 'Water wheat field',
+      title: t('schedule.waterWheatField'),
       crop: 'Wheat',
       field: 'Field 1',
       dueDate: '2025-01-16',
@@ -20,7 +20,7 @@ export const CropSchedule: React.FC = () => {
     },
     {
       id: 2,
-      title: 'Apply fertilizer',
+      title: t('schedule.applyFertilizer'),
       crop: 'Rice',
       field: 'Field 2',
       dueDate: '2025-01-18',
@@ -29,7 +29,7 @@ export const CropSchedule: React.FC = () => {
     },
     {
       id: 3,
-      title: 'Harvest inspection',
+      title: t('schedule.harvestInspection'),
       crop: 'Wheat',
       field: 'Field 1',
       dueDate: '2025-01-20',
@@ -57,9 +57,9 @@ export const CropSchedule: React.FC = () => {
         <Calendar className="w-8 h-8 text-green-600" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('navigation.crop_schedule')}
+            {t('schedule.title')}
           </h1>
-          <p className="text-gray-600">Manage your farming tasks</p>
+          <p className="text-gray-600">{t('schedule.subtitle')}</p>
         </div>
       </div>
 
@@ -67,25 +67,25 @@ export const CropSchedule: React.FC = () => {
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-orange-600">2</div>
-            <div className="text-sm text-gray-600">Pending</div>
+            <div className="text-sm text-gray-600">{t('schedule.pending')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">1</div>
-            <div className="text-sm text-gray-600">Completed</div>
+            <div className="text-sm text-gray-600">{t('schedule.completed')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">1</div>
-            <div className="text-sm text-gray-600">Overdue</div>
+            <div className="text-sm text-gray-600">{t('schedule.overdue')}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('schedule.upcomingTasks')}</h2>
         {mockTasks.map((task) => (
           <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
@@ -101,17 +101,17 @@ export const CropSchedule: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Crop:</span>
+                <span className="text-gray-600">{t('schedule.crop')}:</span>
                 <span className="font-medium">{task.crop}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Field:</span>
+                <span className="text-gray-600">{t('schedule.field')}:</span>
                 <span className="font-medium">{task.field}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center text-gray-600">
                   <Clock className="w-4 h-4 mr-1" />
-                  Due Date:
+                  {t('schedule.dueDate')}:
                 </div>
                 <span className="font-medium">{task.dueDate}</span>
               </div>

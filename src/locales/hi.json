@@ -9,7 +9,21 @@
     "error": "त्रुटि",
     "success": "सफलता",
     "offline": "ऑफलाइन",
-    "online": "ऑनलाइन"
+    "online": "ऑनलाइन",
+    "new": "नया",
+    "comingSoon": "जल्द आ रहा है",
+    "viewDetails": "विवरण देखें",
+    "checkPrices": "कीमतें देखें",
+    "addToSchedule": "कार्यक्रम में जोड़ें",
+    "bookTest": "परीक्षण बुक करें",
+    "shopNow": "अभी खरीदें",
+    "viewAll": "सभी देखें",
+    "viewCalendar": "कैलेंडर देखें",
+    "back": "वापस",
+    "farmer": "किसान",
+    "initializing": "शुरुआत हो रही है...",
+    "ready": "तैयार!",
+    "tryAgain": "पुनः प्रयास करें"
   },
   "onboarding": {
     "welcome_title": "KisanShaktiAI में आपका स्वागत है",
@@ -17,7 +31,8 @@
     "location_title": "आपका स्थान",
     "location_subtitle": "बेहतर सलाह के लिए अपना स्थान साझा करें",
     "language_title": "भाषा चुनें",
-    "language_subtitle": "अपनी पसंदीदा भाषा का चयन करें"
+    "language_subtitle": "अपनी पसंदीदा भाषा का चयन करें",
+    "autoDetected": "स्वचालित रूप से पहचाना गया"
   },
   "auth": {
     "phone_number": "फोन नंबर",
@@ -33,5 +48,97 @@
     "market": "बाजार",
     "community": "समुदाय",
     "profile": "प्रोफाइल"
+  },
+  "features": {
+    "aiPoweredAdvice": "AI-संचालित सलाह",
+    "aiPoweredAdviceDesc": "व्यक्तिगत कृषि सिफारिशें प्राप्त करें",
+    "communitySupport": "समुदायिक सहायता",
+    "communitySupportDesc": "साथी किसानों से जुड़ें"
+  },
+  "home": {
+    "quickActions": "त्वरित क्रियाएं",
+    "todaysSummary": "आज का सारांश",
+    "weather": "मौसम",
+    "tasksPending": "लंबित कार्य",
+    "aiMessages": "AI संदेश",
+    "newMessages": "नए",
+    "getFarmingAdvice": "कृषि सलाह प्राप्त करें",
+    "viewUpcomingTasks": "आने वाले कार्य देखें",
+    "checkLatestRates": "नवीनतम दरें देखें",
+    "manageYourFields": "अपने खेतों का प्रबंधन करें"
+  },
+  "market": {
+    "title": "बाजार",
+    "subtitle": "नवीनतम फसल की कीमतें और रुझान",
+    "updatedAgo": "2 घंटे पहले अपडेट किया गया",
+    "todaysPrices": "आज की कीमतें",
+    "previous": "पिछला",
+    "perQuintal": "प्रति क्विंटल",
+    "perTon": "प्रति टन",
+    "marketTip": "बाजार सुझाव",
+    "marketTipContent": "गेहूं की कीमतें बढ़ रही हैं। यदि आपके पास अतिरिक्त स्टॉक है तो बेचने पर विचार करें।"
+  },
+  "schedule": {
+    "title": "फसल कार्यक्रम",
+    "subtitle": "अपने कृषि कार्यों का प्रबंधन करें",
+    "pending": "लंबित",
+    "completed": "पूर्ण",
+    "overdue": "विलंबित",
+    "upcomingTasks": "आने वाले कार्य",
+    "crop": "फसल",
+    "field": "खेत",
+    "dueDate": "देय तिथि",
+    "waterWheatField": "गेहूं के खेत में पानी दें",
+    "applyFertilizer": "उर्वरक लगाएं",
+    "harvestInspection": "फसल निरीक्षण"
+  },
+  "community": {
+    "title": "समुदाय",
+    "subtitle": "साथी किसानों से जुड़ें",
+    "members": "सदस्य",
+    "posts": "पोस्ट",
+    "today": "आज",
+    "recentDiscussions": "हाल की चर्चाएं",
+    "bestTimeWheatSowing": "पंजाब में गेहूं बुआई का सबसे अच्छा समय",
+    "bestTimeWheatSowingDesc": "अगले महीने गेहूं बोने की योजना है। इस क्षेत्र में समय के साथ आपके क्या अनुभव हैं?",
+    "organicPestControl": "जैविक कीट नियंत्रण विधियां",
+    "organicPestControlDesc": "मेरी सब्जी की फसलों पर एफिड्स को नियंत्रित करने के प्राकृतिक तरीकों की तलाश में हूं। कोई सुझाव?",
+    "waterConservation": "पानी संरक्षण तकनीकें",
+    "waterConservationDesc": "ड्रिप सिंचाई के साथ अपना अनुभव साझा कर रहा हूं। इस सीजन में पानी का उपयोग 40% कम किया।",
+    "hoursAgo": "घंटे पहले",
+    "dayAgo": "दिन पहले",
+    "categories": {
+      "crops": "फसलें",
+      "organicFarming": "जैविक खेती",
+      "waterManagement": "पानी प्रबंधन"
+    }
+  },
+  "profile": {
+    "title": "प्रोफाइल",
+    "verifiedAccount": "सत्यापित खाता",
+    "locationNotSet": "स्थान सेट नहीं है",
+    "lands": "भूमि",
+    "aiChats": "AI चैट",
+    "daysActive": "सक्रिय दिन",
+    "accountSettings": "खाता सेटिंग्स",
+    "accountSettingsDesc": "अपनी खाता प्राथमिकताएं प्रबंधित करें",
+    "notifications": "अधिसूचनाएं",
+    "notificationsDesc": "अधिसूचना सेटिंग्स कॉन्फ़िगर करें",
+    "privacySecurity": "गोपनीयता और सुरक्षा",
+    "privacySecurityDesc": "अपनी गोपनीयता सेटिंग्स प्रबंधित करें",
+    "language": "भाषा",
+    "languageDesc": "ऐप भाषा बदलें",
+    "logout": "लॉगआउट"
+  },
+  "errors": {
+    "pageNotFound": "ओह! पेज नहीं मिला",
+    "returnToHome": "होम पर वापस जाएं"
+  },
+  "splash": {
+    "tagline": "किसानों के लिए बुद्धिमान गुरु",
+    "loadingServices": "सेवाएं लोड हो रही हैं...",
+    "detectingOrganization": "संगठन का पता लगाया जा रहा है...",
+    "preparingLocationServices": "स्थान सेवाएं तैयार की जा रही हैं...",
+    "version": "v6.0.0 • टेनेंट तैयार • ऑफलाइन सक्षम"
   }
 }

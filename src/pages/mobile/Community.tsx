@@ -14,42 +14,42 @@ export const Community: React.FC = () => {
       id: 1,
       author: 'Rajesh Kumar',
       authorInitials: 'RK',
-      title: 'Best time for wheat sowing in Punjab',
-      content: 'Planning to sow wheat next month. What are your experiences with timing in this region?',
-      timestamp: '2 hours ago',
+      title: t('community.bestTimeWheatSowing'),
+      content: t('community.bestTimeWheatSowingDesc'),
+      timestamp: `2 ${t('community.hoursAgo')}`,
       likes: 12,
       comments: 8,
-      category: 'Crops',
+      category: t('community.categories.crops'),
     },
     {
       id: 2,
       author: 'Priya Sharma',
       authorInitials: 'PS',
-      title: 'Organic pest control methods',
-      content: 'Looking for natural ways to control aphids on my vegetable crops. Any suggestions?',
-      timestamp: '5 hours ago',
+      title: t('community.organicPestControl'),
+      content: t('community.organicPestControlDesc'),
+      timestamp: `5 ${t('community.hoursAgo')}`,
       likes: 18,
       comments: 15,
-      category: 'Organic Farming',
+      category: t('community.categories.organicFarming'),
     },
     {
       id: 3,
       author: 'Suresh Patel',
       authorInitials: 'SP',
-      title: 'Water conservation techniques',
-      content: 'Sharing my experience with drip irrigation. Reduced water usage by 40% this season.',
-      timestamp: '1 day ago',
+      title: t('community.waterConservation'),
+      content: t('community.waterConservationDesc'),
+      timestamp: `1 ${t('community.dayAgo')}`,
       likes: 25,
       comments: 12,
-      category: 'Water Management',
+      category: t('community.categories.waterManagement'),
     },
   ];
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Crops': 'bg-green-100 text-green-800',
-      'Organic Farming': 'bg-blue-100 text-blue-800',
-      'Water Management': 'bg-orange-100 text-orange-800',
+      [t('community.categories.crops')]: 'bg-green-100 text-green-800',
+      [t('community.categories.organicFarming')]: 'bg-blue-100 text-blue-800',
+      [t('community.categories.waterManagement')]: 'bg-orange-100 text-orange-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
@@ -60,35 +60,35 @@ export const Community: React.FC = () => {
         <div className="flex items-center justify-center space-x-2 mb-2">
           <Users className="w-8 h-8 text-green-600" />
           <h1 className="text-2xl font-bold text-gray-900">
-            {t('navigation.community')}
+            {t('community.title')}
           </h1>
         </div>
-        <p className="text-gray-600">Connect with fellow farmers</p>
+        <p className="text-gray-600">{t('community.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-green-600">1.2k</div>
-            <div className="text-xs text-gray-600">Members</div>
+            <div className="text-xs text-gray-600">{t('community.members')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-blue-600">156</div>
-            <div className="text-xs text-gray-600">Posts</div>
+            <div className="text-xs text-gray-600">{t('community.posts')}</div>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="p-4">
             <div className="text-xl font-bold text-orange-600">42</div>
-            <div className="text-xs text-gray-600">Today</div>
+            <div className="text-xs text-gray-600">{t('community.today')}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Discussions</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('community.recentDiscussions')}</h2>
         {mockPosts.map((post) => (
           <Card key={post.id} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">

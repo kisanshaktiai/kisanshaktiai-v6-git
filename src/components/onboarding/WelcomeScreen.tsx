@@ -35,8 +35,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             <Smartphone className="w-6 h-6 text-blue-600" />
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-gray-900">AI-Powered Advice</h3>
-            <p className="text-gray-600">Get personalized farming recommendations</p>
+            <h3 className="font-semibold text-gray-900">{t('features.aiPoweredAdvice')}</h3>
+            <p className="text-gray-600">{t('features.aiPoweredAdviceDesc')}</p>
           </div>
         </div>
 
@@ -45,8 +45,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
             <Users className="w-6 h-6 text-green-600" />
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-gray-900">Community Support</h3>
-            <p className="text-gray-600">Connect with fellow farmers</p>
+            <h3 className="font-semibold text-gray-900">{t('features.communitySupport')}</h3>
+            <p className="text-gray-600">{t('features.communitySupportDesc')}</p>
           </div>
         </div>
       </div>

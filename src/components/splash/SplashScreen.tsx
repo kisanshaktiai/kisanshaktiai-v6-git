@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { setTenantId } from '@/store/slices/farmerSlice';
 import { LocationService } from '@/services/LocationService';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -12,13 +13,14 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState('Initializing...');
+  const [status, setStatus] = useState('');
   const [currentLogo, setCurrentLogo] = useState('kisanshakti'); // 'kisanshakti' or 'tenant'
   const [tenantBranding, setTenantBranding] = useState({
     logo: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
     appName: 'KisanShaktiAI',
-    tagline: 'Intelligent Guru for Farmers',
+    tagline: t('splash.tagline'),
     primaryColor: '#4D7C0F',
     backgroundColor: '#FFFFFF'
   });
@@ -30,19 +32,19 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const initializeApp = async () => {
     try {
       // Step 1: Show KisanShaktiAI logo first
-      setStatus('Loading KisanShaktiAI...');
+      setStatus(t('common.initializing'));
       setProgress(10);
       
       await new Promise(resolve => setTimeout(resolve, 1500)); // Show for 1.5 seconds
 
       // Step 2: Initialize services
-      setStatus('Loading services...');
+      setStatus(t('splash.loadingServices'));
       setProgress(25);
       
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 3: Detect tenant
-      setStatus('Detecting organization...');
+      setStatus(t('splash.detectingOrganization'));
       setProgress(40);
       
       const detectedTenant = await TenantDetectionService.getInstance().detectTenant();
@@ -53,7 +55,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         setTenantBranding({
           logo: detectedTenant.branding?.logo_url || '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
           appName: detectedTenant.branding?.app_name || 'KisanShaktiAI',
-          tagline: detectedTenant.branding?.app_tagline || 'Intelligent Guru for Farmers',
+          tagline: detectedTenant.branding?.app_tagline || t('splash.tagline'),
           primaryColor: detectedTenant.branding?.primary_color || '#4D7C0F',
           backgroundColor: detectedTenant.branding?.background_color || '#FFFFFF'
         });
@@ -69,7 +71,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       // Step 4: Prepare location services
-      setStatus('Preparing location services...');
+      setStatus(t('splash.preparingLocationServices'));
       setProgress(80);
       
       try {
@@ -79,7 +81,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       }
 
       setProgress(100);
-      setStatus('Ready!');
+      setStatus(t('common.ready'));
       
       await new Promise(resolve => setTimeout(resolve, 500));
       onComplete();
@@ -107,7 +109,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const getCurrentTagline = () => {
     if (currentLogo === 'kisanshakti') {
-      return 'Intelligent Guru for Farmers';
+      return t('splash.tagline');
     }
     return tenantBranding.tagline;
   };
@@ -161,7 +163,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
       {/* Version Info */}
       <div className="absolute bottom-6 text-sm text-gray-400">
-        v6.0.0 • Tenant Ready • Offline Capable
+        {t('splash.version')}
       </div>
     </div>
   );

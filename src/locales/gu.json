@@ -9,7 +9,21 @@
     "error": "ભૂલ",
     "success": "સફળતા",
     "offline": "ઓફલાઈન",
-    "online": "ઓનલાઈન"
+    "online": "ઓનલાઈન",
+    "new": "નવું",
+    "comingSoon": "ટૂંક સમયમાં આવી રહ્યું છે",
+    "viewDetails": "વિગતો જુઓ",
+    "checkPrices": "કિંમતો તપાસો",
+    "addToSchedule": "શેડ્યૂલમાં ઉમેરો",
+    "bookTest": "ટેસ્ટ બુક કરો",
+    "shopNow": "હવે ખરીદો",
+    "viewAll": "બધું જુઓ",
+    "viewCalendar": "કેલેન્ડર જુઓ",
+    "back": "પાછળ",
+    "farmer": "ખેડૂત",
+    "initializing": "શરૂઆત થઈ રહી છે...",
+    "ready": "તૈયાર!",
+    "tryAgain": "ફરી પ્રયાસ કરો"
   },
   "onboarding": {
     "welcome_title": "KisanShaktiAI માં આપનું સ્વાગત છે",
@@ -17,7 +31,8 @@
     "location_title": "આપનું સ્થાન",
     "location_subtitle": "સારી સલાહ માટે આપનું સ્થાન શેર કરો",
     "language_title": "ભાષા પસંદ કરો",
-    "language_subtitle": "આપની પસંદગીની ભાષા પસંદ કરો"
+    "language_subtitle": "આપની પસંદગીની ભાષા પસંદ કરો",
+    "autoDetected": "સ્વચાલિત રીતે ઓળખાયેલ"
   },
   "auth": {
     "phone_number": "ફોન નંબર",
@@ -33,5 +48,97 @@
     "market": "બજાર",
     "community": "સમુદાય",
     "profile": "પ્રોફાઈલ"
+  },
+  "features": {
+    "aiPoweredAdvice": "AI-સંચાલિત સલાહ",
+    "aiPoweredAdviceDesc": "વ્યક્તિગત ખેતી ભલામણો મેળવો",
+    "communitySupport": "સમુદાયિક સહાય",
+    "communitySupportDesc": "સાથી ખેડૂતો સાથે જોડાઓ"
+  },
+  "home": {
+    "quickActions": "ઝડપી ક્રિયાઓ",
+    "todaysSummary": "આજનો સારાંશ",
+    "weather": "હવામાન",
+    "tasksPending": "બાકી કામો",
+    "aiMessages": "AI સંદેશાઓ",
+    "newMessages": "નવા",
+    "getFarmingAdvice": "ખેતી સલાહ મેળવો",
+    "viewUpcomingTasks": "આગામી કામો જુઓ",
+    "checkLatestRates": "તાજા રેટ્સ તપાસો",
+    "manageYourFields": "તમારા ખેતરોનું સંચાલન કરો"
+  },
+  "market": {
+    "title": "બજાર",
+    "subtitle": "તાજા પાકની કિંમતો અને ટ્રેન્ડ",
+    "updatedAgo": "2 કલાક પહેલાં અપડેટ થયું",
+    "todaysPrices": "આજની કિંમતો",
+    "previous": "પહેલાંની",
+    "perQuintal": "પ્રતિ ક્વિન્ટલ",
+    "perTon": "પ્રતિ ટન",
+    "marketTip": "બજાર સલાહ",
+    "marketTipContent": "ઘઉંની કિંમતો વધી રહી છે. જો તમારી પાસે વધારાનો સ્ટોક છે તો વેચવાનું વિચારો."
+  },
+  "schedule": {
+    "title": "પાક શેડ્યૂલ",
+    "subtitle": "તમારા ખેતીના કામોનું સંચાલન કરો",
+    "pending": "બાકી",
+    "completed": "પૂર્ણ",
+    "overdue": "મુદત વીતી ગઈ",
+    "upcomingTasks": "આગામી કામો",
+    "crop": "પાક",
+    "field": "ખેતર",
+    "dueDate": "બાકી તારીખ",
+    "waterWheatField": "ઘઉંના ખેતરમાં પાણી આપો",
+    "applyFertilizer": "ખાતર નાખો",
+    "harvestInspection": "ફસલની તપાસ"
+  },
+  "community": {
+    "title": "સમુદાય",
+    "subtitle": "સાથી ખેડૂતો સાથે જોડાઓ",
+    "members": "સભ્યો",
+    "posts": "પોસ્ટ્સ",
+    "today": "આજે",
+    "recentDiscussions": "તાજેતરની ચર્ચાઓ",
+    "bestTimeWheatSowing": "પંજાબમાં ઘઉં વાવવાનો સારો સમય",
+    "bestTimeWheatSowingDesc": "આગલા મહિને ઘઉં વાવવાની યોજના છે. આ પ્રદેશમાં સમયની સાથે તમારા અનુભવો શું છે?",
+    "organicPestControl": "કાર્બનિક જંતુ નિયંત્રણ પદ્ધતિઓ",
+    "organicPestControlDesc": "મારા શાકભાજીના પાક પર એફિડ્સ નિયંત્રિત કરવાની પ્રાકૃતિક રીતો શોધી રહ્યો છું. કોઈ સૂચનો?",
+    "waterConservation": "પાણી સંરક્ષણ તકનીકો",
+    "waterConservationDesc": "ડ્રિપ સિંચાઈ સાથેનો મારો અનુભવ શેર કરી રહ્યો છું. આ સીઝનમાં પાણીનો ઉપયોગ 40% ઘટાડ્યો.",
+    "hoursAgo": "કલાક પહેલાં",
+    "dayAgo": "દિવસ પહેલાં",
+    "categories": {
+      "crops": "પાકો",
+      "organicFarming": "કાર્બનિક ખેતી",
+      "waterManagement": "પાણી વ્યવસ્થાપન"
+    }
+  },
+  "profile": {
+    "title": "પ્રોફાઈલ",
+    "verifiedAccount": "ચકાસાયેલ એકાઉન્ટ",
+    "locationNotSet": "સ્થાન સેટ નથી",
+    "lands": "જમીન",
+    "aiChats": "AI ચેટ્સ",
+    "daysActive": "સક્રિય દિવસો",
+    "accountSettings": "એકાઉન્ટ સેટિંગ્સ",
+    "accountSettingsDesc": "તમારી એકાઉન્ટ પસંદગીઓનું સંચાલન કરો",
+    "notifications": "સૂચનાઓ",
+    "notificationsDesc": "સૂચના સેટિંગ્સ કાન્ફિગર કરો",
+    "privacySecurity": "ગોપનીયતા અને સુરક્ષા",
+    "privacySecurityDesc": "તમારી ગોપનીયતા સેટિંગ્સનું સંચાલન કરો",
+    "language": "ભાષા",
+    "languageDesc": "એપ્લિકેશન ભાષા બદલો",
+    "logout": "લોગઆઉટ"
+  },
+  "errors": {
+    "pageNotFound": "અરે! પેજ મળ્યું નથી",
+    "returnToHome": "હોમ પર પાછા જાઓ"
+  },
+  "splash": {
+    "tagline": "ખેડૂતો માટે બુદ્ધિશાળી ગુરુ",
+    "loadingServices": "સેવાઓ લોડ થઈ રહી છે...",
+    "detectingOrganization": "સંસ્થાની ઓળખ કરી રહ્યા છીએ...",
+    "preparingLocationServices": "લોકેશન સેવાઓ તૈયાર કરી રહ્યા છીએ...",
+    "version": "v6.0.0 • ટેનેન્ટ તૈયાર • ઓફલાઈન સક્ષમ"
   }
 }
