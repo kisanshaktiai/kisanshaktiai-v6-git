@@ -4,10 +4,9 @@ import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
-import { LocationService } from '@/services/LocationService';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
-import { SplashScreen } from '@/components/splash/SplashScreen';
+import { SkeletonSplashScreen } from '@/components/splash/SkeletonSplashScreen';
 import { MobileLayout } from './MobileLayout';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 import { DashboardHome } from './DashboardHome';
@@ -33,8 +32,11 @@ export const MobileApp: React.FC = () => {
     const initializeApp = async () => {
       if (!appInitialized) {
         try {
-          await LanguageService.getInstance().initialize();
-          await SyncService.getInstance().initialize();
+          // Initialize services in parallel for better performance
+          await Promise.allSettled([
+            LanguageService.getInstance().initialize(),
+            SyncService.getInstance().initialize()
+          ]);
           setAppInitialized(true);
         } catch (error) {
           console.error('Failed to initialize services:', error);
@@ -52,9 +54,9 @@ export const MobileApp: React.FC = () => {
     setShowSplash(false);
   };
 
-  // Show splash screen first
+  // Show optimized skeleton splash screen first
   if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
+    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Show loading while auth is being determined
