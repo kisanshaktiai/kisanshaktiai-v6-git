@@ -5,13 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { SplashScreen } from '../splash/SplashScreen';
-import { WelcomeScreen } from './WelcomeScreen';
-import { LocationScreen } from './LocationScreen';
-import { LanguageScreen } from './LanguageScreen';
-import { MobileNumberScreen } from './MobileNumberScreen';
+import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
+import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
+import { MobileAuthScreen } from '../auth/MobileAuthScreen';
 import { ProfileRegistrationScreen } from './ProfileRegistrationScreen';
-import { OnboardingProgress } from './OnboardingProgress';
+
+type OnboardingStep = 'splash' | 'language' | 'auth' | 'profile' | 'complete';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
@@ -19,73 +18,60 @@ export const OnboardingFlow: React.FC = () => {
   const { isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
-  const [currentStep, setCurrentStep] = useState(0);
-  const [showSplash, setShowSplash] = useState(true);
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Use the most reliable source of authentication state
   const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
-  const steps = [
-    { component: WelcomeScreen, name: t('onboarding.welcome_title'), requiresAuth: false },
-    { component: LocationScreen, name: t('onboarding.location_title'), requiresAuth: false },
-    { component: LanguageScreen, name: t('onboarding.language_title'), requiresAuth: false },
-    { component: MobileNumberScreen, name: t('auth.phone_number'), requiresAuth: false },
-    { component: ProfileRegistrationScreen, name: t('navigation.profile'), requiresAuth: true },
-  ];
+  useEffect(() => {
+    // If user is already authenticated and onboarded, skip the flow
+    if (isAuthenticated && onboardingCompleted && isInitialized) {
+      console.log('User is already authenticated and onboarded');
+      return;
+    }
+  }, [isAuthenticated, onboardingCompleted, isInitialized]);
 
   const handleSplashComplete = () => {
-    setShowSplash(false);
     setIsInitialized(true);
-  };
-
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    
+    // Check if we need language selection (first time users)
+    const hasSelectedLanguage = localStorage.getItem('i18nextLng');
+    if (!hasSelectedLanguage || hasSelectedLanguage === 'undefined') {
+      setCurrentStep('language');
+    } else {
+      setCurrentStep('auth');
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleLanguageComplete = () => {
+    setCurrentStep('auth');
+  };
+
+  const handleAuthComplete = () => {
+    // After authentication, check if user needs profile setup
+    // For now, always go to profile setup for new users
+    setCurrentStep('profile');
+  };
+
+  const handleProfileComplete = () => {
+    dispatch(setOnboardingCompleted());
+    setCurrentStep('complete');
   };
 
   const completeOnboarding = () => {
     dispatch(setOnboardingCompleted());
   };
 
-  // Handle authentication state changes after initialization
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    // If user is authenticated and onboarding is completed, this component should not be shown
-    if (isAuthenticated && onboardingCompleted) {
-      console.log('User is fully onboarded, should redirect to main app');
-      return;
-    }
-
-    const step = steps[currentStep];
-    if (step?.requiresAuth && !isAuthenticated && currentStep !== 3) {
-      // If step requires auth but user isn't authenticated, go to mobile number screen
-      setCurrentStep(3);
-    } else if (isAuthenticated && currentStep === 3) {
-      // User just authenticated, check if they need profile setup
-      // For now, always go to profile setup for new users
-      setCurrentStep(4);
-    } else if (isAuthenticated && currentStep === 4) {
-      // User completed profile setup
-      completeOnboarding();
-    }
-  }, [isAuthenticated, onboardingCompleted, currentStep, isInitialized]);
-
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
+  // Show splash screen first
+  if (currentStep === 'splash') {
+    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
   }
 
+  // Show loading if not initialized
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">{t('common.initializing')}</p>
@@ -94,29 +80,45 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  const CurrentStepComponent = steps[currentStep]?.component || WelcomeScreen;
-  const showProgress = currentStep > 0; // Don't show progress on welcome screen
+  // Language selection step
+  if (currentStep === 'language') {
+    return (
+      <EnhancedLanguageScreen 
+        onNext={handleLanguageComplete}
+        onSkip={handleLanguageComplete}
+      />
+    );
+  }
 
+  // Authentication step
+  if (currentStep === 'auth' && !isAuthenticated) {
+    return <MobileAuthScreen onComplete={handleAuthComplete} />;
+  }
+
+  // Profile registration step
+  if (currentStep === 'profile' && isAuthenticated) {
+    return (
+      <ProfileRegistrationScreen 
+        onNext={() => {}} 
+        onPrev={() => {}}
+        isFirstStep={false}
+        isLastStep={true}
+        onComplete={handleProfileComplete}
+      />
+    );
+  }
+
+  // If user is authenticated and onboarded, this component should not be rendered
+  if (isAuthenticated && onboardingCompleted) {
+    return null;
+  }
+
+  // Fallback loading state
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {showProgress && (
-        <div className="fixed top-0 left-0 right-0 z-10 bg-white/80 backdrop-blur-sm p-4">
-          <OnboardingProgress
-            currentStep={currentStep}
-            totalSteps={steps.length}
-            steps={steps.map(s => s.name)}
-          />
-        </div>
-      )}
-      
-      <div className={showProgress ? 'pt-24' : ''}>
-        <CurrentStepComponent 
-          onNext={nextStep} 
-          onPrev={prevStep}
-          isFirstStep={currentStep === 0}
-          isLastStep={currentStep === steps.length - 1}
-          onComplete={completeOnboarding}
-        />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">{t('common.loading')}</p>
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 {
   "common": {
     "welcome": "स्वागत है",
@@ -32,13 +31,41 @@
     "location_subtitle": "बेहतर सलाह के लिए अपना स्थान साझा करें",
     "language_title": "भाषा चुनें",
     "language_subtitle": "अपनी पसंदीदा भाषा का चयन करें",
-    "autoDetected": "स्वचालित रूप से पहचाना गया"
+    "autoDetected": "स्वचालित रूप से पहचाना गया",
+    "detecting_language": "भाषा का पता लगाना",
+    "location_language_subtitle": "हम आपके लिए सबसे अच्छी भाषा सुझाने के लिए आपके स्थान का पता लगा रहे हैं",
+    "choose_language": "अपनी भाषा चुनें",
+    "language_description": "सर्वोत्तम कृषि अनुभव के लिए अपनी पसंदीदा भाषा चुनें",
+    "detected_location": "स्थान का पता चला",
+    "recommended_for_you": "आपके लिए अनुशंसित",
+    "other_languages": "अन्य भाषाएं",
+    "skip_for_now": "अभी के लिए छोड़ें"
   },
   "auth": {
-    "phone_number": "फोन नंबर",
-    "enter_phone": "अपना फोन नंबर दर्ज करें",
+    "mobile_number": "मोबाइल नंबर",
+    "mobile_subtitle": "स्मार्ट खेती शुरू करने के लिए अपना मोबाइल नंबर दर्ज करें",
+    "welcome_to": "स्वागत है",
+    "invalid_mobile": "कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें",
+    "otp_send_failed": "OTP भेजने में विफल। कृपया पुनः प्रयास करें।",
+    "sending_otp": "OTP भेज रहे हैं...",
     "login": "लॉगिन",
-    "register": "पंजीकरण"
+    "get_started": "शुरू करें",
+    "welcome_back": "वापस स्वागत है! हमें आपका खाता मिल गया।",
+    "new_user_signup": "नया उपयोगकर्ता - हम आपका खाता बनाएंगे।",
+    "privacy_notice": "आपकी गोपनीयता सुरक्षित है। हम एंड-टू-एंड एन्क्रिप्शन का उपयोग करते हैं।",
+    "verify_otp": "OTP सत्यापित करें",
+    "otp_sent_to": "हमने 6 अंकों का कोड भेजा है",
+    "enter_otp": "सत्यापन कोड दर्ज करें",
+    "invalid_otp": "कृपया 6 अंकों का वैध OTP दर्ज करें",
+    "verification_failed": "सत्यापन विफल। कृपया पुनः प्रयास करें।",
+    "verifying": "सत्यापित कर रहे हैं...",
+    "verify_continue": "सत्यापित करें और जारी रखें",
+    "resend_in": "पुनः भेजें",
+    "resend_otp": "OTP पुनः भेजें",
+    "resend_failed": "OTP पुनः भेजने में विफल। कृपया पुनः प्रयास करें।",
+    "verification_success": "सत्यापन सफल!",
+    "welcome_back_message": "वापस स्वागत है! आप जारी रखने के लिए तैयार हैं।",
+    "account_created_message": "आपका खाता सफलतापूर्वक बनाया गया है!"
   },
   "navigation": {
     "home": "होम",

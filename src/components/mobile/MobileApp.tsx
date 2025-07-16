@@ -6,9 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
-import { SkeletonSplashScreen } from '@/components/splash/SkeletonSplashScreen';
-import { MobileLayout } from './MobileLayout';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
+import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
@@ -21,14 +20,13 @@ export const MobileApp: React.FC = () => {
   const dispatch = useDispatch();
   const { loading: authLoading, isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
-  const [showSplash, setShowSplash] = useState(true);
   const [appInitialized, setAppInitialized] = useState(false);
 
   // Use the most reliable source of authentication state
   const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   useEffect(() => {
-    // Initialize mobile services only once after splash
+    // Initialize mobile services
     const initializeApp = async () => {
       if (!appInitialized) {
         try {
@@ -45,21 +43,10 @@ export const MobileApp: React.FC = () => {
       }
     };
 
-    if (!showSplash) {
-      initializeApp();
-    }
-  }, [showSplash, appInitialized]);
+    initializeApp();
+  }, [appInitialized]);
 
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-  };
-
-  // Show optimized skeleton splash screen first
-  if (showSplash) {
-    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
-  }
-
-  // Show loading while auth is being determined
+  // Show loading while auth is being determined or app is initializing
   if (authLoading || !appInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
