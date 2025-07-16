@@ -68,6 +68,9 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
           backgroundColor: tenant.branding?.background_color || '#FFFFFF'
         });
         
+        // Cache branding for offline use
+        await TenantDetectionService.getInstance().preCacheBranding(tenant.id);
+        
         // Smooth transition to branded UI
         setTimeout(() => setShowBranding(true), 100);
       }
