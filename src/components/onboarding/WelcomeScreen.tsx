@@ -9,6 +9,7 @@ interface WelcomeScreenProps {
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
+  onComplete?: () => void;
 }
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
