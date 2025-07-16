@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Network } from '@capacitor/network';
+import { Network, PluginListenerHandle } from '@capacitor/network';
 import { syncService } from '../services/offline/syncService';
 
 export const useOffline = () => {
@@ -8,6 +8,8 @@ export const useOffline = () => {
   const [syncStatus, setSyncStatus] = useState({ pending: 0, errors: 0 });
 
   useEffect(() => {
+    let networkListener: PluginListenerHandle | null = null;
+
     const checkNetworkStatus = async () => {
       const status = await Network.getStatus();
       setIsOffline(!status.connected);
@@ -18,24 +20,30 @@ export const useOffline = () => {
       setSyncStatus(status);
     };
 
-    // Initial check
-    checkNetworkStatus();
-    updateSyncStatus();
+    const initializeNetworkListener = async () => {
+      // Initial check
+      await checkNetworkStatus();
+      await updateSyncStatus();
 
-    // Listen for network changes
-    const networkListener = Network.addListener('networkStatusChange', (status) => {
-      setIsOffline(!status.connected);
-      if (status.connected) {
-        // Update sync status when coming back online
-        setTimeout(updateSyncStatus, 1000);
-      }
-    });
+      // Listen for network changes
+      networkListener = await Network.addListener('networkStatusChange', (status) => {
+        setIsOffline(!status.connected);
+        if (status.connected) {
+          // Update sync status when coming back online
+          setTimeout(updateSyncStatus, 1000);
+        }
+      });
+    };
+
+    initializeNetworkListener();
 
     // Periodic sync status updates
     const syncInterval = setInterval(updateSyncStatus, 30000); // Every 30 seconds
 
     return () => {
-      networkListener.remove();
+      if (networkListener) {
+        networkListener.remove();
+      }
       clearInterval(syncInterval);
     };
   }, []);

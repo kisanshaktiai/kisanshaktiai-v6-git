@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useTenant } from '@/context/TenantContext';
+import { useTenant } from '@/hooks/useTenant';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, Wheat, ShoppingCart, TrendingUp, MapPin } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface TenantDashboardProps {
 }
 
 export const TenantDashboard = ({ tenantSlug }: TenantDashboardProps) => {
-  const { currentTenant, tenantBranding, tenantFeatures, loading } = useTenant();
+  const { tenant: currentTenant, branding: tenantBranding, features: tenantFeatures, loading } = useTenant();
   const { farmer, currentAssociation } = useAuth();
 
   if (loading) {
