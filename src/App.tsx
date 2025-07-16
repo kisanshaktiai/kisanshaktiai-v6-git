@@ -1,15 +1,17 @@
 
-import { Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
-import { store } from '@/store';
-import { AuthProvider } from "@/hooks/useAuth";
-import { TenantProvider } from "@/context/TenantContext";
-import { Toaster } from "@/components/ui/sonner";
-import Index from "@/pages/Index";
-import TenantAccess from "@/pages/TenantAccess";
-import NotFound from "@/pages/NotFound";
+import { I18nextProvider } from 'react-i18next';
+import { store } from './store';
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { AppShell } from './components/layouts/AppShell';
+import { DashboardHome } from './components/mobile/DashboardHome';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
+import i18n from './i18n';
+import './index.css';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,28 +23,57 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          isAuthenticated ? (
+            <DashboardHome />
+          ) : (
+            <Navigate to="/onboarding" replace />
+          )
+        } 
+      />
+      <Route 
+        path="/onboarding" 
+        element={
+          !isAuthenticated ? (
+            <OnboardingFlow />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        } 
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <AuthProvider>
-          <TenantProvider>
-            <Router>
-              <div className="min-h-screen bg-background">
-                <Suspense fallback={<div>Loading...</div>}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/tenant" element={<TenantAccess />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-                <Toaster />
-              </div>
-            </Router>
-          </TenantProvider>
-        </AuthProvider>
-      </Provider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <I18nextProvider i18n={i18n}>
+            <AuthProvider>
+              <Router>
+                <AppShell>
+                  <AppRoutes />
+                </AppShell>
+              </Router>
+            </AuthProvider>
+          </I18nextProvider>
+        </Provider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

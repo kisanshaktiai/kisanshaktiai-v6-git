@@ -42,7 +42,7 @@ export const DashboardHeader: React.FC = () => {
           )}
           <div>
             <h1 className="text-lg font-semibold text-gray-900">
-              {tenantBranding?.app_name || 'KisanShakti AI'}
+              {tenantBranding?.app_name || currentTenant?.name || 'KisanShakti AI'}
             </h1>
             {tenantBranding?.app_tagline && (
               <p className="text-xs text-gray-500">{tenantBranding.app_tagline}</p>

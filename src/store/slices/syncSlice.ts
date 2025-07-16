@@ -3,18 +3,18 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface SyncState {
   isOnline: boolean;
-  lastSyncTime: string | null;
-  pendingActions: any[];
   syncInProgress: boolean;
-  syncErrors: string[];
+  lastSyncTime: string | null;
+  pendingOperations: number;
+  failedOperations: number;
 }
 
 const initialState: SyncState = {
   isOnline: true,
-  lastSyncTime: null,
-  pendingActions: [],
   syncInProgress: false,
-  syncErrors: [],
+  lastSyncTime: null,
+  pendingOperations: 0,
+  failedOperations: 0,
 };
 
 const syncSlice = createSlice({
@@ -24,37 +24,39 @@ const syncSlice = createSlice({
     setOnlineStatus: (state, action: PayloadAction<boolean>) => {
       state.isOnline = action.payload;
     },
-    addPendingAction: (state, action: PayloadAction<any>) => {
-      state.pendingActions.push(action.payload);
-    },
-    removePendingAction: (state, action: PayloadAction<string>) => {
-      state.pendingActions = state.pendingActions.filter(
-        action => action.id !== action.payload
-      );
-    },
     setSyncInProgress: (state, action: PayloadAction<boolean>) => {
       state.syncInProgress = action.payload;
     },
     setLastSyncTime: (state, action: PayloadAction<string>) => {
       state.lastSyncTime = action.payload;
     },
-    addSyncError: (state, action: PayloadAction<string>) => {
-      state.syncErrors.push(action.payload);
+    setPendingOperations: (state, action: PayloadAction<number>) => {
+      state.pendingOperations = action.payload;
     },
-    clearSyncErrors: (state) => {
-      state.syncErrors = [];
+    setFailedOperations: (state, action: PayloadAction<number>) => {
+      state.failedOperations = action.payload;
+    },
+    incrementPending: (state) => {
+      state.pendingOperations += 1;
+    },
+    decrementPending: (state) => {
+      state.pendingOperations = Math.max(0, state.pendingOperations - 1);
+    },
+    incrementFailed: (state) => {
+      state.failedOperations += 1;
     },
   },
 });
 
 export const {
   setOnlineStatus,
-  addPendingAction,
-  removePendingAction,
   setSyncInProgress,
   setLastSyncTime,
-  addSyncError,
-  clearSyncErrors,
+  setPendingOperations,
+  setFailedOperations,
+  incrementPending,
+  decrementPending,
+  incrementFailed,
 } = syncSlice.actions;
 
 export default syncSlice.reducer;

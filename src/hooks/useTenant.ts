@@ -1,66 +1,95 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Tenant, TenantBranding, TenantFeatures } from '@/types/database';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../store';
+import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '../store/slices/tenantSlice';
+import { supabase } from '../config/supabase';
+import { secureStorage } from '../services/storage/secureStorage';
+import { STORAGE_KEYS } from '../config/constants';
 
-export const useTenant = (slug?: string) => {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [branding, setBranding] = useState<TenantBranding | null>(null);
-  const [features, setFeatures] = useState<TenantFeatures | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useTenant = () => {
+  const dispatch = useDispatch();
+  const { currentTenant, tenantBranding, tenantFeatures, loading } = useSelector(
+    (state: RootState) => state.tenant
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTenant = async () => {
-      if (!slug) {
-        setLoading(false);
+    loadTenantData();
+  }, []);
+
+  const loadTenantData = async () => {
+    try {
+      // Try to get tenant ID from storage
+      let tenantId = await secureStorage.get(STORAGE_KEYS.TENANT_ID);
+      
+      if (!tenantId) {
+        // Default to 'default' tenant if none found
+        tenantId = 'default';
+        await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
+      }
+
+      // Load tenant data
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .single();
+
+      if (tenantError) {
+        console.warn('Tenant not found, using default');
+        // Create default tenant data
+        dispatch(setCurrentTenant({
+          id: 'default',
+          name: 'KisanShakti AI',
+          slug: 'default',
+          type: 'default',
+        }));
         return;
       }
 
-      try {
-        setLoading(true);
-        
-        // Fetch tenant data with type assertion
-        const { data: tenantData, error: tenantError } = await (supabase as any)
-          .from('tenants')
-          .select('*')
-          .eq('slug', slug)
-          .single();
+      dispatch(setCurrentTenant(tenant));
 
-        if (tenantError) throw tenantError;
-        
-        if (tenantData) {
-          setTenant(tenantData);
+      // Load branding
+      const { data: branding } = await supabase
+        .from('tenant_branding')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .single();
 
-          // Fetch branding with type assertion
-          const { data: brandingData } = await (supabase as any)
-            .from('tenant_branding')
-            .select('*')
-            .eq('tenant_id', tenantData.id)
-            .single();
-
-          setBranding(brandingData);
-
-          // Fetch features with type assertion
-          const { data: featuresData } = await (supabase as any)
-            .from('tenant_features')
-            .select('*')
-            .eq('tenant_id', tenantData.id)
-            .single();
-
-          setFeatures(featuresData);
-        }
-
-      } catch (err) {
-        console.error('Error fetching tenant:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch tenant');
-      } finally {
-        setLoading(false);
+      if (branding) {
+        dispatch(setTenantBranding(branding));
       }
-    };
 
-    fetchTenant();
-  }, [slug]);
+      // Load features
+      const { data: features } = await supabase
+        .from('tenant_features')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .single();
 
-  return { tenant, branding, features, loading, error };
+      if (features) {
+        dispatch(setTenantFeatures(features));
+      }
+
+    } catch (error) {
+      console.error('Error loading tenant data:', error);
+      setError('Failed to load tenant configuration');
+    }
+  };
+
+  const switchTenant = async (tenantId: string) => {
+    await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
+    await loadTenantData();
+  };
+
+  return {
+    tenant: currentTenant,
+    branding: tenantBranding,
+    features: tenantFeatures,
+    loading,
+    error,
+    switchTenant,
+    refreshTenant: loadTenantData,
+  };
 };

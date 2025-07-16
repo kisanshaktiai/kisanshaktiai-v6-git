@@ -25,23 +25,20 @@ const capacitorStorage = {
 const persistConfig = {
   key: 'root',
   storage: capacitorStorage,
-  whitelist: ['auth', 'farmer', 'offline', 'tenant'],
+  whitelist: ['auth', 'farmer', 'tenant'],
 };
 
-const rootReducer = {
-  auth: authSlice,
-  farmer: farmerSlice,
-  sync: syncSlice,
-  offline: offlineSlice,
-  tenant: tenantSlice,
+const rootReducer = (state: any = {}, action: any) => {
+  return {
+    auth: authSlice(state.auth, action),
+    farmer: farmerSlice(state.farmer, action),
+    sync: syncSlice(state.sync, action),
+    offline: offlineSlice(state.offline, action),
+    tenant: tenantSlice(state.tenant, action),
+  };
 };
 
-const persistedReducer = persistReducer(persistConfig, (state = {}, action) => {
-  return Object.entries(rootReducer).reduce((acc, [key, reducer]) => {
-    acc[key] = reducer(state[key], action);
-    return acc;
-  }, {} as any);
-});
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
@@ -62,4 +59,5 @@ export type RootState = {
   offline: ReturnType<typeof offlineSlice>;
   tenant: ReturnType<typeof tenantSlice>;
 };
+
 export type AppDispatch = typeof store.dispatch;
