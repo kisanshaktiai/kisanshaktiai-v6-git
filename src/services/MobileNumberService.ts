@@ -80,10 +80,13 @@ export class MobileNumberService {
       const deviceInfo = await Device.getId();
       const deviceId = deviceInfo.identifier;
 
-      // Create user in Supabase Auth with phone
+      // Create a synthetic email for the user since phone auth is disabled
+      const syntheticEmail = `${mobileNumber.replace('+', '')}@farmer.local`;
+      
+      // Create user in Supabase Auth with synthetic email
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        phone: mobileNumber,
-        password: `${mobileNumber}_${pin}`, // Temporary password
+        email: syntheticEmail,
+        password: `${mobileNumber}_${pin}`, // Use mobile + pin as password
         options: {
           data: {
             phone: mobileNumber,
@@ -115,7 +118,8 @@ export class MobileNumberService {
             pin_hash: btoa(pin),
             device_id: deviceId,
             registration_date: new Date().toISOString(),
-            profile_completed: false
+            profile_completed: false,
+            synthetic_email: syntheticEmail
           }
         });
 
@@ -175,9 +179,12 @@ export class MobileNumberService {
         return { success: false, error: 'Invalid PIN' };
       }
 
-      // Sign in user
+      // Get synthetic email from metadata
+      const syntheticEmail = metadata?.synthetic_email || `${mobileNumber.replace('+', '')}@farmer.local`;
+
+      // Sign in user with synthetic email
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        phone: mobileNumber,
+        email: syntheticEmail,
         password: `${mobileNumber}_${pin}`
       });
 

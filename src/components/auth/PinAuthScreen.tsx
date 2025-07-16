@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
@@ -171,7 +170,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
           <Phone className="w-10 h-10" style={{ color: primaryColor }} />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          {t('auth.welcome_to')} {appName}
+          Welcome to {appName}
         </h1>
         <p className="text-gray-600 text-base leading-relaxed px-4">
           Enter your mobile number to continue
@@ -181,7 +180,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 block">
-            {t('auth.mobile_number')}
+            Mobile Number
           </label>
           <div className="relative">
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
