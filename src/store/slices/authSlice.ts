@@ -8,6 +8,7 @@ interface AuthState {
   token: string | null;
   onboardingCompleted: boolean;
   biometricEnabled: boolean;
+  userId: string | null;
 }
 
 const initialState: AuthState = {
@@ -17,6 +18,7 @@ const initialState: AuthState = {
   token: null,
   onboardingCompleted: false,
   biometricEnabled: false,
+  userId: null,
 };
 
 const authSlice = createSlice({
@@ -27,11 +29,13 @@ const authSlice = createSlice({
       phoneNumber: string;
       deviceId: string;
       token: string;
+      userId?: string;
     }>) => {
       state.isAuthenticated = true;
       state.phoneNumber = action.payload.phoneNumber;
       state.deviceId = action.payload.deviceId;
       state.token = action.payload.token;
+      state.userId = action.payload.userId || null;
     },
     setOnboardingCompleted: (state) => {
       state.onboardingCompleted = true;
@@ -44,6 +48,22 @@ const authSlice = createSlice({
       state.phoneNumber = null;
       state.deviceId = null;
       state.token = null;
+      state.onboardingCompleted = false;
+      state.userId = null;
+    },
+    // Add action to sync with Supabase auth
+    syncWithSupabaseAuth: (state, action: PayloadAction<{
+      isAuthenticated: boolean;
+      userId?: string;
+    }>) => {
+      if (action.payload.isAuthenticated && action.payload.userId) {
+        state.isAuthenticated = true;
+        state.userId = action.payload.userId;
+        state.onboardingCompleted = true; // If user exists in Supabase, onboarding is done
+      } else {
+        state.isAuthenticated = false;
+        state.userId = null;
+      }
     },
   },
 });
@@ -52,7 +72,8 @@ export const {
   setAuthenticated, 
   setOnboardingCompleted, 
   setBiometricEnabled, 
-  logout 
+  logout,
+  syncWithSupabaseAuth
 } = authSlice.actions;
 
 export default authSlice.reducer;

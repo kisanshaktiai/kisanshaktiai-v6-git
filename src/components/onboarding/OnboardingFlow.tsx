@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
+import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SplashScreen } from '../splash/SplashScreen';
 import { WelcomeScreen } from './WelcomeScreen';
 import { LocationScreen } from './LocationScreen';
@@ -12,9 +14,15 @@ import { OnboardingProgress } from './OnboardingProgress';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
-  const { isAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated: contextIsAuthenticated } = useAuth();
+  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [showSplash, setShowSplash] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Use the most reliable source of authentication state
+  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   const steps = [
     { component: WelcomeScreen, name: 'Welcome', requiresAuth: false },
@@ -26,6 +34,7 @@ export const OnboardingFlow: React.FC = () => {
 
   const handleSplashComplete = () => {
     setShowSplash(false);
+    setIsInitialized(true);
   };
 
   const nextStep = () => {
@@ -40,11 +49,17 @@ export const OnboardingFlow: React.FC = () => {
     }
   };
 
-  // Handle authentication state changes
+  const completeOnboarding = () => {
+    dispatch(setOnboardingCompleted());
+  };
+
+  // Handle authentication state changes after initialization
   useEffect(() => {
+    if (!isInitialized) return;
+
+    // If user is authenticated and onboarding is completed, this component should not be shown
     if (isAuthenticated && onboardingCompleted) {
-      // User is fully onboarded, redirect to main app
-      window.location.href = '/';
+      console.log('User is fully onboarded, should redirect to main app');
       return;
     }
 
@@ -54,14 +69,27 @@ export const OnboardingFlow: React.FC = () => {
       setCurrentStep(3);
     } else if (isAuthenticated && currentStep === 3) {
       // User just authenticated, check if they need profile setup
-      // This would typically check if user exists in database
       // For now, always go to profile setup for new users
       setCurrentStep(4);
+    } else if (isAuthenticated && currentStep === 4) {
+      // User completed profile setup
+      completeOnboarding();
     }
-  }, [isAuthenticated, onboardingCompleted, currentStep]);
+  }, [isAuthenticated, onboardingCompleted, currentStep, isInitialized]);
 
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
   }
 
   const CurrentStepComponent = steps[currentStep]?.component || WelcomeScreen;
@@ -85,6 +113,7 @@ export const OnboardingFlow: React.FC = () => {
           onPrev={prevStep}
           isFirstStep={currentStep === 0}
           isLastStep={currentStep === steps.length - 1}
+          onComplete={completeOnboarding}
         />
       </div>
     </div>

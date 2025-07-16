@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { setAuthenticated } from '@/store/slices/authSlice';
+import { setAuthenticated, setOnboardingCompleted } from '@/store/slices/authSlice';
 import { MobileNumberService } from '@/services/MobileNumberService';
 import { Phone, Smartphone, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -13,11 +13,13 @@ interface MobileNumberScreenProps {
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
+  onComplete?: () => void;
 }
 
 export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({ 
   onNext, 
-  onPrev 
+  onPrev,
+  onComplete
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -90,10 +92,12 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
           token: authResult.token!,
         }));
 
-        // If existing user, skip profile registration
+        // If existing user, complete onboarding
         if (isExistingUser) {
-          // Skip to dashboard (complete onboarding)
-          window.location.href = '/';
+          dispatch(setOnboardingCompleted());
+          if (onComplete) {
+            onComplete();
+          }
         } else {
           // New user - continue to profile registration
           onNext();
