@@ -14,11 +14,12 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const dispatch = useDispatch();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('Initializing...');
+  const [currentLogo, setCurrentLogo] = useState('kisanshakti'); // 'kisanshakti' or 'tenant'
   const [tenantBranding, setTenantBranding] = useState({
-    logo: '/placeholder.svg',
-    appName: 'KisanShaktiAI V6',
-    tagline: 'Empowering Farmers with AI',
-    primaryColor: '#10B981',
+    logo: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
+    appName: 'KisanShaktiAI',
+    tagline: 'Intelligent Guru for Farmers',
+    primaryColor: '#4D7C0F',
     backgroundColor: '#FFFFFF'
   });
 
@@ -28,32 +29,46 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const initializeApp = async () => {
     try {
-      // Step 1: Initialize services
+      // Step 1: Show KisanShaktiAI logo first
+      setStatus('Loading KisanShaktiAI...');
+      setProgress(10);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Show for 1.5 seconds
+
+      // Step 2: Initialize services
       setStatus('Loading services...');
-      setProgress(20);
+      setProgress(25);
       
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Step 2: Detect tenant
+      // Step 3: Detect tenant
       setStatus('Detecting organization...');
       setProgress(40);
       
       const detectedTenant = await TenantDetectionService.getInstance().detectTenant();
       if (detectedTenant) {
         dispatch(setTenantId(detectedTenant.id));
+        
+        // Update branding with tenant-specific data
         setTenantBranding({
-          logo: detectedTenant.branding?.logo_url || '/placeholder.svg',
-          appName: detectedTenant.branding?.app_name || 'KisanShaktiAI V6',
-          tagline: detectedTenant.branding?.app_tagline || 'Empowering Farmers with AI',
-          primaryColor: detectedTenant.branding?.primary_color || '#10B981',
+          logo: detectedTenant.branding?.logo_url || '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
+          appName: detectedTenant.branding?.app_name || 'KisanShaktiAI',
+          tagline: detectedTenant.branding?.app_tagline || 'Intelligent Guru for Farmers',
+          primaryColor: detectedTenant.branding?.primary_color || '#4D7C0F',
           backgroundColor: detectedTenant.branding?.background_color || '#FFFFFF'
         });
+
+        // Switch to tenant logo if different from default
+        if (detectedTenant.id !== 'default' && detectedTenant.branding?.logo_url) {
+          setCurrentLogo('tenant');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Show tenant logo for 1 second
+        }
       }
 
       setProgress(60);
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Step 3: Prepare location services
+      // Step 4: Prepare location services
       setStatus('Preparing location services...');
       setProgress(80);
       
@@ -76,39 +91,60 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     }
   };
 
+  const getCurrentLogo = () => {
+    if (currentLogo === 'kisanshakti') {
+      return '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png';
+    }
+    return tenantBranding.logo;
+  };
+
+  const getCurrentAppName = () => {
+    if (currentLogo === 'kisanshakti') {
+      return 'KisanShaktiAI';
+    }
+    return tenantBranding.appName;
+  };
+
+  const getCurrentTagline = () => {
+    if (currentLogo === 'kisanshakti') {
+      return 'Intelligent Guru for Farmers';
+    }
+    return tenantBranding.tagline;
+  };
+
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6"
+      className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-500"
       style={{ backgroundColor: tenantBranding.backgroundColor }}
     >
       {/* Logo and Branding */}
       <div className="text-center mb-8">
-        <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white shadow-lg flex items-center justify-center">
+        <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-white shadow-lg flex items-center justify-center transition-all duration-500">
           <img 
-            src={tenantBranding.logo} 
+            src={getCurrentLogo()} 
             alt="Logo" 
-            className="w-16 h-16 object-contain"
+            className="w-24 h-24 object-contain transition-all duration-500"
             onError={(e) => {
               e.currentTarget.src = '/placeholder.svg';
             }}
           />
         </div>
         <h1 
-          className="text-2xl font-bold mb-2"
+          className="text-3xl font-bold mb-3 transition-all duration-500"
           style={{ color: tenantBranding.primaryColor }}
         >
-          {tenantBranding.appName}
+          {getCurrentAppName()}
         </h1>
-        <p className="text-gray-600 text-sm">
-          {tenantBranding.tagline}
+        <p className="text-gray-600 text-base transition-all duration-500">
+          {getCurrentTagline()}
         </p>
       </div>
 
       {/* Progress Indicator */}
-      <div className="w-full max-w-xs mb-4">
-        <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full max-w-sm mb-6">
+        <div className="w-full bg-gray-200 rounded-full h-3">
           <div 
-            className="h-2 rounded-full transition-all duration-300 ease-out"
+            className="h-3 rounded-full transition-all duration-300 ease-out"
             style={{ 
               width: `${progress}%`,
               backgroundColor: tenantBranding.primaryColor 
@@ -118,14 +154,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       </div>
 
       {/* Status Text */}
-      <div className="flex items-center space-x-2 text-gray-600">
-        <Loader className="w-4 h-4 animate-spin" />
-        <span className="text-sm">{status}</span>
+      <div className="flex items-center space-x-2 text-gray-600 mb-8">
+        <Loader className="w-5 h-5 animate-spin" />
+        <span className="text-base">{status}</span>
       </div>
 
       {/* Version Info */}
-      <div className="absolute bottom-4 text-xs text-gray-400">
-        v6.0.0 • Offline Ready
+      <div className="absolute bottom-6 text-sm text-gray-400">
+        v6.0.0 • Tenant Ready • Offline Capable
       </div>
     </div>
   );

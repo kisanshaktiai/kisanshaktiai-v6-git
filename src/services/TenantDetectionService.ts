@@ -1,6 +1,7 @@
 
 import { Preferences } from '@capacitor/preferences';
 import { LocationService } from './LocationService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DetectedTenant {
   id: string;
@@ -31,7 +32,8 @@ export class TenantDetectionService {
       const { value: cachedTenantId } = await Preferences.get({ key: 'currentTenantId' });
       if (cachedTenantId) {
         console.log('Using cached tenant:', cachedTenantId);
-        return await this.getTenantById(cachedTenantId);
+        const tenant = await this.getTenantById(cachedTenantId);
+        if (tenant) return tenant;
       }
 
       // Check for referral code in URL
@@ -64,41 +66,95 @@ export class TenantDetectionService {
       }
 
       // Fallback to default tenant
-      return this.getDefaultTenant();
+      const defaultTenant = await this.getDefaultTenant();
+      if (defaultTenant) {
+        await this.cacheTenant(defaultTenant.id);
+      }
+      return defaultTenant;
 
     } catch (error) {
       console.error('Tenant detection error:', error);
-      return this.getDefaultTenant();
+      return await this.getDefaultTenant();
     }
   }
 
   private async getTenantById(tenantId: string): Promise<DetectedTenant | null> {
-    // Mock implementation - replace with actual Supabase call
-    const mockTenants = this.getMockTenants();
-    return mockTenants.find(t => t.id === tenantId) || null;
+    try {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .single();
+
+      if (tenantError) {
+        console.warn('Tenant not found:', tenantError);
+        return null;
+      }
+
+      const { data: branding } = await supabase
+        .from('tenant_branding')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .single();
+
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        branding: branding ? {
+          logo_url: branding.logo_url,
+          app_name: branding.app_name,
+          app_tagline: branding.app_tagline,
+          primary_color: branding.primary_color,
+          background_color: branding.background_color
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Error fetching tenant by ID:', error);
+      return null;
+    }
   }
 
   private async getTenantBySlug(slug: string): Promise<DetectedTenant | null> {
-    // Mock implementation - replace with actual Supabase call
-    const mockTenants = this.getMockTenants();
-    return mockTenants.find(t => t.slug === slug) || null;
+    try {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (tenantError) {
+        console.warn('Tenant not found by slug:', tenantError);
+        return null;
+      }
+
+      const { data: branding } = await supabase
+        .from('tenant_branding')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        branding: branding ? {
+          logo_url: branding.logo_url,
+          app_name: branding.app_name,
+          app_tagline: branding.app_tagline,
+          primary_color: branding.primary_color,
+          background_color: branding.background_color
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Error fetching tenant by slug:', error);
+      return null;
+    }
   }
 
   private async getTenantByLocation(state: string, district: string): Promise<DetectedTenant | null> {
-    // Mock geo-based tenant detection
-    const locationMappings = {
-      'Maharashtra': 'mahindra-agri',
-      'Punjab': 'iffco',
-      'Uttar Pradesh': 'government-up',
-      'Karnataka': 'upl-agri',
-      'Tamil Nadu': 'coromandel'
-    };
-
-    const tenantSlug = locationMappings[state];
-    if (tenantSlug) {
-      return await this.getTenantBySlug(tenantSlug);
-    }
-
+    // This can be enhanced with actual location-based tenant mapping
+    // For now, return null to fallback to default
     return null;
   }
 
@@ -109,59 +165,29 @@ export class TenantDetectionService {
     });
   }
 
-  private getDefaultTenant(): DetectedTenant {
+  private async getDefaultTenant(): Promise<DetectedTenant> {
+    try {
+      // Try to fetch the default tenant from database
+      const defaultTenant = await this.getTenantById('default');
+      if (defaultTenant) {
+        return defaultTenant;
+      }
+    } catch (error) {
+      console.error('Error fetching default tenant:', error);
+    }
+
+    // Fallback to hardcoded default
     return {
       id: 'default',
-      name: 'KisanShaktiAI',
+      name: 'VisionAi Solutions Pvt Ltd',
       slug: 'default',
       branding: {
-        logo_url: '/placeholder.svg',
-        app_name: 'KisanShaktiAI V6',
-        app_tagline: 'Empowering 10M+ farmers across India',
-        primary_color: '#10B981',
+        logo_url: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
+        app_name: 'KisanShaktiAI',
+        app_tagline: 'Intelligent Guru for Farmers',
+        primary_color: '#4D7C0F',
         background_color: '#FFFFFF'
       }
     };
-  }
-
-  private getMockTenants(): DetectedTenant[] {
-    return [
-      {
-        id: 'mahindra-agri',
-        name: 'Mahindra Agriculture',
-        slug: 'mahindra-agri',
-        branding: {
-          logo_url: '/placeholder.svg',
-          app_name: 'Mahindra Krishi',
-          app_tagline: 'Rise for Good Agriculture',
-          primary_color: '#DC2626',
-          background_color: '#FEF2F2'
-        }
-      },
-      {
-        id: 'iffco',
-        name: 'IFFCO',
-        slug: 'iffco',
-        branding: {
-          logo_url: '/placeholder.svg',
-          app_name: 'IFFCO Kisan',
-          app_tagline: 'Cooperative Success for Farmers',
-          primary_color: '#059669',
-          background_color: '#F0FDF4'
-        }
-      },
-      {
-        id: 'government-up',
-        name: 'UP Government',
-        slug: 'government-up',
-        branding: {
-          logo_url: '/placeholder.svg',
-          app_name: 'UP Kisan Seva',
-          app_tagline: 'Government of Uttar Pradesh',
-          primary_color: '#7C3AED',
-          background_color: '#FAF5FF'
-        }
-      }
-    ];
   }
 }

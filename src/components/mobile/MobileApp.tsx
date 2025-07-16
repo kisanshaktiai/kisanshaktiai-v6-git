@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +7,7 @@ import { RootState } from '@/store';
 import { LocationService } from '@/services/LocationService';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
+import { SplashScreen } from '@/components/splash/SplashScreen';
 import { MobileLayout } from './MobileLayout';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 import { DashboardHome } from './DashboardHome';
@@ -21,26 +22,43 @@ export const MobileApp: React.FC = () => {
   const dispatch = useDispatch();
   const { loading: authLoading, isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const [showSplash, setShowSplash] = useState(true);
+  const [appInitialized, setAppInitialized] = useState(false);
 
   // Use the most reliable source of authentication state
   const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   useEffect(() => {
-    // Initialize mobile services only once
+    // Initialize mobile services only once after splash
     const initializeApp = async () => {
-      try {
-        await LanguageService.getInstance().initialize();
-        await SyncService.getInstance().initialize();
-      } catch (error) {
-        console.error('Failed to initialize services:', error);
+      if (!appInitialized) {
+        try {
+          await LanguageService.getInstance().initialize();
+          await SyncService.getInstance().initialize();
+          setAppInitialized(true);
+        } catch (error) {
+          console.error('Failed to initialize services:', error);
+          setAppInitialized(true); // Continue anyway
+        }
       }
     };
 
-    initializeApp();
-  }, []);
+    if (!showSplash) {
+      initializeApp();
+    }
+  }, [showSplash, appInitialized]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  // Show splash screen first
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
 
   // Show loading while auth is being determined
-  if (authLoading) {
+  if (authLoading || !appInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
         <div className="text-center">
