@@ -114,7 +114,8 @@ export class MobileNumberService {
           metadata: {
             pin_hash: btoa(pin),
             device_id: deviceId,
-            registration_date: new Date().toISOString()
+            registration_date: new Date().toISOString(),
+            profile_completed: false
           }
         });
 

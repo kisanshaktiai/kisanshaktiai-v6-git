@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { setAuthenticated } from '@/store/slices/authSlice';
 import { MobileNumberService } from '@/services/MobileNumberService';
-import { Phone, Loader, CheckCircle2, Shield, User, MapPin } from 'lucide-react';
+import { Phone, Loader, CheckCircle2, Shield } from 'lucide-react';
 import { RootState } from '@/store';
 
 interface PinAuthScreenProps {
   onComplete: () => void;
 }
 
-type AuthStep = 'mobile' | 'pin-login' | 'register' | 'pin-create' | 'success';
+type AuthStep = 'mobile' | 'pin-login' | 'pin-create' | 'success';
 
 export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
@@ -24,10 +24,6 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
   const [mobileNumber, setMobileNumber] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [village, setVillage] = useState('');
-  const [district, setDistrict] = useState('');
-  const [state, setState] = useState('');
   const [loading, setLoading] = useState(false);
   const [autoDetecting, setAutoDetecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +80,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     if (isExistingUser) {
       setStep('pin-login');
     } else {
-      setStep('register');
+      setStep('pin-create');
     }
   };
 
@@ -123,14 +119,6 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     }
   };
 
-  const handleRegister = async () => {
-    if (!fullName.trim()) {
-      setError('Please enter your full name');
-      return;
-    }
-    setStep('pin-create');
-  };
-
   const handleCreatePin = async () => {
     if (pin.length !== 4 || confirmPin.length !== 4) {
       setError('PIN must be 4 digits');
@@ -148,10 +136,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     try {
       const formatted = `+91${mobileNumber}`;
       const result = await MobileNumberService.getInstance().registerUser(formatted, pin, {
-        fullName,
-        village,
-        district,
-        state
+        fullName: 'User', // Default name, will be updated in profile
       });
       
       if (result.success) {
@@ -298,65 +283,6 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     </div>
   );
 
-  const renderRegisterStep = () => (
-    <div className="space-y-6">
-      <div className="text-center space-y-3">
-        <div 
-          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg"
-          style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-        >
-          <User className="w-10 h-10" style={{ color: primaryColor }} />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-        <p className="text-gray-600 text-base">
-          Tell us about yourself
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <Input
-          placeholder="Full Name *"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          className="h-12"
-        />
-        <Input
-          placeholder="Village"
-          value={village}
-          onChange={(e) => setVillage(e.target.value)}
-          className="h-12"
-        />
-        <Input
-          placeholder="District"
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
-          className="h-12"
-        />
-        <Input
-          placeholder="State"
-          value={state}
-          onChange={(e) => setState(e.target.value)}
-          className="h-12"
-        />
-
-        {error && (
-          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
-            {error}
-          </div>
-        )}
-
-        <Button 
-          onClick={handleRegister}
-          disabled={!fullName.trim() || loading}
-          className="w-full h-14 text-lg font-semibold rounded-xl"
-          style={{ backgroundColor: primaryColor }}
-        >
-          Continue
-        </Button>
-      </div>
-    </div>
-  );
-
   const renderPinCreateStep = () => (
     <div className="space-y-6">
       <div className="text-center space-y-3">
@@ -476,7 +402,6 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
       <div className="w-full max-w-sm space-y-8">
         {step === 'mobile' && renderMobileStep()}
         {step === 'pin-login' && renderPinLoginStep()}
-        {step === 'register' && renderRegisterStep()}
         {step === 'pin-create' && renderPinCreateStep()}
         {step === 'success' && renderSuccessStep()}
       </div>
