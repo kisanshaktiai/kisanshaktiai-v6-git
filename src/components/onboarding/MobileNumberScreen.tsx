@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -83,6 +82,7 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
     setError(null);
 
     try {
+      // Use the basic authenticateUser method for compatibility
       const authResult = await MobileNumberService.getInstance().authenticateUser(formatted);
       
       if (authResult.success) {

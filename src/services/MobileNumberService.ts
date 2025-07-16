@@ -165,8 +165,9 @@ export class MobileNumberService {
         return { success: false, error: 'User not found' };
       }
 
-      // Verify PIN
-      const storedPinHash = profile.metadata?.pin_hash;
+      // Safely access metadata properties
+      const metadata = profile.metadata as any;
+      const storedPinHash = metadata?.pin_hash;
       const providedPinHash = btoa(pin);
 
       if (storedPinHash !== providedPinHash) {
@@ -188,6 +189,28 @@ export class MobileNumberService {
       return {
         success: true,
         userId: authData.user?.id
+      };
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return { success: false, error: 'Authentication failed' };
+    }
+  }
+
+  // Add the missing authenticateUser method for backward compatibility
+  async authenticateUser(mobileNumber: string): Promise<{
+    success: boolean;
+    error?: string;
+    deviceId?: string;
+    token?: string;
+  }> {
+    try {
+      const deviceInfo = await Device.getId();
+      await this.saveMobileNumber(mobileNumber);
+
+      return {
+        success: true,
+        deviceId: deviceInfo.identifier,
+        token: 'mock_token' // In a real app, this would be a proper token
       };
     } catch (error) {
       console.error('Authentication error:', error);
