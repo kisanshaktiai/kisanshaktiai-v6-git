@@ -98,9 +98,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
       setStep('verification');
       
       dispatch(setAuthenticated({
-        phoneNumber: formatted,
-        deviceId: 'device_id',
-        token: 'auth_token',
+        userId: 'demo_user',
+        phoneNumber: formatted
       }));
 
       // Success animation delay

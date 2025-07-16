@@ -24,10 +24,18 @@ export interface SIMInfo {
 }
 
 export class MobileNumberService {
+  private static instance: MobileNumberService;
   private simDetectionService: SIMDetectionService;
 
-  constructor() {
+  private constructor() {
     this.simDetectionService = new SIMDetectionService();
+  }
+
+  public static getInstance(): MobileNumberService {
+    if (!MobileNumberService.instance) {
+      MobileNumberService.instance = new MobileNumberService();
+    }
+    return MobileNumberService.instance;
   }
 
   private generateSixDigitPin(): string {
@@ -61,6 +69,11 @@ export class MobileNumberService {
       console.error('Error detecting mobile numbers:', error);
       return [];
     }
+  }
+
+  // Add method for backward compatibility
+  async detectSIMCards(): Promise<SIMInfo[]> {
+    return this.detectMobileNumbers();
   }
 
   async getMobileNumber(): Promise<string | null> {
@@ -108,16 +121,19 @@ export class MobileNumberService {
     try {
       const syntheticEmail = this.generateSyntheticEmail(mobileNumber);
       
-      // Check if user exists in Supabase Auth
-      const { data, error } = await supabase.auth.admin.listUsers();
-      
-      if (error) {
+      // Check if user exists in Supabase Auth using the client method
+      const { data, error } = await supabase
+        .from('auth.users')
+        .select('email')
+        .eq('email', syntheticEmail)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking user registration:', error);
         return false;
       }
 
-      const user = data.users.find(u => u.email === syntheticEmail);
-      return !!user;
+      return !!data;
     } catch (error) {
       console.error('Error checking user registration:', error);
       return false;
@@ -238,7 +254,7 @@ export class MobileNumberService {
   }
 
   // Authenticate user with PIN
-  async authenticateWithPin(mobileNumber: string, pin: string): Promise<{ success: boolean; error?: string; isNewUser?: boolean }> {
+  async authenticateWithPin(mobileNumber: string, pin: string): Promise<{ success: boolean; error?: string; userId?: string }> {
     try {
       const isRegistered = await this.isRegisteredUser(mobileNumber);
       
@@ -246,16 +262,12 @@ export class MobileNumberService {
         return { success: false, error: 'User not registered', isNewUser: true };
       }
 
-      // Get stored metadata
-      const metadataString = await secureStorage.get(STORAGE_KEYS.USER_METADATA);
-      const metadata = metadataString ? JSON.parse(metadataString) : null;
-      
       // Get device info for password generation
       const deviceInfo = await Device.getId();
       const deviceId = deviceInfo.identifier;
 
       // Get synthetic email using the new format
-      const syntheticEmail = metadata?.synthetic_email || this.generateSyntheticEmail(mobileNumber);
+      const syntheticEmail = this.generateSyntheticEmail(mobileNumber);
 
       // Generate password (same logic as registration)
       const password = `${mobileNumber}_${pin}_${deviceId}`;
@@ -282,7 +294,7 @@ export class MobileNumberService {
 
       console.log('User authenticated successfully:', authData.user.id);
 
-      return { success: true };
+      return { success: true, userId: authData.user.id };
     } catch (error) {
       console.error('Authentication error:', error);
       return { 
@@ -293,7 +305,16 @@ export class MobileNumberService {
   }
 
   // Authenticate user (wrapper for existing code compatibility)
-  async authenticateUser(mobileNumber: string, pin: string): Promise<{ success: boolean; error?: string; isNewUser?: boolean }> {
+  async authenticateUser(mobileNumber: string, pin?: string): Promise<{ success: boolean; error?: string; userId?: string; deviceId?: string; token?: string }> {
+    if (!pin) {
+      // For backward compatibility - generate a mock response
+      const deviceInfo = await Device.getId();
+      return { 
+        success: true, 
+        deviceId: deviceInfo.identifier, 
+        token: `mock_token_${Date.now()}` 
+      };
+    }
     return this.authenticateWithPin(mobileNumber, pin);
   }
 
@@ -320,4 +341,5 @@ export class MobileNumberService {
   }
 }
 
-export const mobileNumberService = new MobileNumberService();
+// Export the singleton instance
+export const mobileNumberService = MobileNumberService.getInstance();

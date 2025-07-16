@@ -34,9 +34,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext, onPrev }) => {
       const token = `token_${deviceId}_${Date.now()}`;
       
       dispatch(setAuthenticated({
-        phoneNumber,
-        deviceId,
-        token,
+        userId: `user_${deviceId}`,
+        phoneNumber
       }));
 
       onNext();

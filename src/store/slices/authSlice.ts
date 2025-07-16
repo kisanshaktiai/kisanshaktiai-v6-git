@@ -5,7 +5,7 @@ interface AuthState {
   isAuthenticated: boolean;
   userId: string | null;
   phoneNumber: string | null;
-  isOnboardingCompleted: boolean;
+  onboardingCompleted: boolean;
   tenantId: string | null;
 }
 
@@ -13,7 +13,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   userId: null,
   phoneNumber: null,
-  isOnboardingCompleted: false,
+  onboardingCompleted: false,
   tenantId: null,
 };
 
@@ -32,7 +32,7 @@ const authSlice = createSlice({
       state.phoneNumber = action.payload;
     },
     setOnboardingCompleted: (state) => {
-      state.isOnboardingCompleted = true;
+      state.onboardingCompleted = true;
     },
     setTenantId: (state, action: PayloadAction<string>) => {
       state.tenantId = action.payload;
@@ -41,7 +41,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.userId = null;
       state.phoneNumber = null;
-      state.isOnboardingCompleted = false;
+      state.onboardingCompleted = false;
       state.tenantId = null;
     },
   },

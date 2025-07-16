@@ -87,9 +87,8 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
       
       if (authResult.success) {
         dispatch(setAuthenticated({
-          phoneNumber: formatted,
-          deviceId: authResult.deviceId!,
-          token: authResult.token!,
+          userId: authResult.userId || 'temp_user',
+          phoneNumber: formatted
         }));
 
         // If existing user, complete onboarding

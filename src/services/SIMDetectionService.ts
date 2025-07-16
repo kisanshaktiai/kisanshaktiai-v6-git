@@ -1,105 +1,94 @@
 
 import { Device } from '@capacitor/device';
-import { Capacitor } from '@capacitor/core';
 
-interface SIMInfo {
+export interface SIMCard {
   slot: number;
   phoneNumber: string;
   carrierName: string;
   countryCode: string;
-  isDefault?: boolean;
+  isActive: boolean;
+  displayName: string;
 }
 
 export class SIMDetectionService {
-  private static instance: SIMDetectionService;
-
-  public static getInstance(): SIMDetectionService {
-    if (!SIMDetectionService.instance) {
-      SIMDetectionService.instance = new SIMDetectionService();
-    }
-    return SIMDetectionService.instance;
-  }
-
-  async detectSIMCards(): Promise<SIMInfo[]> {
-    if (!Capacitor.isNativePlatform()) {
-      console.log('SIM detection only available on native platforms');
-      return [];
-    }
-
+  
+  // Method to detect SIM cards (mock implementation for web/testing)
+  async detectSIMs(): Promise<SIMCard[]> {
     try {
+      // Get device info for mock data
       const deviceInfo = await Device.getInfo();
-      console.log('Device platform:', deviceInfo.platform);
-
-      // This is a placeholder implementation
-      // In a real app, you would use native plugins like:
-      // - @ionic-native/sim for Ionic
-      // - Custom Capacitor plugin for SIM access
-      // - Platform-specific implementations
-
-      // Simulated SIM data for development/testing
-      if (deviceInfo.platform === 'android' || deviceInfo.platform === 'ios') {
-        return this.getMockSIMData();
+      
+      // Mock SIM data for testing - in a real app this would use native plugins
+      const mockSIMs: SIMCard[] = [];
+      
+      // Simulate different scenarios based on platform
+      if (deviceInfo.platform === 'web') {
+        // Web environment - return mock data for testing
+        mockSIMs.push({
+          slot: 1,
+          phoneNumber: '+919876543210',
+          carrierName: 'Airtel',
+          countryCode: '+91',
+          isActive: true,
+          displayName: 'Airtel - 9876543210'
+        });
+        
+        // Optionally add a second SIM for testing multi-SIM scenarios
+        if (Math.random() > 0.5) {
+          mockSIMs.push({
+            slot: 2,
+            phoneNumber: '+917218973005',
+            carrierName: 'Jio',
+            countryCode: '+91',
+            isActive: true,
+            displayName: 'Jio - 7218973005'
+          });
+        }
+      } else {
+        // Native environment - would use actual device APIs
+        // For now, return mock data similar to web
+        mockSIMs.push({
+          slot: 1,
+          phoneNumber: '+919876543210',
+          carrierName: 'Airtel',
+          countryCode: '+91',
+          isActive: true,
+          displayName: 'Airtel - 9876543210'
+        });
       }
-
-      return [];
+      
+      console.log('Detected SIM cards:', mockSIMs);
+      return mockSIMs;
+      
     } catch (error) {
       console.error('Error detecting SIM cards:', error);
       return [];
     }
   }
 
-  private getMockSIMData(): SIMInfo[] {
-    // Mock data for testing - replace with actual native plugin calls
-    const mockSIMs: SIMInfo[] = [
-      {
-        slot: 1,
-        phoneNumber: '+919876543210',
-        carrierName: 'Airtel',
-        countryCode: 'IN',
-        isDefault: true
-      },
-      {
-        slot: 2,
-        phoneNumber: '+919123456789',
-        carrierName: 'Jio',
-        countryCode: 'IN',
-        isDefault: false
-      }
-    ];
-
-    // Randomly return 1 or 2 SIMs for testing
-    const numSIMs = Math.random() > 0.5 ? 1 : 2;
-    return mockSIMs.slice(0, numSIMs);
+  // Method to get the primary/active SIM
+  async getPrimarySIM(): Promise<SIMCard | null> {
+    try {
+      const sims = await this.detectSIMs();
+      return sims.find(sim => sim.isActive && sim.slot === 1) || sims[0] || null;
+    } catch (error) {
+      console.error('Error getting primary SIM:', error);
+      return null;
+    }
   }
 
-  async getDefaultSIM(): Promise<SIMInfo | null> {
-    const sims = await this.detectSIMCards();
-    return sims.find(sim => sim.isDefault) || sims[0] || null;
-  }
-
-  formatPhoneNumber(phoneNumber: string, countryCode: string = 'IN'): string {
-    // Remove all non-digit characters
-    const cleaned = phoneNumber.replace(/\D/g, '');
+  // Method to format phone number from SIM
+  formatPhoneNumber(phoneNumber: string): string {
+    // Remove any non-digit characters except +
+    const cleaned = phoneNumber.replace(/[^\d+]/g, '');
     
-    // Handle Indian numbers specifically
-    if (countryCode === 'IN') {
-      if (cleaned.length === 10) {
-        return `+91${cleaned}`;
-      } else if (cleaned.length === 12 && cleaned.startsWith('91')) {
-        return `+${cleaned}`;
-      } else if (cleaned.length === 13 && cleaned.startsWith('+91')) {
-        return cleaned;
-      }
-      return `+91${cleaned.slice(-10)}`;
+    // Ensure it starts with +91 for Indian numbers
+    if (cleaned.startsWith('91') && !cleaned.startsWith('+91')) {
+      return `+${cleaned}`;
+    } else if (!cleaned.startsWith('+91') && cleaned.length === 10) {
+      return `+91${cleaned}`;
     }
     
-    // For other countries, add appropriate country codes
-    return phoneNumber;
-  }
-
-  validatePhoneNumber(phoneNumber: string): boolean {
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    // Indian mobile numbers: 10 digits starting with 6,7,8,9
-    return /^[6-9]\d{9}$/.test(cleaned.slice(-10));
+    return cleaned;
   }
 }

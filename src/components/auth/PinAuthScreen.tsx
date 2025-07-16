@@ -134,10 +134,8 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
       
       if (result.success) {
         dispatch(setAuthenticated({
-          phoneNumber: formatted,
-          deviceId: 'device_id',
-          token: 'auth_token',
-          userId: result.userId
+          userId: result.userId!,
+          phoneNumber: formatted
         }));
         
         setStep('success');
@@ -176,10 +174,8 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
       
       if (result.success) {
         dispatch(setAuthenticated({
-          phoneNumber: formatted,
-          deviceId: 'device_id',
-          token: 'auth_token',
-          userId: result.userId
+          userId: result.userId!,
+          phoneNumber: formatted
         }));
         
         setStep('success');
