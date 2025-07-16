@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -12,6 +11,7 @@ interface LanguageScreenProps {
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
+  onComplete?: () => void;
 }
 
 export const LanguageScreen: React.FC<LanguageScreenProps> = ({ onNext, onPrev }) => {
