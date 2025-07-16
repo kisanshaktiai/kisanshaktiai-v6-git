@@ -1,4 +1,3 @@
-
 import { supabase } from '../config/supabase';
 import { Device } from '@capacitor/device';
 import { secureStorage } from './storage/secureStorage';
@@ -17,10 +16,13 @@ export interface UserData {
 }
 
 export interface SIMInfo {
-  mobileNumber: string;
+  slot: number;
+  phoneNumber: string;
   carrierName: string;
-  displayName: string;
+  countryCode: string;
   isActive: boolean;
+  displayName: string;
+  isDefault?: boolean;
 }
 
 export class MobileNumberService {
@@ -60,10 +62,13 @@ export class MobileNumberService {
       console.log('Detected SIMs:', sims);
       
       return sims.map(sim => ({
-        mobileNumber: sim.phoneNumber,
+        slot: sim.slot,
+        phoneNumber: sim.phoneNumber,
         carrierName: sim.carrierName,
+        countryCode: sim.countryCode,
+        isActive: sim.isActive,
         displayName: sim.displayName,
-        isActive: sim.isActive
+        isDefault: sim.slot === 1
       }));
     } catch (error) {
       console.error('Error detecting mobile numbers:', error);
@@ -254,7 +259,7 @@ export class MobileNumberService {
   }
 
   // Authenticate user with PIN
-  async authenticateWithPin(mobileNumber: string, pin: string): Promise<{ success: boolean; error?: string; userId?: string }> {
+  async authenticateWithPin(mobileNumber: string, pin: string): Promise<{ success: boolean; error?: string; userId?: string; isNewUser?: boolean }> {
     try {
       const isRegistered = await this.isRegisteredUser(mobileNumber);
       

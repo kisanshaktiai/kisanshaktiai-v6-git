@@ -4,21 +4,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { setAuthenticated } from '@/store/slices/authSlice';
-import { MobileNumberService } from '@/services/MobileNumberService';
+import { MobileNumberService, SIMInfo } from '@/services/MobileNumberService';
 import { SIMSelectionModal } from './SIMSelectionModal';
 import { Phone, Loader, CheckCircle2, Shield, Smartphone } from 'lucide-react';
 import { RootState } from '@/store';
 
 interface PinAuthScreenProps {
   onComplete: () => void;
-}
-
-interface SIMInfo {
-  slot: number;
-  phoneNumber: string;
-  carrierName: string;
-  countryCode: string;
-  isDefault?: boolean;
 }
 
 type AuthStep = 'detecting' | 'sim-selection' | 'mobile' | 'pin-login' | 'pin-create' | 'success';

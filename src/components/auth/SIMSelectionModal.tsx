@@ -4,14 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Phone, Smartphone, Signal } from 'lucide-react';
-
-interface SIMInfo {
-  slot: number;
-  phoneNumber: string;
-  carrierName: string;
-  countryCode: string;
-  isDefault?: boolean;
-}
+import { SIMInfo } from '@/services/MobileNumberService';
 
 interface SIMSelectionModalProps {
   isOpen: boolean;
