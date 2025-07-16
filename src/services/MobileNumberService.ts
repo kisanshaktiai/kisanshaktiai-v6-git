@@ -1,3 +1,4 @@
+
 import { supabase } from '../config/supabase';
 import { Device } from '@capacitor/device';
 import { secureStorage } from './storage/secureStorage';
@@ -53,6 +54,16 @@ export class MobileNumberService {
 
   private generateSixDigitPin(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  private generateSyntheticEmail(mobileNumber: string): string {
+    // Remove country code and any special characters
+    const cleanMobileNumber = mobileNumber.replace(/[^\d]/g, '');
+    // Remove leading 91 if present (Indian country code)
+    const phoneNumber = cleanMobileNumber.startsWith('91') ? 
+      cleanMobileNumber.substring(2) : cleanMobileNumber;
+    
+    return `farmer.${phoneNumber}@kisanshakti.com`;
   }
 
   // Enhanced mobile number detection with SIM support
@@ -196,9 +207,8 @@ export class MobileNumberService {
       const metadataString = await secureStorage.get(STORAGE_KEYS.USER_METADATA);
       const metadata = metadataString ? JSON.parse(metadataString) : null;
       
-      // Get synthetic email from metadata or generate it
-      const cleanMobileNumber = mobileNumber.replace('+', '');
-      const syntheticEmail = metadata?.synthetic_email || `${cleanMobileNumber}@kisanshaktiai.in`;
+      // Get synthetic email using the new format
+      const syntheticEmail = metadata?.synthetic_email || this.generateSyntheticEmail(mobileNumber);
 
       // For existing users, we'll use a default PIN if none is stored
       const storedPinHash = await secureStorage.get(STORAGE_KEYS.PIN_HASH);
@@ -246,9 +256,8 @@ export class MobileNumberService {
       const deviceInfo = await Device.getId();
       const deviceId = deviceInfo.identifier;
 
-      // Create a proper email using kisanshaktiai.in domain
-      const cleanMobileNumber = mobileNumber.replace('+', '');
-      const syntheticEmail = `${cleanMobileNumber}@kisanshaktiai.in`;
+      // Create a proper email using the new format
+      const syntheticEmail = this.generateSyntheticEmail(mobileNumber);
       
       // Create user in Supabase Auth with synthetic email
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -314,9 +323,8 @@ export class MobileNumberService {
         return { success: false, error: 'Invalid PIN' };
       }
 
-      // Get synthetic email from metadata or generate it
-      const cleanMobileNumber = mobileNumber.replace('+', '');
-      const syntheticEmail = metadata?.synthetic_email || `${cleanMobileNumber}@kisanshaktiai.in`;
+      // Get synthetic email using the new format
+      const syntheticEmail = metadata?.synthetic_email || this.generateSyntheticEmail(mobileNumber);
 
       // Sign in user with synthetic email
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
