@@ -13,15 +13,17 @@ export const DashboardHeader: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useSelector((state: RootState) => state.farmer);
   const { isOnline } = useSelector((state: RootState) => state.sync);
-  const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant || {});
+  const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant);
 
   const getFarmerName = (): string => {
     if (!profile?.name) return t('dashboard.defaultFarmerName', 'Farmer');
     
+    // Handle string type
     if (typeof profile.name === 'string') {
       return profile.name.split(' ')[0];
     }
     
+    // Handle object type with language codes
     if (typeof profile.name === 'object' && profile.name !== null) {
       const nameObj = profile.name as Record<string, string>;
       const nameValue = nameObj.en || nameObj.hi || Object.values(nameObj)[0];
@@ -87,15 +89,7 @@ export const DashboardHeader: React.FC = () => {
       {/* Bottom Row - Greeting and Profile */}
       <div className="flex items-center space-x-3">
         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-          {profile?.avatar_url ? (
-            <img 
-              src={profile.avatar_url} 
-              alt={getFarmerName()}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <User className="w-6 h-6 text-primary" />
-          )}
+          <User className="w-6 h-6 text-primary" />
         </div>
         
         <div className="flex-1">

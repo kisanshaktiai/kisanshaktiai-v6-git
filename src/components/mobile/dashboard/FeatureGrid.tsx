@@ -35,7 +35,7 @@ interface FeatureModule {
 export const FeatureGrid: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantFeatures } = useSelector((state: RootState) => state.tenant || {});
+  const { tenantFeatures } = useSelector((state: RootState) => state.tenant);
 
   const features: FeatureModule[] = [
     {
@@ -139,7 +139,8 @@ export const FeatureGrid: React.FC = () => {
 
   const isFeatureEnabled = (feature: FeatureModule): boolean => {
     if (!feature.tenantFeature) return true;
-    return tenantFeatures?.[feature.tenantFeature] ?? true;
+    // Safely check if tenantFeatures exists and has the property
+    return tenantFeatures?.[feature.tenantFeature as keyof typeof tenantFeatures] ?? true;
   };
 
   const availableFeatures = features.filter(isFeatureEnabled);

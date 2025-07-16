@@ -21,12 +21,27 @@ export const QuickSummaryTiles: React.FC = () => {
   const { profile } = useSelector((state: RootState) => state.farmer);
   const { lands, crops } = useSelector((state: RootState) => state.farmer);
 
+  // Safely get total land acres from farmer profile or calculate from lands
+  const getTotalLandAcres = (): number => {
+    // Try to get from profile first (if it has the property)
+    if (profile && 'total_land_acres' in profile && typeof profile.total_land_acres === 'number') {
+      return profile.total_land_acres;
+    }
+    
+    // Calculate from lands array if available
+    if (lands && Array.isArray(lands)) {
+      return lands.reduce((total, land) => total + (land.area_acres || 0), 0);
+    }
+    
+    return 0;
+  };
+
   const summaryData: SummaryTile[] = [
     {
       id: 'land-area',
       icon: MapPin,
       title: t('dashboard.totalLand', 'Total Land'),
-      value: `${profile?.total_land_acres || 0}`,
+      value: `${getTotalLandAcres()}`,
       subtitle: t('dashboard.acres', 'acres'),
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50'

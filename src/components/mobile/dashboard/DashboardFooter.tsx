@@ -26,7 +26,7 @@ export const DashboardFooter: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { tenantFeatures } = useSelector((state: RootState) => state.tenant || {});
+  const { tenantFeatures } = useSelector((state: RootState) => state.tenant);
 
   const footerItems: FooterItem[] = [
     {
