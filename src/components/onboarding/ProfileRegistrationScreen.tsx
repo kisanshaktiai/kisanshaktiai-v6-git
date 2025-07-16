@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -14,6 +13,7 @@ interface ProfileRegistrationScreenProps {
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
+  onComplete?: () => void;
 }
 
 export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps> = ({ 
