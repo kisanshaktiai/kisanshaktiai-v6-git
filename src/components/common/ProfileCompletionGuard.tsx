@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/config/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { User, MapPin, Calendar, Users } from 'lucide-react';
@@ -38,9 +38,16 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
         .eq('id', userId)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking profile:', error);
-        setProfileCompleted(true); // Default to completed if error
+        setProfileCompleted(false);
+        setShowProfileForm(true);
+        return;
+      }
+
+      if (!profile) {
+        setProfileCompleted(false);
+        setShowProfileForm(true);
         return;
       }
 
@@ -56,7 +63,6 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
       setProfileCompleted(!!isCompleted);
       
       if (!isCompleted) {
-        // Pre-fill form with existing data
         setFormData({
           fullName: profile.full_name || '',
           village: profile.village || '',
@@ -68,7 +74,8 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
       }
     } catch (error) {
       console.error('Error checking profile completion:', error);
-      setProfileCompleted(true);
+      setProfileCompleted(false);
+      setShowProfileForm(true);
     }
   };
 
@@ -77,29 +84,86 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Get current user to get phone number
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const phone = user.user_metadata?.phone || user.email?.split('@')[0];
+
+      // First, try to get existing profile
+      const { data: existingProfile } = await supabase
         .from('user_profiles')
-        .update({
-          full_name: formData.fullName,
-          village: formData.village,
-          district: formData.district,
-          state: formData.state,
-          date_of_birth: formData.dateOfBirth,
-          metadata: {
-            profile_completed: true,
-            completion_date: new Date().toISOString()
-          }
-        })
-        .eq('id', userId);
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      const profileData = {
+        id: userId,
+        phone: phone,
+        full_name: formData.fullName,
+        village: formData.village,
+        district: formData.district,
+        state: formData.state,
+        date_of_birth: formData.dateOfBirth,
+        metadata: {
+          profile_completed: true,
+          completion_date: new Date().toISOString()
+        }
+      };
+
+      let error;
+      if (existingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update(profileData)
+          .eq('id', userId);
+        error = updateError;
+      } else {
+        // Create new profile
+        const { error: insertError } = await supabase
+          .from('user_profiles')
+          .insert([profileData]);
+        error = insertError;
+      }
 
       if (error) {
+        console.error('Profile operation error:', error);
         throw error;
+      }
+
+      // Also create/update farmer profile
+      const { data: existingFarmer } = await supabase
+        .from('farmers')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      const farmerData = {
+        id: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      if (!existingFarmer) {
+        const { error: farmerError } = await supabase
+          .from('farmers')
+          .insert([farmerData]);
+        
+        if (farmerError) {
+          console.error('Farmer profile creation error:', farmerError);
+          // Don't throw here, as the user profile was created successfully
+        }
       }
 
       setProfileCompleted(true);
       setShowProfileForm(false);
     } catch (error) {
       console.error('Error updating profile:', error);
+      // Show more specific error message
+      alert('Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }

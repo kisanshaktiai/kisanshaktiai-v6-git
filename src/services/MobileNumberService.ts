@@ -1,82 +1,101 @@
 
+import { supabase } from '../config/supabase';
 import { Device } from '@capacitor/device';
-import { Preferences } from '@capacitor/preferences';
-import { supabase } from '@/integrations/supabase/client';
+import { secureStorage } from './storage/secureStorage';
+import { STORAGE_KEYS } from '../config/constants';
+
+interface UserData {
+  fullName: string;
+  location: {
+    state: string;
+    district: string;
+    village: string;
+  };
+}
+
+interface RegistrationResult {
+  success: boolean;
+  error?: string;
+  userId?: string;
+}
+
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  userId?: string;
+}
 
 export class MobileNumberService {
   private static instance: MobileNumberService;
-  
-  static getInstance(): MobileNumberService {
+
+  public static getInstance(): MobileNumberService {
     if (!MobileNumberService.instance) {
       MobileNumberService.instance = new MobileNumberService();
     }
     return MobileNumberService.instance;
   }
 
-  async getMobileNumber(): Promise<string | null> {
+  private generateSixDigitPin(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  async sendOTP(mobileNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // First check if we have a cached mobile number
-      const { value: cachedNumber } = await Preferences.get({ 
-        key: 'userMobileNumber' 
-      });
+      console.log('Sending OTP to:', mobileNumber);
       
-      if (cachedNumber) {
-        console.log('Using cached mobile number');
-        return cachedNumber;
-      }
-
-      // Try to get device info for auto-detection (limited on web)
-      const deviceInfo = await Device.getInfo();
-      console.log('Device info:', deviceInfo);
-
-      // On web/PWA, we cannot access SIM info
-      // This would work better in native Capacitor apps
+      // For demo purposes, we'll generate and store a PIN
+      const pin = this.generateSixDigitPin();
+      console.log('Generated PIN:', pin);
       
-      return null;
+      // Store the PIN temporarily (in production, this would be sent via SMS)
+      await secureStorage.set(`${STORAGE_KEYS.OTP_PREFIX}${mobileNumber}`, pin);
+      await secureStorage.set(`${STORAGE_KEYS.OTP_TIMESTAMP_PREFIX}${mobileNumber}`, Date.now().toString());
+      
+      // Show PIN in console for testing
+      console.log(`OTP for ${mobileNumber}: ${pin}`);
+      
+      return { success: true };
     } catch (error) {
-      console.error('Error getting mobile number:', error);
-      return null;
+      console.error('Error sending OTP:', error);
+      return { success: false, error: 'Failed to send OTP' };
     }
   }
 
-  async saveMobileNumber(mobileNumber: string): Promise<void> {
-    await Preferences.set({
-      key: 'userMobileNumber',
-      value: mobileNumber
-    });
-  }
-
-  async isRegisteredUser(mobileNumber: string): Promise<boolean> {
+  async verifyOTP(mobileNumber: string, otp: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('phone', mobileNumber)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking registration:', error);
-        return false;
+      const storedOtp = await secureStorage.get(`${STORAGE_KEYS.OTP_PREFIX}${mobileNumber}`);
+      const timestamp = await secureStorage.get(`${STORAGE_KEYS.OTP_TIMESTAMP_PREFIX}${mobileNumber}`);
+      
+      if (!storedOtp || !timestamp) {
+        return { success: false, error: 'OTP not found or expired' };
       }
-
-      return !!data;
+      
+      // Check if OTP is expired (5 minutes)
+      const otpAge = Date.now() - parseInt(timestamp);
+      if (otpAge > 5 * 60 * 1000) {
+        await secureStorage.remove(`${STORAGE_KEYS.OTP_PREFIX}${mobileNumber}`);
+        await secureStorage.remove(`${STORAGE_KEYS.OTP_TIMESTAMP_PREFIX}${mobileNumber}`);
+        return { success: false, error: 'OTP has expired' };
+      }
+      
+      if (storedOtp !== otp) {
+        return { success: false, error: 'Invalid OTP' };
+      }
+      
+      // Clean up OTP
+      await secureStorage.remove(`${STORAGE_KEYS.OTP_PREFIX}${mobileNumber}`);
+      await secureStorage.remove(`${STORAGE_KEYS.OTP_TIMESTAMP_PREFIX}${mobileNumber}`);
+      
+      return { success: true };
     } catch (error) {
-      console.error('Error checking registration:', error);
-      return false;
+      console.error('Error verifying OTP:', error);
+      return { success: false, error: 'Failed to verify OTP' };
     }
   }
 
-  async registerUser(mobileNumber: string, pin: string, userData: {
-    fullName: string;
-    village?: string;
-    district?: string;
-    state?: string;
-  }): Promise<{
-    success: boolean;
-    error?: string;
-    userId?: string;
-  }> {
+  async registerUser(mobileNumber: string, pin: string, userData: UserData): Promise<RegistrationResult> {
     try {
+      // Get device info
       const deviceInfo = await Device.getId();
       const deviceId = deviceInfo.identifier;
 
@@ -107,90 +126,44 @@ export class MobileNumberService {
         return { success: false, error: 'User creation failed' };
       }
 
-      // Auto-verify the user since it's a synthetic email
-      if (!authData.user.email_confirmed_at) {
-        try {
-          // Admin API call to confirm email programmatically would go here
-          // For now, we'll proceed as the user registration was successful
-          console.log('User created with synthetic email, proceeding with registration');
-        } catch (confirmError) {
-          console.error('Email confirmation error:', confirmError);
-          // Continue anyway since it's a synthetic email
-        }
-      }
+      // Wait a moment for the user to be properly created
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: authData.user.id,
-          phone: mobileNumber,
-          full_name: userData.fullName,
-          village: userData.village,
-          district: userData.district,
-          state: userData.state,
-          metadata: {
-            pin_hash: btoa(pin),
-            device_id: deviceId,
-            registration_date: new Date().toISOString(),
-            profile_completed: false,
-            synthetic_email: syntheticEmail
-          }
-        });
+      // Store authentication info
+      await secureStorage.set(STORAGE_KEYS.USER_ID, authData.user.id);
+      await secureStorage.set(STORAGE_KEYS.MOBILE_NUMBER, mobileNumber);
+      await secureStorage.set(STORAGE_KEYS.PIN_HASH, btoa(pin));
+      await secureStorage.set(STORAGE_KEYS.USER_METADATA, JSON.stringify({
+        fullName: userData.fullName,
+        location: userData.location,
+        synthetic_email: syntheticEmail,
+        device_id: deviceId,
+        registered_at: new Date().toISOString()
+      }));
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        return { success: false, error: 'Profile creation failed' };
-      }
-
-      // Create farmer profile
-      const { error: farmerError } = await supabase
-        .from('farmers')
-        .insert({
-          id: authData.user.id,
-          app_install_date: new Date().toISOString().split('T')[0],
-          total_app_opens: 1
-        });
-
-      if (farmerError) {
-        console.error('Farmer profile creation error:', farmerError);
-      }
-
-      await this.saveMobileNumber(mobileNumber);
-
-      return {
-        success: true,
-        userId: authData.user.id
+      console.log('User registered successfully:', authData.user.id);
+      return { 
+        success: true, 
+        userId: authData.user.id 
       };
+
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, error: 'Registration failed' };
+      return { success: false, error: error instanceof Error ? error.message : 'Registration failed' };
     }
   }
 
-  async authenticateWithPin(mobileNumber: string, pin: string): Promise<{
-    success: boolean;
-    error?: string;
-    userId?: string;
-  }> {
+  async loginUser(mobileNumber: string, pin: string): Promise<LoginResult> {
     try {
-      // Get user profile to verify PIN
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id, metadata')
-        .eq('phone', mobileNumber)
-        .single();
-
-      if (profileError || !profile) {
-        return { success: false, error: 'User not found' };
-      }
-
-      // Safely access metadata properties
-      const metadata = profile.metadata as any;
-      const storedPinHash = metadata?.pin_hash;
-      const providedPinHash = btoa(pin);
-
-      if (storedPinHash !== providedPinHash) {
+      // Get stored metadata
+      const metadataString = await secureStorage.get(STORAGE_KEYS.USER_METADATA);
+      const metadata = metadataString ? JSON.parse(metadataString) : null;
+      
+      // Verify PIN
+      const storedPinHash = await secureStorage.get(STORAGE_KEYS.PIN_HASH);
+      const currentPinHash = btoa(pin);
+      
+      if (!storedPinHash || storedPinHash !== currentPinHash) {
         return { success: false, error: 'Invalid PIN' };
       }
 
@@ -209,59 +182,52 @@ export class MobileNumberService {
         return { success: false, error: authError.message };
       }
 
-      await this.saveMobileNumber(mobileNumber);
+      if (!authData.user) {
+        return { success: false, error: 'Login failed' };
+      }
 
-      return {
-        success: true,
-        userId: authData.user?.id
+      // Update stored user ID
+      await secureStorage.set(STORAGE_KEYS.USER_ID, authData.user.id);
+      
+      console.log('User logged in successfully:', authData.user.id);
+      return { 
+        success: true, 
+        userId: authData.user.id 
       };
+
     } catch (error) {
-      console.error('Authentication error:', error);
-      return { success: false, error: 'Authentication failed' };
+      console.error('Login error:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
     }
   }
 
-  // Add the missing authenticateUser method for backward compatibility
-  async authenticateUser(mobileNumber: string): Promise<{
-    success: boolean;
-    error?: string;
-    deviceId?: string;
-    token?: string;
-  }> {
+  async isUserRegistered(mobileNumber: string): Promise<boolean> {
     try {
-      const deviceInfo = await Device.getId();
-      await this.saveMobileNumber(mobileNumber);
-
-      return {
-        success: true,
-        deviceId: deviceInfo.identifier,
-        token: 'mock_token' // In a real app, this would be a proper token
-      };
+      const storedMobile = await secureStorage.get(STORAGE_KEYS.MOBILE_NUMBER);
+      const storedPinHash = await secureStorage.get(STORAGE_KEYS.PIN_HASH);
+      
+      return storedMobile === mobileNumber && !!storedPinHash;
     } catch (error) {
-      console.error('Authentication error:', error);
-      return { success: false, error: 'Authentication failed' };
+      console.error('Error checking user registration:', error);
+      return false;
     }
   }
 
-  formatMobileNumber(number: string): string {
-    // Remove all non-digits
-    const digits = number.replace(/\D/g, '');
-    
-    // Add +91 prefix if not present
-    if (digits.length === 10) {
-      return `+91${digits}`;
-    } else if (digits.length === 12 && digits.startsWith('91')) {
-      return `+${digits}`;
-    } else if (digits.length === 13 && digits.startsWith('91')) {
-      return `+${digits}`;
+  async getCurrentUserMobile(): Promise<string | null> {
+    try {
+      return await secureStorage.get(STORAGE_KEYS.MOBILE_NUMBER);
+    } catch (error) {
+      console.error('Error getting current user mobile:', error);
+      return null;
     }
-    
-    return number;
   }
 
-  validateMobileNumber(number: string): boolean {
-    const formatted = this.formatMobileNumber(number);
-    const indianMobileRegex = /^\+91[6-9]\d{9}$/;
-    return indianMobileRegex.test(formatted);
+  async logout(): Promise<void> {
+    try {
+      await supabase.auth.signOut();
+      await secureStorage.clear();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   }
 }
