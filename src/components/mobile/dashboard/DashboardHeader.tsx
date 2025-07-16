@@ -16,22 +16,8 @@ export const DashboardHeader: React.FC = () => {
   const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant);
 
   const getFarmerName = (): string => {
-    if (!profile?.name) return t('dashboard.defaultFarmerName', 'Farmer');
-    
-    // Handle string type
-    if (typeof profile.name === 'string') {
-      return profile.name.split(' ')[0];
-    }
-    
-    // Handle object type with language codes
-    if (typeof profile.name === 'object' && profile.name !== null) {
-      const nameObj = profile.name as Record<string, string>;
-      const nameValue = nameObj.en || nameObj.hi || Object.values(nameObj)[0];
-      if (typeof nameValue === 'string') {
-        return nameValue.split(' ')[0];
-      }
-    }
-    
+    // Since farmers table doesn't have a name field, we'll use a default greeting
+    // In a real implementation, this would come from user_profiles table or auth metadata
     return t('dashboard.defaultFarmerName', 'Farmer');
   };
 
