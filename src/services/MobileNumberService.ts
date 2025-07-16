@@ -1,4 +1,3 @@
-
 import { supabase } from '../config/supabase';
 import { Device } from '@capacitor/device';
 import { secureStorage } from './storage/secureStorage';
@@ -6,7 +5,7 @@ import { STORAGE_KEYS } from '../config/constants';
 
 interface UserData {
   fullName: string;
-  location: {
+  location?: {
     state: string;
     district: string;
     village: string;
@@ -25,6 +24,14 @@ interface LoginResult {
   userId?: string;
 }
 
+interface AuthenticationResult {
+  success: boolean;
+  error?: string;
+  userId?: string;
+  deviceId?: string;
+  token?: string;
+}
+
 export class MobileNumberService {
   private static instance: MobileNumberService;
 
@@ -37,6 +44,51 @@ export class MobileNumberService {
 
   private generateSixDigitPin(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // Mobile number detection and formatting methods
+  async getMobileNumber(): Promise<string | null> {
+    try {
+      // Try to get from cache first
+      const cachedNumber = await secureStorage.get(STORAGE_KEYS.MOBILE_NUMBER);
+      if (cachedNumber) {
+        console.log('Using cached mobile number');
+        return cachedNumber;
+      }
+      
+      // In a real app, this would use device APIs to detect the mobile number
+      // For now, return null so user has to enter manually
+      return null;
+    } catch (error) {
+      console.error('Error getting mobile number:', error);
+      return null;
+    }
+  }
+
+  formatMobileNumber(number: string): string {
+    // Remove all non-digit characters
+    const cleaned = number.replace(/\D/g, '');
+    
+    // If it starts with country code, use as is, otherwise add +91
+    if (cleaned.length === 10) {
+      return `+91${cleaned}`;
+    } else if (cleaned.length === 12 && cleaned.startsWith('91')) {
+      return `+${cleaned}`;
+    } else if (cleaned.length === 13 && cleaned.startsWith('+91')) {
+      return cleaned;
+    }
+    
+    return `+91${cleaned.slice(-10)}`; // Take last 10 digits and add +91
+  }
+
+  validateMobileNumber(number: string): boolean {
+    const cleaned = number.replace(/\D/g, '');
+    // Indian mobile numbers: 10 digits starting with 6,7,8,9
+    return /^[6-9]\d{9}$/.test(cleaned.slice(-10));
+  }
+
+  async isRegisteredUser(mobileNumber: string): Promise<boolean> {
+    return await this.isUserRegistered(mobileNumber);
   }
 
   async sendOTP(mobileNumber: string): Promise<{ success: boolean; error?: string }> {
@@ -90,6 +142,92 @@ export class MobileNumberService {
     } catch (error) {
       console.error('Error verifying OTP:', error);
       return { success: false, error: 'Failed to verify OTP' };
+    }
+  }
+
+  async authenticateUser(mobileNumber: string): Promise<AuthenticationResult> {
+    try {
+      // Check if user is already registered
+      const isRegistered = await this.isUserRegistered(mobileNumber);
+      
+      if (isRegistered) {
+        // Existing user - try to log them in
+        return await this.loginExistingUser(mobileNumber);
+      } else {
+        // New user - register them with basic info
+        const result = await this.registerUser(mobileNumber, '0000', {
+          fullName: 'User', // Default name
+        });
+        
+        if (result.success) {
+          const deviceInfo = await Device.getId();
+          return {
+            success: true,
+            userId: result.userId,
+            deviceId: deviceInfo.identifier,
+            token: 'demo_token',
+          };
+        } else {
+          return { success: false, error: result.error };
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return { success: false, error: 'Authentication failed' };
+    }
+  }
+
+  async authenticateWithPin(mobileNumber: string, pin: string): Promise<LoginResult> {
+    return await this.loginUser(mobileNumber, pin);
+  }
+
+  private async loginExistingUser(mobileNumber: string): Promise<AuthenticationResult> {
+    try {
+      // Get stored metadata
+      const metadataString = await secureStorage.get(STORAGE_KEYS.USER_METADATA);
+      const metadata = metadataString ? JSON.parse(metadataString) : null;
+      
+      // Get synthetic email from metadata or generate it
+      const cleanMobileNumber = mobileNumber.replace('+', '');
+      const syntheticEmail = metadata?.synthetic_email || `${cleanMobileNumber}@kisanshaktiai.in`;
+
+      // For existing users, we'll use a default PIN if none is stored
+      const storedPinHash = await secureStorage.get(STORAGE_KEYS.PIN_HASH);
+      const defaultPassword = storedPinHash ? 
+        `${mobileNumber}_${atob(storedPinHash)}` : 
+        `${mobileNumber}_0000`;
+
+      // Sign in user with synthetic email
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: syntheticEmail,
+        password: defaultPassword
+      });
+
+      if (authError) {
+        console.error('Authentication error:', authError);
+        return { success: false, error: authError.message };
+      }
+
+      if (!authData.user) {
+        return { success: false, error: 'Login failed' };
+      }
+
+      // Update stored user ID
+      await secureStorage.set(STORAGE_KEYS.USER_ID, authData.user.id);
+      
+      const deviceInfo = await Device.getId();
+      console.log('User logged in successfully:', authData.user.id);
+      
+      return { 
+        success: true, 
+        userId: authData.user.id,
+        deviceId: deviceInfo.identifier,
+        token: 'demo_token',
+      };
+
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
     }
   }
 

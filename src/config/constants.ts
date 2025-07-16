@@ -17,6 +17,13 @@ export const STORAGE_KEYS = {
   LANGUAGE: 'selected_language',
   OFFLINE_QUEUE: 'offline_queue',
   CACHE_PREFIX: 'cache_',
+  // Mobile auth specific keys
+  USER_ID: 'user_id',
+  MOBILE_NUMBER: 'mobile_number',
+  PIN_HASH: 'pin_hash',
+  USER_METADATA: 'user_metadata',
+  OTP_PREFIX: 'otp_',
+  OTP_TIMESTAMP_PREFIX: 'otp_timestamp_',
 };
 
 export const API_ENDPOINTS = {
