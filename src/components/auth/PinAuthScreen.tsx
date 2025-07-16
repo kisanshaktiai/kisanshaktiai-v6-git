@@ -5,26 +5,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { setAuthenticated } from '@/store/slices/authSlice';
 import { MobileNumberService } from '@/services/MobileNumberService';
-import { Phone, Loader, CheckCircle2, Shield } from 'lucide-react';
+import { SIMSelectionModal } from './SIMSelectionModal';
+import { Phone, Loader, CheckCircle2, Shield, Smartphone } from 'lucide-react';
 import { RootState } from '@/store';
 
 interface PinAuthScreenProps {
   onComplete: () => void;
 }
 
-type AuthStep = 'mobile' | 'pin-login' | 'pin-create' | 'success';
+interface SIMInfo {
+  slot: number;
+  phoneNumber: string;
+  carrierName: string;
+  countryCode: string;
+  isDefault?: boolean;
+}
+
+type AuthStep = 'detecting' | 'sim-selection' | 'mobile' | 'pin-login' | 'pin-create' | 'success';
 
 export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
   
-  const [step, setStep] = useState<AuthStep>('mobile');
+  const [step, setStep] = useState<AuthStep>('detecting');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [detectedSIMs, setDetectedSIMs] = useState<SIMInfo[]>([]);
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
-  const [autoDetecting, setAutoDetecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
@@ -36,18 +45,45 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
   }, []);
 
   const autoDetectMobileNumber = async () => {
-    setAutoDetecting(true);
+    setStep('detecting');
     try {
-      const detectedNumber = await MobileNumberService.getInstance().getMobileNumber();
-      if (detectedNumber) {
-        setMobileNumber(detectedNumber.replace('+91', ''));
-        await checkUserRegistration(detectedNumber);
+      // First try to get cached number
+      const cachedNumber = await MobileNumberService.getInstance().getMobileNumber();
+      if (cachedNumber) {
+        setMobileNumber(cachedNumber.replace('+91', ''));
+        await checkUserRegistration(cachedNumber);
+        setStep('mobile');
+        return;
+      }
+
+      // Try to detect SIM cards
+      const sims = await MobileNumberService.getInstance().detectSIMCards();
+      console.log('Detected SIMs:', sims);
+      
+      if (sims.length === 0) {
+        // No SIMs detected, go to manual entry
+        setStep('mobile');
+      } else if (sims.length === 1) {
+        // Single SIM, use it automatically
+        const sim = sims[0];
+        setMobileNumber(sim.phoneNumber.replace('+91', ''));
+        await checkUserRegistration(sim.phoneNumber);
+        setStep('mobile');
+      } else {
+        // Multiple SIMs, show selection
+        setDetectedSIMs(sims);
+        setStep('sim-selection');
       }
     } catch (error) {
       console.error('Auto-detection failed:', error);
-    } finally {
-      setAutoDetecting(false);
+      setStep('mobile');
     }
+  };
+
+  const handleSIMSelection = async (sim: SIMInfo) => {
+    setMobileNumber(sim.phoneNumber.replace('+91', ''));
+    await checkUserRegistration(sim.phoneNumber);
+    setStep('mobile');
   };
 
   const checkUserRegistration = async (number: string) => {
@@ -160,6 +196,29 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     }
   };
 
+  const renderDetectingStep = () => (
+    <div className="space-y-6">
+      <div className="text-center space-y-3">
+        <div 
+          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg"
+          style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
+        >
+          <Smartphone className="w-10 h-10 animate-pulse" style={{ color: primaryColor }} />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Detecting Mobile Number
+        </h1>
+        <p className="text-gray-600 text-base">
+          Checking for SIM cards on your device...
+        </p>
+        <div className="flex items-center justify-center space-x-2">
+          <Loader className="w-4 h-4 animate-spin" style={{ color: primaryColor }} />
+          <span className="text-sm text-gray-500">Please wait</span>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderMobileStep = () => (
     <div className="space-y-6">
       <div className="text-center space-y-3">
@@ -223,6 +282,16 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
         >
           {isExistingUser ? 'Continue to Login' : 'Continue to Register'}
         </Button>
+        
+        {detectedSIMs.length > 0 && (
+          <Button 
+            variant="outline"
+            onClick={() => setStep('sim-selection')}
+            className="w-full"
+          >
+            Choose Different SIM
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -374,35 +443,22 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
     </div>
   );
 
-  if (autoDetecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <Phone className="w-8 h-8 text-white animate-pulse" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Detecting Mobile Number
-          </h1>
-          <p className="text-gray-600">
-            We're trying to automatically detect your mobile number...
-          </p>
-          <div className="flex items-center justify-center space-x-2">
-            <Loader className="w-4 h-4 animate-spin text-blue-500" />
-            <span className="text-sm text-gray-500">Please wait</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-8">
+        {step === 'detecting' && renderDetectingStep()}
         {step === 'mobile' && renderMobileStep()}
         {step === 'pin-login' && renderPinLoginStep()}
         {step === 'pin-create' && renderPinCreateStep()}
         {step === 'success' && renderSuccessStep()}
+        
+        <SIMSelectionModal
+          isOpen={step === 'sim-selection'}
+          onClose={() => setStep('mobile')}
+          sims={detectedSIMs}
+          onSelectSIM={handleSIMSelection}
+          primaryColor={primaryColor}
+        />
       </div>
     </div>
   );

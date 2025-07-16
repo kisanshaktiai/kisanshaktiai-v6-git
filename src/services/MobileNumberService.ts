@@ -2,6 +2,7 @@ import { supabase } from '../config/supabase';
 import { Device } from '@capacitor/device';
 import { secureStorage } from './storage/secureStorage';
 import { STORAGE_KEYS } from '../config/constants';
+import { SIMDetectionService } from './SIMDetectionService';
 
 interface UserData {
   fullName: string;
@@ -32,6 +33,14 @@ interface AuthenticationResult {
   token?: string;
 }
 
+interface SIMInfo {
+  slot: number;
+  phoneNumber: string;
+  carrierName: string;
+  countryCode: string;
+  isDefault?: boolean;
+}
+
 export class MobileNumberService {
   private static instance: MobileNumberService;
 
@@ -46,18 +55,23 @@ export class MobileNumberService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  // Mobile number detection and formatting methods
+  // Enhanced mobile number detection with SIM support
   async getMobileNumber(): Promise<string | null> {
     try {
       // Try to get from cache first
       const cachedNumber = await secureStorage.get(STORAGE_KEYS.MOBILE_NUMBER);
       if (cachedNumber) {
-        console.log('Using cached mobile number');
+        console.log('Using cached mobile number:', cachedNumber);
         return cachedNumber;
       }
       
-      // In a real app, this would use device APIs to detect the mobile number
-      // For now, return null so user has to enter manually
+      // Try to detect from SIM cards
+      const defaultSIM = await SIMDetectionService.getInstance().getDefaultSIM();
+      if (defaultSIM) {
+        console.log('Detected mobile number from default SIM:', defaultSIM.phoneNumber);
+        return defaultSIM.phoneNumber;
+      }
+      
       return null;
     } catch (error) {
       console.error('Error getting mobile number:', error);
@@ -65,26 +79,21 @@ export class MobileNumberService {
     }
   }
 
-  formatMobileNumber(number: string): string {
-    // Remove all non-digit characters
-    const cleaned = number.replace(/\D/g, '');
-    
-    // If it starts with country code, use as is, otherwise add +91
-    if (cleaned.length === 10) {
-      return `+91${cleaned}`;
-    } else if (cleaned.length === 12 && cleaned.startsWith('91')) {
-      return `+${cleaned}`;
-    } else if (cleaned.length === 13 && cleaned.startsWith('+91')) {
-      return cleaned;
+  async detectSIMCards(): Promise<SIMInfo[]> {
+    try {
+      return await SIMDetectionService.getInstance().detectSIMCards();
+    } catch (error) {
+      console.error('Error detecting SIM cards:', error);
+      return [];
     }
-    
-    return `+91${cleaned.slice(-10)}`; // Take last 10 digits and add +91
+  }
+
+  formatMobileNumber(number: string): string {
+    return SIMDetectionService.getInstance().formatPhoneNumber(number);
   }
 
   validateMobileNumber(number: string): boolean {
-    const cleaned = number.replace(/\D/g, '');
-    // Indian mobile numbers: 10 digits starting with 6,7,8,9
-    return /^[6-9]\d{9}$/.test(cleaned.slice(-10));
+    return SIMDetectionService.getInstance().validatePhoneNumber(number);
   }
 
   async isRegisteredUser(mobileNumber: string): Promise<boolean> {
