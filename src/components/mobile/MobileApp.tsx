@@ -7,6 +7,7 @@ import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
+import { ProfileCompletionGuard } from '../common/ProfileCompletionGuard';
 import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
@@ -28,23 +29,21 @@ export const MobileApp: React.FC = () => {
   useEffect(() => {
     // Initialize mobile services
     const initializeApp = async () => {
-      if (!appInitialized) {
-        try {
-          // Initialize services in parallel for better performance
-          await Promise.allSettled([
-            LanguageService.getInstance().initialize(),
-            SyncService.getInstance().initialize()
-          ]);
-          setAppInitialized(true);
-        } catch (error) {
-          console.error('Failed to initialize services:', error);
-          setAppInitialized(true); // Continue anyway
-        }
+      try {
+        // Initialize services in parallel for better performance
+        await Promise.allSettled([
+          LanguageService.getInstance().initialize(),
+          SyncService.getInstance().initialize()
+        ]);
+        setAppInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize services:', error);
+        setAppInitialized(true); // Continue anyway
       }
     };
 
     initializeApp();
-  }, [appInitialized]);
+  }, []);
 
   // Show loading while auth is being determined or app is initializing
   if (authLoading || !appInitialized) {
@@ -63,19 +62,21 @@ export const MobileApp: React.FC = () => {
     return <OnboardingFlow />;
   }
 
-  // User is authenticated and onboarded, show main app
+  // User is authenticated and onboarded, show main app with profile completion guard
   return (
-    <MobileLayout>
-      <Routes>
-        <Route path="/" element={<DashboardHome />} />
-        <Route path="/my-lands" element={<MyLands />} />
-        <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/crop-schedule" element={<CropSchedule />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<DashboardHome />} />
-      </Routes>
-    </MobileLayout>
+    <ProfileCompletionGuard>
+      <MobileLayout>
+        <Routes>
+          <Route path="/" element={<DashboardHome />} />
+          <Route path="/my-lands" element={<MyLands />} />
+          <Route path="/ai-chat" element={<AiChat />} />
+          <Route path="/crop-schedule" element={<CropSchedule />} />
+          <Route path="/market" element={<Market />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<DashboardHome />} />
+        </Routes>
+      </MobileLayout>
+    </ProfileCompletionGuard>
   );
 };

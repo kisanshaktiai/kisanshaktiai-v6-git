@@ -9,7 +9,7 @@ import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
 import { PinAuthScreen } from '../auth/PinAuthScreen';
 
-type OnboardingStep = 'splash' | 'language' | 'auth' | 'complete';
+type OnboardingStep = 'splash' | 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
@@ -23,13 +23,12 @@ export const OnboardingFlow: React.FC = () => {
   // Use the most reliable source of authentication state
   const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
+  // If user is already authenticated and onboarded, this component should not be rendered
   useEffect(() => {
-    // If user is already authenticated and onboarded, skip the flow
-    if (isAuthenticated && onboardingCompleted && isInitialized) {
-      console.log('User is already authenticated and onboarded');
-      return;
+    if (isAuthenticated && onboardingCompleted) {
+      console.log('User is already authenticated and onboarded, OnboardingFlow should not be shown');
     }
-  }, [isAuthenticated, onboardingCompleted, isInitialized]);
+  }, [isAuthenticated, onboardingCompleted]);
 
   const handleSplashComplete = () => {
     setIsInitialized(true);
@@ -49,7 +48,6 @@ export const OnboardingFlow: React.FC = () => {
 
   const handleAuthComplete = () => {
     dispatch(setOnboardingCompleted());
-    setCurrentStep('complete');
   };
 
   // Show splash screen first
@@ -79,23 +77,11 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Authentication step
-  if (currentStep === 'auth' && !isAuthenticated) {
+  // Authentication step - only show if not authenticated
+  if (currentStep === 'auth') {
     return <PinAuthScreen onComplete={handleAuthComplete} />;
   }
 
-  // If user is authenticated and onboarded, this component should not be rendered
-  if (isAuthenticated && onboardingCompleted) {
-    return null;
-  }
-
-  // Fallback loading state
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-      <div className="text-center">
-        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">{t('common.loading')}</p>
-      </div>
-    </div>
-  );
+  // Fallback - should not reach here
+  return null;
 };
