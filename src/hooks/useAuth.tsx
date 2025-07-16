@@ -4,12 +4,10 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
 import { secureStorage } from '../services/storage/secureStorage';
 import { STORAGE_KEYS } from '../config/constants';
+import type { Database } from '../integrations/supabase/types';
 
-interface Farmer {
-  id: string;
-  phone: string;
-  // Add other farmer properties as needed
-}
+type Farmer = Database['public']['Tables']['farmers']['Row'];
+type UserTenant = Database['public']['Tables']['user_tenants']['Row'];
 
 interface Association {
   id: string;
