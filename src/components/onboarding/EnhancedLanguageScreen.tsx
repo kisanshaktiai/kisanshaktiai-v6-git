@@ -210,8 +210,7 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({
                   }`}
                   style={selectedLanguage === language.code ? {
                     backgroundColor: primaryColor,
-                    borderColor: primaryColor,
-                    ringColor: `${primaryColor}40`
+                    borderColor: primaryColor
                   } : {}}
                 >
                   <div className="flex items-center space-x-3">
@@ -249,8 +248,7 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({
                   }`}
                   style={selectedLanguage === language.code ? {
                     backgroundColor: primaryColor,
-                    borderColor: primaryColor,
-                    ringColor: `${primaryColor}40`
+                    borderColor: primaryColor
                   } : {}}
                 >
                   <div className="flex items-center space-x-3">
