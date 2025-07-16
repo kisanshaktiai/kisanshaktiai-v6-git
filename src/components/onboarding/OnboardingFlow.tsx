@@ -7,10 +7,9 @@ import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
-import { MobileAuthScreen } from '../auth/MobileAuthScreen';
-import { ProfileRegistrationScreen } from './ProfileRegistrationScreen';
+import { PinAuthScreen } from '../auth/PinAuthScreen';
 
-type OnboardingStep = 'splash' | 'language' | 'auth' | 'profile' | 'complete';
+type OnboardingStep = 'splash' | 'language' | 'auth' | 'complete';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
@@ -49,18 +48,8 @@ export const OnboardingFlow: React.FC = () => {
   };
 
   const handleAuthComplete = () => {
-    // After authentication, check if user needs profile setup
-    // For now, always go to profile setup for new users
-    setCurrentStep('profile');
-  };
-
-  const handleProfileComplete = () => {
     dispatch(setOnboardingCompleted());
     setCurrentStep('complete');
-  };
-
-  const completeOnboarding = () => {
-    dispatch(setOnboardingCompleted());
   };
 
   // Show splash screen first
@@ -92,20 +81,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Authentication step
   if (currentStep === 'auth' && !isAuthenticated) {
-    return <MobileAuthScreen onComplete={handleAuthComplete} />;
-  }
-
-  // Profile registration step
-  if (currentStep === 'profile' && isAuthenticated) {
-    return (
-      <ProfileRegistrationScreen 
-        onNext={() => {}} 
-        onPrev={() => {}}
-        isFirstStep={false}
-        isLastStep={true}
-        onComplete={handleProfileComplete}
-      />
-    );
+    return <PinAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // If user is authenticated and onboarded, this component should not be rendered
