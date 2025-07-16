@@ -35,7 +35,7 @@ export const useAI = () => {
           state: 'Unknown',
         },
         farmingProfile: {
-          crops: farmer.primary_crops || [],
+          crops: Array.isArray(farmer.primary_crops) ? farmer.primary_crops : [],
           landArea: farmer.total_land_acres || 0,
           experience: farmer.farming_experience_years || 0,
         },

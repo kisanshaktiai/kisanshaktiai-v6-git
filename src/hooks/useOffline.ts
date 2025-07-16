@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { Network, PluginListenerHandle } from '@capacitor/network';
+import { Network } from '@capacitor/network';
+import { PluginListenerHandle } from '@capacitor/core';
 import { syncService } from '../services/offline/syncService';
 
 export const useOffline = () => {
