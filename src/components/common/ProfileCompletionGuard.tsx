@@ -36,9 +36,9 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
         .from('user_profiles')
         .select('full_name, village, district, state, date_of_birth, metadata')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking profile:', error);
         setProfileCompleted(false);
         setShowProfileForm(true);
@@ -84,23 +84,33 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
     setLoading(true);
 
     try {
-      // Get current user to get phone number
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('No authenticated user found');
+      // Verify we have an authenticated session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        console.error('No authenticated session found:', sessionError);
+        throw new Error('Please log in again to continue');
       }
 
-      const phone = user.user_metadata?.phone || user.email?.split('@')[0];
+      const currentUserId = session.user.id;
+      console.log('Current user ID:', currentUserId);
 
-      // First, try to get existing profile
+      // Get phone number from user metadata or auth user
+      const phone = session.user.user_metadata?.phone || 
+                   session.user.email?.split('@')[0] || 
+                   session.user.phone || '';
+
+      console.log('Phone number:', phone);
+
+      // Check if profile already exists
       const { data: existingProfile } = await supabase
         .from('user_profiles')
         .select('id')
-        .eq('id', userId)
-        .single();
+        .eq('id', currentUserId)
+        .maybeSingle();
 
       const profileData = {
-        id: userId,
+        id: currentUserId,
         phone: phone,
         full_name: formData.fullName,
         village: formData.village,
@@ -119,7 +129,7 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update(profileData)
-          .eq('id', userId);
+          .eq('id', currentUserId);
         error = updateError;
       } else {
         // Create new profile
@@ -138,11 +148,11 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
       const { data: existingFarmer } = await supabase
         .from('farmers')
         .select('id')
-        .eq('id', userId)
-        .single();
+        .eq('id', currentUserId)
+        .maybeSingle();
 
       const farmerData = {
-        id: userId,
+        id: currentUserId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -163,7 +173,11 @@ export const ProfileCompletionGuard: React.FC<ProfileCompletionGuardProps> = ({ 
     } catch (error) {
       console.error('Error updating profile:', error);
       // Show more specific error message
-      alert('Failed to save profile. Please try again.');
+      if (error instanceof Error) {
+        alert(`Failed to save profile: ${error.message}`);
+      } else {
+        alert('Failed to save profile. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
