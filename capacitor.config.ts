@@ -18,7 +18,22 @@ const config: CapacitorConfig = {
     },
     Geolocation: {
       permissions: ['location']
+    },
+    CapacitorSim: {
+      permissions: ['telephony']
     }
+  },
+  android: {
+    permissions: [
+      'android.permission.READ_PHONE_STATE',
+      'android.permission.READ_PHONE_NUMBERS',
+      'android.permission.ACCESS_NETWORK_STATE'
+    ]
+  },
+  ios: {
+    permissions: [
+      'NSContactsUsageDescription'
+    ]
   }
 };
 

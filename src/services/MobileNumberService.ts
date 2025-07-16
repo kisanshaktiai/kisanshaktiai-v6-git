@@ -54,10 +54,15 @@ export class MobileNumberService {
     return `farmer.${phoneNumber}@kisanshakti.com`;
   }
 
-  // Enhanced mobile number detection with SIM support
+  // Enhanced mobile number detection with real SIM support
   async detectMobileNumbers(): Promise<SIMInfo[]> {
     try {
       console.log('Detecting SIMs...');
+      
+      // Check platform capabilities
+      const platformInfo = await this.simDetectionService.getPlatformInfo();
+      console.log('Platform info:', platformInfo);
+      
       const sims = await this.simDetectionService.detectSIMs();
       console.log('Detected SIMs:', sims);
       
@@ -72,6 +77,7 @@ export class MobileNumberService {
       }));
     } catch (error) {
       console.error('Error detecting mobile numbers:', error);
+      // Return empty array on error - UI will handle manual entry
       return [];
     }
   }
@@ -81,12 +87,24 @@ export class MobileNumberService {
     return this.detectMobileNumbers();
   }
 
+  // Enhanced method to get stored or detected mobile number
   async getMobileNumber(): Promise<string | null> {
     try {
+      // First try to get from storage
       const storedNumber = await secureStorage.get(STORAGE_KEYS.MOBILE_NUMBER);
-      return storedNumber;
+      if (storedNumber) {
+        return storedNumber;
+      }
+
+      // If not stored, try to detect from SIM
+      const primarySIM = await this.simDetectionService.getPrimarySIM();
+      if (primarySIM && primarySIM.phoneNumber) {
+        return primarySIM.phoneNumber;
+      }
+
+      return null;
     } catch (error) {
-      console.error('Error getting stored mobile number:', error);
+      console.error('Error getting mobile number:', error);
       return null;
     }
   }
