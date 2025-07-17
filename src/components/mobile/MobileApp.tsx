@@ -7,7 +7,7 @@ import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
-import { ProfileCompletionGuard } from '../common/ProfileCompletionGuard';
+
 import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
@@ -62,21 +62,19 @@ export const MobileApp: React.FC = () => {
     return <OnboardingFlow />;
   }
 
-  // User is authenticated and onboarded, show main app with profile completion guard
+  // User is authenticated and onboarded, show main app
   return (
-    <ProfileCompletionGuard>
-      <MobileLayout>
-        <Routes>
-          <Route path="/" element={<DashboardHome />} />
-          <Route path="/my-lands" element={<MyLands />} />
-          <Route path="/ai-chat" element={<AiChat />} />
-          <Route path="/crop-schedule" element={<CropSchedule />} />
-          <Route path="/market" element={<Market />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<DashboardHome />} />
-        </Routes>
-      </MobileLayout>
-    </ProfileCompletionGuard>
+    <MobileLayout>
+      <Routes>
+        <Route path="/" element={<DashboardHome />} />
+        <Route path="/my-lands" element={<MyLands />} />
+        <Route path="/ai-chat" element={<AiChat />} />
+        <Route path="/crop-schedule" element={<CropSchedule />} />
+        <Route path="/market" element={<Market />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<DashboardHome />} />
+      </Routes>
+    </MobileLayout>
   );
 };

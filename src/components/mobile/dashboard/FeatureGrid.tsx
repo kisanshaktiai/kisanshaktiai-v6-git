@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { ProfileCompletionModal } from '@/components/common/ProfileCompletionModal';
 import { 
   MapPin, 
   Calendar, 
@@ -16,7 +18,8 @@ import {
   Users, 
   Satellite,
   FileText,
-  Shield
+  Shield,
+  Lock
 } from 'lucide-react';
 
 interface FeatureModule {
@@ -30,12 +33,16 @@ interface FeatureModule {
   isNew?: boolean;
   isComingSoon?: boolean;
   tenantFeature?: string;
+  requiresProfile?: boolean;
 }
 
 export const FeatureGrid: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { tenantFeatures } = useSelector((state: RootState) => state.tenant);
+  const { isProfileComplete, refreshProfileStatus } = useProfileCompletion();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<string>('');
 
   const features: FeatureModule[] = [
     {
@@ -45,7 +52,8 @@ export const FeatureGrid: React.FC = () => {
       description: t('features.myLandsDesc', 'Manage your fields'),
       route: '/my-lands',
       color: 'text-emerald-600',
-      bgColor: 'bg-emerald-500'
+      bgColor: 'bg-emerald-500',
+      requiresProfile: true
     },
     {
       id: 'crop-schedule',
@@ -54,7 +62,8 @@ export const FeatureGrid: React.FC = () => {
       description: t('features.cropScheduleDesc', 'AI-powered schedule'),
       route: '/crop-schedule',
       color: 'text-green-600',
-      bgColor: 'bg-green-500'
+      bgColor: 'bg-green-500',
+      requiresProfile: true
     },
     {
       id: 'ai-chat',
@@ -64,7 +73,8 @@ export const FeatureGrid: React.FC = () => {
       route: '/ai-chat',
       color: 'text-blue-600',
       bgColor: 'bg-blue-500',
-      tenantFeature: 'ai_chat'
+      tenantFeature: 'ai_chat',
+      requiresProfile: true
     },
     {
       id: 'weather',
@@ -84,7 +94,8 @@ export const FeatureGrid: React.FC = () => {
       route: '/marketplace',
       color: 'text-orange-600',
       bgColor: 'bg-orange-500',
-      tenantFeature: 'marketplace'
+      tenantFeature: 'marketplace',
+      requiresProfile: true
     },
     {
       id: 'analytics',
@@ -94,7 +105,8 @@ export const FeatureGrid: React.FC = () => {
       route: '/analytics',
       color: 'text-purple-600',
       bgColor: 'bg-purple-500',
-      tenantFeature: 'basic_analytics'
+      tenantFeature: 'basic_analytics',
+      requiresProfile: true
     },
     {
       id: 'community',
@@ -115,7 +127,8 @@ export const FeatureGrid: React.FC = () => {
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-500',
       tenantFeature: 'satellite_imagery',
-      isNew: true
+      isNew: true,
+      requiresProfile: true
     },
     {
       id: 'reports',
@@ -124,7 +137,8 @@ export const FeatureGrid: React.FC = () => {
       description: t('features.reportsDesc', 'Yield logs & documents'),
       route: '/reports',
       color: 'text-gray-600',
-      bgColor: 'bg-gray-500'
+      bgColor: 'bg-gray-500',
+      requiresProfile: true
     },
     {
       id: 'schemes',
@@ -147,7 +161,23 @@ export const FeatureGrid: React.FC = () => {
 
   const handleFeatureClick = (feature: FeatureModule) => {
     if (feature.isComingSoon) return;
+    
+    // Check if feature requires profile completion
+    if (feature.requiresProfile && !isProfileComplete) {
+      setSelectedFeature(feature.title);
+      setShowProfileModal(true);
+      return;
+    }
+    
     navigate(feature.route);
+  };
+
+  const handleProfileComplete = () => {
+    refreshProfileStatus();
+  };
+
+  const isFeatureLocked = (feature: FeatureModule): boolean => {
+    return feature.requiresProfile && !isProfileComplete;
   };
 
   return (
@@ -159,12 +189,14 @@ export const FeatureGrid: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         {availableFeatures.map((feature) => {
           const Icon = feature.icon;
+          const isLocked = isFeatureLocked(feature);
+          
           return (
             <Card 
               key={feature.id}
               className={`cursor-pointer transition-all duration-200 hover:shadow-md active:scale-95 ${
                 feature.isComingSoon ? 'opacity-60' : ''
-              }`}
+              } ${isLocked ? 'opacity-75' : ''}`}
               onClick={() => handleFeatureClick(feature)}
             >
               <CardContent className="p-4 text-center relative">
@@ -174,7 +206,15 @@ export const FeatureGrid: React.FC = () => {
                   </Badge>
                 )}
                 
-                <div className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center mb-3 mx-auto`}>
+                {isLocked && (
+                  <div className="absolute top-2 left-2">
+                    <Lock className="w-4 h-4 text-orange-500" />
+                  </div>
+                )}
+                
+                <div className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center mb-3 mx-auto ${
+                  isLocked ? 'opacity-70' : ''
+                }`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
                 
@@ -182,7 +222,7 @@ export const FeatureGrid: React.FC = () => {
                   {feature.title}
                 </h3>
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  {feature.description}
+                  {isLocked ? 'Complete profile to unlock' : feature.description}
                 </p>
                 
                 {feature.isComingSoon && (
@@ -195,6 +235,13 @@ export const FeatureGrid: React.FC = () => {
           );
         })}
       </div>
+
+      <ProfileCompletionModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onComplete={handleProfileComplete}
+        featureName={selectedFeature}
+      />
     </div>
   );
 };
