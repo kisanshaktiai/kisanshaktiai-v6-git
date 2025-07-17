@@ -1,4 +1,5 @@
 
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -202,18 +203,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('=== GENERATING SESSION ===');
+    console.log('=== GENERATING SESSION TOKENS ===');
 
-    // Generate session for the user
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: authUser.email!,
-      options: {
-        redirectTo: `${req.headers.get('origin') || 'https://kisanshakti.app'}/`
-      }
+    // Create a proper session for the user
+    const { data: { session }, error: sessionError } = await supabase.auth.admin.createSession({
+      userId: authUser.id
     });
 
-    if (sessionError) {
+    if (sessionError || !session) {
       console.error('Session generation error:', sessionError);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to generate session' }),
@@ -224,13 +221,13 @@ serve(async (req) => {
       );
     }
 
-    // Create session tokens
+    // Create session response with actual tokens
     const sessionResponse = {
-      access_token: sessionData.properties?.access_token,
-      refresh_token: sessionData.properties?.refresh_token,
-      expires_at: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_at: session.expires_at,
       token_type: 'bearer',
-      user: authUser
+      user: session.user
     };
 
     console.log('Session generated successfully for user:', authUser.id);
@@ -265,3 +262,4 @@ serve(async (req) => {
     );
   }
 });
+
