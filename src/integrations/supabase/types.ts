@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_reports: {
+        Row: {
+          end_date: string
+          farmer_id: string
+          file_url: string | null
+          generated_at: string
+          id: string
+          metadata: Json | null
+          report_data: Json
+          report_period: string
+          report_type: string
+          start_date: string
+          status: string | null
+          tenant_id: string
+        }
+        Insert: {
+          end_date: string
+          farmer_id: string
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          metadata?: Json | null
+          report_data: Json
+          report_period: string
+          report_type: string
+          start_date: string
+          status?: string | null
+          tenant_id: string
+        }
+        Update: {
+          end_date?: string
+          farmer_id?: string
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          metadata?: Json | null
+          report_data?: Json
+          report_period?: string
+          report_type?: string
+          start_date?: string
+          status?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       crop_history: {
         Row: {
           created_at: string
@@ -170,6 +215,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          crop_name: string | null
+          currency: string
+          description: string | null
+          farmer_id: string
+          id: string
+          land_id: string | null
+          metadata: Json | null
+          payment_method: string | null
+          receipt_url: string | null
+          season: string | null
+          tenant_id: string
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          crop_name?: string | null
+          currency?: string
+          description?: string | null
+          farmer_id: string
+          id?: string
+          land_id?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          season?: string | null
+          tenant_id: string
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          crop_name?: string | null
+          currency?: string
+          description?: string | null
+          farmer_id?: string
+          id?: string
+          land_id?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          season?: string | null
+          tenant_id?: string
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       land_activities: {
         Row: {
@@ -329,6 +434,57 @@ export type Database = {
           updated_at?: string
           village?: string | null
           water_source?: string | null
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          created_at: string
+          crop_name: string
+          district: string | null
+          id: string
+          market_location: string
+          metadata: Json | null
+          price_date: string
+          price_per_unit: number
+          price_type: string | null
+          quality_grade: string | null
+          source: string | null
+          state: string | null
+          unit: string
+          variety: string | null
+        }
+        Insert: {
+          created_at?: string
+          crop_name: string
+          district?: string | null
+          id?: string
+          market_location: string
+          metadata?: Json | null
+          price_date: string
+          price_per_unit: number
+          price_type?: string | null
+          quality_grade?: string | null
+          source?: string | null
+          state?: string | null
+          unit?: string
+          variety?: string | null
+        }
+        Update: {
+          created_at?: string
+          crop_name?: string
+          district?: string | null
+          id?: string
+          market_location?: string
+          metadata?: Json | null
+          price_date?: string
+          price_per_unit?: number
+          price_type?: string | null
+          quality_grade?: string | null
+          source?: string | null
+          state?: string | null
+          unit?: string
+          variety?: string | null
         }
         Relationships: []
       }
@@ -746,6 +902,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      resource_usage: {
+        Row: {
+          application_method: string | null
+          cost_per_unit: number | null
+          created_at: string
+          effectiveness_rating: number | null
+          farmer_id: string
+          id: string
+          land_id: string
+          notes: string | null
+          quantity: number
+          resource_name: string
+          resource_type: string
+          total_cost: number | null
+          unit: string
+          updated_at: string
+          usage_date: string
+          weather_conditions: Json | null
+        }
+        Insert: {
+          application_method?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          effectiveness_rating?: number | null
+          farmer_id: string
+          id?: string
+          land_id: string
+          notes?: string | null
+          quantity: number
+          resource_name: string
+          resource_type: string
+          total_cost?: number | null
+          unit: string
+          updated_at?: string
+          usage_date: string
+          weather_conditions?: Json | null
+        }
+        Update: {
+          application_method?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          effectiveness_rating?: number | null
+          farmer_id?: string
+          id?: string
+          land_id?: string
+          notes?: string | null
+          quantity?: number
+          resource_name?: string
+          resource_type?: string
+          total_cost?: number | null
+          unit?: string
+          updated_at?: string
+          usage_date?: string
+          weather_conditions?: Json | null
+        }
+        Relationships: []
       }
       soil_health: {
         Row: {
@@ -1297,6 +1510,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      yield_predictions: {
+        Row: {
+          actual_yield_per_acre: number | null
+          confidence_score: number | null
+          created_at: string
+          crop_name: string
+          factors_considered: Json | null
+          farmer_id: string
+          harvest_date_estimate: string | null
+          id: string
+          land_id: string
+          model_version: string | null
+          predicted_yield_per_acre: number
+          prediction_accuracy: number | null
+          prediction_date: string
+          updated_at: string
+          variety: string | null
+        }
+        Insert: {
+          actual_yield_per_acre?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          crop_name: string
+          factors_considered?: Json | null
+          farmer_id: string
+          harvest_date_estimate?: string | null
+          id?: string
+          land_id: string
+          model_version?: string | null
+          predicted_yield_per_acre: number
+          prediction_accuracy?: number | null
+          prediction_date: string
+          updated_at?: string
+          variety?: string | null
+        }
+        Update: {
+          actual_yield_per_acre?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          crop_name?: string
+          factors_considered?: Json | null
+          farmer_id?: string
+          harvest_date_estimate?: string | null
+          id?: string
+          land_id?: string
+          model_version?: string | null
+          predicted_yield_per_acre?: number
+          prediction_accuracy?: number | null
+          prediction_date?: string
+          updated_at?: string
+          variety?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
