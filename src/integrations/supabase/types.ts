@@ -72,6 +72,7 @@ export type Database = {
       }
       farmers: {
         Row: {
+          aadhaar_number: string | null
           annual_income_range: string | null
           app_install_date: string | null
           associated_tenants: string[] | null
@@ -90,6 +91,7 @@ export type Database = {
           loan_amount: number | null
           preferred_dealer_id: string | null
           primary_crops: string[] | null
+          shc_id: string | null
           total_app_opens: number | null
           total_land_acres: number | null
           total_queries: number | null
@@ -99,6 +101,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
           annual_income_range?: string | null
           app_install_date?: string | null
           associated_tenants?: string[] | null
@@ -117,6 +120,7 @@ export type Database = {
           loan_amount?: number | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
+          shc_id?: string | null
           total_app_opens?: number | null
           total_land_acres?: number | null
           total_queries?: number | null
@@ -126,6 +130,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
           annual_income_range?: string | null
           app_install_date?: string | null
           associated_tenants?: string[] | null
@@ -144,6 +149,7 @@ export type Database = {
           loan_amount?: number | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
+          shc_id?: string | null
           total_app_opens?: number | null
           total_land_acres?: number | null
           total_queries?: number | null
@@ -703,6 +709,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          aadhaar_number: string | null
           address_line1: string | null
           address_line2: string | null
           avatar_url: string | null
@@ -715,6 +722,7 @@ export type Database = {
           display_name: string | null
           district: string | null
           expertise_areas: string[] | null
+          farmer_id: string | null
           full_name: string | null
           gender: string | null
           id: string
@@ -727,12 +735,14 @@ export type Database = {
           preferred_language:
             | Database["public"]["Enums"]["language_code"]
             | null
+          shc_id: string | null
           state: string | null
           taluka: string | null
           updated_at: string | null
           village: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
@@ -745,6 +755,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           expertise_areas?: string[] | null
+          farmer_id?: string | null
           full_name?: string | null
           gender?: string | null
           id: string
@@ -757,12 +768,14 @@ export type Database = {
           preferred_language?:
             | Database["public"]["Enums"]["language_code"]
             | null
+          shc_id?: string | null
           state?: string | null
           taluka?: string | null
           updated_at?: string | null
           village?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
@@ -775,6 +788,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           expertise_areas?: string[] | null
+          farmer_id?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
@@ -787,6 +801,7 @@ export type Database = {
           preferred_language?:
             | Database["public"]["Enums"]["language_code"]
             | null
+          shc_id?: string | null
           state?: string | null
           taluka?: string | null
           updated_at?: string | null

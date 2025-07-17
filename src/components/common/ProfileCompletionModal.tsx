@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import { User, MapPin, IdCard, Tractor, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, MapPin, IdCard, Tractor, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 
 interface ProfileCompletionModalProps {
   isOpen: boolean;
@@ -46,6 +46,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     village: '',
@@ -140,7 +141,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       case 2:
         return !!(formData.village && formData.district && formData.state);
       case 3:
-        return !!(formData.aadhaarNumber && formData.farmerId);
+        return true; // No mandatory fields in step 3, all optional
       default:
         return false;
     }
@@ -196,16 +197,16 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         phone: phone,
         full_name: formData.fullName,
         village: formData.village,
+        taluka: formData.tahsil,
         district: formData.district,
         state: formData.state,
         date_of_birth: formData.dateOfBirth,
+        aadhaar_number: formData.aadhaarNumber || null,
+        farmer_id: formData.farmerId || null,
+        shc_id: formData.shcId || null,
         metadata: {
           profile_completed: true,
-          completion_date: new Date().toISOString(),
-          tahsil: formData.tahsil,
-          aadhaar_number: formData.aadhaarNumber,
-          farmer_id: formData.farmerId,
-          shc_id: formData.shcId || null
+          completion_date: new Date().toISOString()
         }
       };
 
@@ -237,7 +238,9 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
       const farmerData = {
         id: currentUserId,
-        farmer_code: formData.farmerId,
+        farmer_code: formData.farmerId || null,
+        aadhaar_number: formData.aadhaarNumber || null,
+        shc_id: formData.shcId || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -253,13 +256,20 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           .insert([farmerData]);
       }
 
+      // Show success animation
+      setShowSuccess(true);
+      
       toast({
         title: "Profile Completed!",
         description: "Your profile has been successfully saved.",
       });
 
-      onComplete();
-      onClose();
+      // Auto close after animation
+      setTimeout(() => {
+        onComplete();
+        onClose();
+        setShowSuccess(false);
+      }, 2000);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -395,7 +405,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="aadhaarNumber" className="text-xs font-medium">Aadhaar Number *</Label>
+                <Label htmlFor="aadhaarNumber" className="text-xs font-medium">Aadhaar Number (Optional)</Label>
                 <Input
                   id="aadhaarNumber"
                   type="text"
@@ -408,7 +418,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="farmerId" className="text-xs font-medium">Farmer ID *</Label>
+                <Label htmlFor="farmerId" className="text-xs font-medium">Farmer ID (Optional)</Label>
                 <Input
                   id="farmerId"
                   type="text"
@@ -481,57 +491,74 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          <form onSubmit={handleSubmit} className="h-full flex flex-col">
-            <div className="flex-1">
-              {renderStepContent()}
+          {showSuccess ? (
+            // Success Animation
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+              <div className="relative">
+                <CheckCircle className="w-16 h-16 text-green-500 animate-bounce" />
+                <div className="absolute inset-0 w-16 h-16 bg-green-500/20 rounded-full animate-ping"></div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-foreground">Profile Completed!</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your profile has been successfully saved.<br />
+                  Redirecting to dashboard...
+                </p>
+              </div>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="h-full flex flex-col">
+              <div className="flex-1">
+                {renderStepContent()}
+              </div>
 
-            {/* Navigation */}
-            <div className="flex gap-2 mt-4 pt-3 border-t border-border shrink-0">
-              {currentStep > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="flex-1 h-10 text-sm"
-                >
-                  <ChevronLeft className="w-3 h-3 mr-1" />
-                  Previous
-                </Button>
-              )}
-              
-              {currentStep === 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Skip for now
-                </Button>
-              )}
+              {/* Navigation */}
+              <div className="flex gap-2 mt-4 pt-3 border-t border-border shrink-0">
+                {currentStep > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    className="flex-1 h-10 text-sm"
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" />
+                    Previous
+                  </Button>
+                )}
+                
+                {currentStep === 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1 h-10 text-sm"
+                  >
+                    Skip for now
+                  </Button>
+                )}
 
-              {currentStep < steps.length ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={!validateStep(currentStep)}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Next
-                  <ChevronRight className="w-3 h-3 ml-1" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={loading || !validateStep(currentStep)}
-                  className="flex-1 h-10 text-sm"
-                >
-                  {loading ? 'Saving...' : 'Complete Profile'}
-                </Button>
-              )}
-            </div>
-          </form>
+                {currentStep < steps.length ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!validateStep(currentStep)}
+                    className="flex-1 h-10 text-sm"
+                  >
+                    Next
+                    <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={loading || !validateStep(currentStep)}
+                    className="flex-1 h-10 text-sm"
+                  >
+                    {loading ? 'Saving...' : 'Complete Profile'}
+                  </Button>
+                )}
+              </div>
+            </form>
+          )}
         </div>
       </DialogContent>
     </Dialog>
