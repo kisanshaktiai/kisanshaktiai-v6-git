@@ -1511,6 +1511,530 @@ export type Database = {
           },
         ]
       }
+      weather_activity_recommendations: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          farmer_id: string
+          id: string
+          is_critical: boolean | null
+          land_id: string | null
+          optimal_conditions: string[] | null
+          precautions: string[] | null
+          recommended_date: string
+          recommended_time_end: string | null
+          recommended_time_start: string | null
+          status: string | null
+          suitability_score: number
+          title: string
+          updated_at: string
+          weather_conditions: Json | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          farmer_id: string
+          id?: string
+          is_critical?: boolean | null
+          land_id?: string | null
+          optimal_conditions?: string[] | null
+          precautions?: string[] | null
+          recommended_date: string
+          recommended_time_end?: string | null
+          recommended_time_start?: string | null
+          status?: string | null
+          suitability_score: number
+          title: string
+          updated_at?: string
+          weather_conditions?: Json | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          farmer_id?: string
+          id?: string
+          is_critical?: boolean | null
+          land_id?: string | null
+          optimal_conditions?: string[] | null
+          precautions?: string[] | null
+          recommended_date?: string
+          recommended_time_end?: string | null
+          recommended_time_start?: string | null
+          status?: string | null
+          suitability_score?: number
+          title?: string
+          updated_at?: string
+          weather_conditions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_activity_recommendations_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_alerts: {
+        Row: {
+          affected_activities: string[] | null
+          alert_id: string
+          area_name: string
+          certainty: string
+          created_at: string
+          crop_impact_level: string | null
+          data_source: string
+          description: string | null
+          end_time: string | null
+          event_type: string
+          id: string
+          instruction: string | null
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          recommendations: string[] | null
+          severity: string
+          start_time: string
+          title: string
+          urgency: string
+        }
+        Insert: {
+          affected_activities?: string[] | null
+          alert_id: string
+          area_name: string
+          certainty: string
+          created_at?: string
+          crop_impact_level?: string | null
+          data_source: string
+          description?: string | null
+          end_time?: string | null
+          event_type: string
+          id?: string
+          instruction?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          recommendations?: string[] | null
+          severity: string
+          start_time: string
+          title: string
+          urgency: string
+        }
+        Update: {
+          affected_activities?: string[] | null
+          alert_id?: string
+          area_name?: string
+          certainty?: string
+          created_at?: string
+          crop_impact_level?: string | null
+          data_source?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string
+          id?: string
+          instruction?: string | null
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          recommendations?: string[] | null
+          severity?: string
+          start_time?: string
+          title?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
+      weather_current: {
+        Row: {
+          cloud_cover_percent: number | null
+          created_at: string
+          data_source: string
+          evapotranspiration_mm: number | null
+          feels_like_celsius: number | null
+          growing_degree_days: number | null
+          humidity_percent: number | null
+          id: string
+          latitude: number
+          longitude: number
+          moon_phase: number | null
+          observation_time: string
+          pressure_hpa: number | null
+          rain_1h_mm: number | null
+          rain_24h_mm: number | null
+          snow_1h_mm: number | null
+          soil_moisture_percent: number | null
+          soil_temperature_celsius: number | null
+          station_id: string | null
+          sunrise: string | null
+          sunset: string | null
+          temperature_celsius: number | null
+          uv_index: number | null
+          visibility_km: number | null
+          weather_description: string | null
+          weather_icon: string | null
+          weather_main: string | null
+          wind_direction_degrees: number | null
+          wind_gust_kmh: number | null
+          wind_speed_kmh: number | null
+        }
+        Insert: {
+          cloud_cover_percent?: number | null
+          created_at?: string
+          data_source: string
+          evapotranspiration_mm?: number | null
+          feels_like_celsius?: number | null
+          growing_degree_days?: number | null
+          humidity_percent?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          moon_phase?: number | null
+          observation_time: string
+          pressure_hpa?: number | null
+          rain_1h_mm?: number | null
+          rain_24h_mm?: number | null
+          snow_1h_mm?: number | null
+          soil_moisture_percent?: number | null
+          soil_temperature_celsius?: number | null
+          station_id?: string | null
+          sunrise?: string | null
+          sunset?: string | null
+          temperature_celsius?: number | null
+          uv_index?: number | null
+          visibility_km?: number | null
+          weather_description?: string | null
+          weather_icon?: string | null
+          weather_main?: string | null
+          wind_direction_degrees?: number | null
+          wind_gust_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Update: {
+          cloud_cover_percent?: number | null
+          created_at?: string
+          data_source?: string
+          evapotranspiration_mm?: number | null
+          feels_like_celsius?: number | null
+          growing_degree_days?: number | null
+          humidity_percent?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          moon_phase?: number | null
+          observation_time?: string
+          pressure_hpa?: number | null
+          rain_1h_mm?: number | null
+          rain_24h_mm?: number | null
+          snow_1h_mm?: number | null
+          soil_moisture_percent?: number | null
+          soil_temperature_celsius?: number | null
+          station_id?: string | null
+          sunrise?: string | null
+          sunset?: string | null
+          temperature_celsius?: number | null
+          uv_index?: number | null
+          visibility_km?: number | null
+          weather_description?: string | null
+          weather_icon?: string | null
+          weather_main?: string | null
+          wind_direction_degrees?: number | null
+          wind_gust_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_current_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "weather_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_forecasts: {
+        Row: {
+          cloud_cover_percent: number | null
+          created_at: string
+          data_source: string
+          evapotranspiration_mm: number | null
+          feels_like_celsius: number | null
+          forecast_time: string
+          forecast_type: string
+          growing_degree_days: number | null
+          humidity_percent: number | null
+          id: string
+          latitude: number
+          longitude: number
+          pressure_hpa: number | null
+          rain_amount_mm: number | null
+          rain_probability_percent: number | null
+          snow_amount_mm: number | null
+          soil_temperature_celsius: number | null
+          station_id: string | null
+          temperature_celsius: number | null
+          temperature_max_celsius: number | null
+          temperature_min_celsius: number | null
+          uv_index: number | null
+          weather_description: string | null
+          weather_icon: string | null
+          weather_main: string | null
+          wind_direction_degrees: number | null
+          wind_gust_kmh: number | null
+          wind_speed_kmh: number | null
+        }
+        Insert: {
+          cloud_cover_percent?: number | null
+          created_at?: string
+          data_source: string
+          evapotranspiration_mm?: number | null
+          feels_like_celsius?: number | null
+          forecast_time: string
+          forecast_type: string
+          growing_degree_days?: number | null
+          humidity_percent?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          pressure_hpa?: number | null
+          rain_amount_mm?: number | null
+          rain_probability_percent?: number | null
+          snow_amount_mm?: number | null
+          soil_temperature_celsius?: number | null
+          station_id?: string | null
+          temperature_celsius?: number | null
+          temperature_max_celsius?: number | null
+          temperature_min_celsius?: number | null
+          uv_index?: number | null
+          weather_description?: string | null
+          weather_icon?: string | null
+          weather_main?: string | null
+          wind_direction_degrees?: number | null
+          wind_gust_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Update: {
+          cloud_cover_percent?: number | null
+          created_at?: string
+          data_source?: string
+          evapotranspiration_mm?: number | null
+          feels_like_celsius?: number | null
+          forecast_time?: string
+          forecast_type?: string
+          growing_degree_days?: number | null
+          humidity_percent?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          pressure_hpa?: number | null
+          rain_amount_mm?: number | null
+          rain_probability_percent?: number | null
+          snow_amount_mm?: number | null
+          soil_temperature_celsius?: number | null
+          station_id?: string | null
+          temperature_celsius?: number | null
+          temperature_max_celsius?: number | null
+          temperature_min_celsius?: number | null
+          uv_index?: number | null
+          weather_description?: string | null
+          weather_icon?: string | null
+          weather_main?: string | null
+          wind_direction_degrees?: number | null
+          wind_gust_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_forecasts_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "weather_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_historical: {
+        Row: {
+          created_at: string
+          data_source: string
+          evapotranspiration_mm: number | null
+          growing_degree_days: number | null
+          humidity_avg_percent: number | null
+          id: string
+          latitude: number
+          longitude: number
+          rainfall_mm: number | null
+          record_date: string
+          temperature_avg_celsius: number | null
+          temperature_max_celsius: number | null
+          temperature_min_celsius: number | null
+          wind_speed_avg_kmh: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_source: string
+          evapotranspiration_mm?: number | null
+          growing_degree_days?: number | null
+          humidity_avg_percent?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          rainfall_mm?: number | null
+          record_date: string
+          temperature_avg_celsius?: number | null
+          temperature_max_celsius?: number | null
+          temperature_min_celsius?: number | null
+          wind_speed_avg_kmh?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_source?: string
+          evapotranspiration_mm?: number | null
+          growing_degree_days?: number | null
+          humidity_avg_percent?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          rainfall_mm?: number | null
+          record_date?: string
+          temperature_avg_celsius?: number | null
+          temperature_max_celsius?: number | null
+          temperature_min_celsius?: number | null
+          wind_speed_avg_kmh?: number | null
+        }
+        Relationships: []
+      }
+      weather_preferences: {
+        Row: {
+          alert_language: string | null
+          created_at: string
+          enable_activity_recommendations: boolean | null
+          enable_push_notifications: boolean | null
+          enable_sms_alerts: boolean | null
+          enable_voice_alerts: boolean | null
+          farmer_id: string
+          humidity_high_alert_percent: number | null
+          humidity_low_alert_percent: number | null
+          id: string
+          latitude: number
+          longitude: number
+          max_rain_probability_spray_percent: number | null
+          max_temperature_spray_celsius: number | null
+          max_wind_speed_spray_kmh: number | null
+          min_temperature_spray_celsius: number | null
+          preferred_station_id: string | null
+          preferred_work_end_time: string | null
+          preferred_work_start_time: string | null
+          rain_probability_alert_percent: number | null
+          temperature_max_alert: number | null
+          temperature_min_alert: number | null
+          updated_at: string
+          wind_speed_alert_kmh: number | null
+        }
+        Insert: {
+          alert_language?: string | null
+          created_at?: string
+          enable_activity_recommendations?: boolean | null
+          enable_push_notifications?: boolean | null
+          enable_sms_alerts?: boolean | null
+          enable_voice_alerts?: boolean | null
+          farmer_id: string
+          humidity_high_alert_percent?: number | null
+          humidity_low_alert_percent?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          max_rain_probability_spray_percent?: number | null
+          max_temperature_spray_celsius?: number | null
+          max_wind_speed_spray_kmh?: number | null
+          min_temperature_spray_celsius?: number | null
+          preferred_station_id?: string | null
+          preferred_work_end_time?: string | null
+          preferred_work_start_time?: string | null
+          rain_probability_alert_percent?: number | null
+          temperature_max_alert?: number | null
+          temperature_min_alert?: number | null
+          updated_at?: string
+          wind_speed_alert_kmh?: number | null
+        }
+        Update: {
+          alert_language?: string | null
+          created_at?: string
+          enable_activity_recommendations?: boolean | null
+          enable_push_notifications?: boolean | null
+          enable_sms_alerts?: boolean | null
+          enable_voice_alerts?: boolean | null
+          farmer_id?: string
+          humidity_high_alert_percent?: number | null
+          humidity_low_alert_percent?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          max_rain_probability_spray_percent?: number | null
+          max_temperature_spray_celsius?: number | null
+          max_wind_speed_spray_kmh?: number | null
+          min_temperature_spray_celsius?: number | null
+          preferred_station_id?: string | null
+          preferred_work_end_time?: string | null
+          preferred_work_start_time?: string | null
+          rain_probability_alert_percent?: number | null
+          temperature_max_alert?: number | null
+          temperature_min_alert?: number | null
+          updated_at?: string
+          wind_speed_alert_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_preferences_preferred_station_id_fkey"
+            columns: ["preferred_station_id"]
+            isOneToOne: false
+            referencedRelation: "weather_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weather_stations: {
+        Row: {
+          created_at: string
+          data_source: string
+          elevation_meters: number | null
+          id: string
+          is_active: boolean
+          last_updated: string | null
+          latitude: number
+          longitude: number
+          name: string
+          station_code: string
+        }
+        Insert: {
+          created_at?: string
+          data_source: string
+          elevation_meters?: number | null
+          id?: string
+          is_active?: boolean
+          last_updated?: string | null
+          latitude: number
+          longitude: number
+          name: string
+          station_code: string
+        }
+        Update: {
+          created_at?: string
+          data_source?: string
+          elevation_meters?: number | null
+          id?: string
+          is_active?: boolean
+          last_updated?: string | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          station_code?: string
+        }
+        Relationships: []
+      }
       yield_predictions: {
         Row: {
           actual_yield_per_acre: number | null
@@ -1803,6 +2327,19 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      calculate_evapotranspiration: {
+        Args: {
+          temp_celsius: number
+          humidity_percent: number
+          wind_speed_kmh: number
+          solar_radiation?: number
+        }
+        Returns: number
+      }
+      calculate_growing_degree_days: {
+        Args: { temp_max: number; temp_min: number; base_temp?: number }
+        Returns: number
       }
       calculate_land_health_score: {
         Args: { land_uuid: string }
@@ -2298,6 +2835,15 @@ export type Database = {
       get_proj4_from_srid: {
         Args: { "": number }
         Returns: string
+      }
+      get_spray_suitability: {
+        Args: {
+          temp_celsius: number
+          wind_speed_kmh: number
+          humidity_percent: number
+          rain_probability_percent: number
+        }
+        Returns: number
       }
       gettransactionid: {
         Args: Record<PropertyKey, never>
