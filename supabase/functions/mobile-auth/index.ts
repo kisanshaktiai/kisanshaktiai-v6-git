@@ -26,7 +26,6 @@ serve(async (req) => {
       }
     )
 
-    // Create anon client for authentication
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -55,8 +54,8 @@ serve(async (req) => {
       )
     }
 
-    const { phone } = requestBody;
-    console.log('Received phone number in edge function:', phone)
+    const { phone, tenantId = 'default' } = requestBody;
+    console.log('Received phone number and tenant:', { phone, tenantId });
 
     if (!phone || typeof phone !== 'string' || phone.length !== 10) {
       console.log('Invalid phone number provided to edge function')
@@ -75,15 +74,26 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Check in user_profiles table (correct table name)
+    // Check in user_profiles table
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, phone, full_name')
       .eq('phone', phone)
       .maybeSingle()
 
-    if (profileError) {
+    if (profileError && profileError.code !== 'PGRST116') {
       console.error('Error checking for existing profile:', profileError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Database error while checking user',
+          details: profileError.message 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     console.log('Profile check result:', {
@@ -95,128 +105,128 @@ serve(async (req) => {
     const email = `farmer.${phone}@kisanshakti.com`
     const password = `kisan_${phone}`
     let userId = null
+    let isNewUser = false
 
     if (existingProfile) {
       console.log('=== EXISTING USER AUTHENTICATION ===')
-      console.log('Found existing user:', existingProfile)
       userId = existingProfile.id
 
       // Check if auth user exists for this profile
-      console.log('Checking auth.users for existing profile...')
       const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId)
       
       if (authUserError || !authUser.user) {
         console.log('Auth user not found, creating auth entry for existing profile...')
         
-        // First check if email already exists to avoid conflicts
-        const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
-        const emailExists = existingAuthUsers.users?.some(user => user.email === email)
-        
-        if (emailExists) {
-          console.log('Email already exists in auth, finding and updating existing user...')
-          const existingUser = existingAuthUsers.users?.find(user => user.email === email)
-          if (existingUser) {
-            userId = existingUser.id
-            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-              password: password,
-              email_confirm: true,
-              user_metadata: { phone, email }
-            })
-            if (updateError) {
-              console.error('Error updating existing auth user:', updateError)
-            }
-          }
-        } else {
-          // Create auth user for existing profile
-          const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-            id: userId,
-            email,
-            password: password,
-            email_confirm: true,
-            phone_confirm: true,
-            user_metadata: { phone, email }
-          })
-
-          if (createAuthError) {
-            console.error('Error creating auth user for existing profile:', createAuthError)
-            // If creation fails, try to find existing user by email
-            const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
-            const existingUser = existingAuthUsers.users?.find(user => user.email === email)
-            if (existingUser) {
-              userId = existingUser.id
-            } else {
-              throw createAuthError
-            }
-          } else {
-            console.log('Auth user created for existing profile:', newAuthUser.user.id)
-          }
-        }
-      } else {
-        console.log('Auth user already exists, updating password...')
-        // Update password for existing auth user
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          password: password,
-          email_confirm: true,
-          user_metadata: { phone, email }
-        })
-
-        if (updateError) {
-          console.error('Error updating existing user:', updateError)
-        }
-      }
-    } else {
-      console.log('=== NEW USER CREATION ===')
-      console.log('No existing profile found, creating new user...')
-      
-      // First check if email already exists in auth.users to avoid conflict
-      const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
-      const emailExists = existingAuthUser.users?.some(user => user.email === email)
-      
-      if (emailExists) {
-        console.log('Email already exists in auth, finding existing user...')
-        const existingUser = existingAuthUser.users?.find(user => user.email === email)
-        if (existingUser) {
-          userId = existingUser.id
-          // Update password for existing auth user
-          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            password: password,
-            email_confirm: true,
-            user_metadata: { phone, email }
-          })
-          if (updateError) {
-            console.error('Error updating existing auth user:', updateError)
-          }
-        }
-      } else {
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        // Create auth user for existing profile
+        const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
+          id: userId,
           email,
           password: password,
           email_confirm: true,
           phone_confirm: true,
-          user_metadata: { phone, email }
+          user_metadata: { phone, email, tenantId }
         })
 
-        if (createError) {
-          console.error('User creation error:', createError)
+        if (createAuthError) {
+          console.error('Error creating auth user for existing profile:', createAuthError)
+          if (createAuthError.message?.includes('duplicate') || createAuthError.message?.includes('already exists')) {
+            // Try to find existing user by email
+            const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
+            const existingUser = existingAuthUsers.users?.find(user => user.email === email)
+            if (existingUser) {
+              userId = existingUser.id
+              // Update password for existing auth user
+              await supabaseAdmin.auth.admin.updateUserById(userId, {
+                password: password,
+                email_confirm: true,
+                user_metadata: { phone, email, tenantId }
+              })
+            } else {
+              throw createAuthError
+            }
+          } else {
+            throw createAuthError
+          }
+        }
+      } else {
+        console.log('Auth user exists, updating password and metadata...')
+        // Update password and metadata for existing auth user
+        await supabaseAdmin.auth.admin.updateUserById(userId, {
+          password: password,
+          email_confirm: true,
+          user_metadata: { phone, email, tenantId }
+        })
+      }
+    } else {
+      console.log('=== NEW USER CREATION ===')
+      isNewUser = true
+      
+      // Create new auth user
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: password,
+        email_confirm: true,
+        phone_confirm: true,
+        user_metadata: { phone, email, tenantId }
+      })
+
+      if (createError) {
+        console.error('User creation error:', createError)
+        if (createError.message?.includes('duplicate') || createError.message?.includes('already exists')) {
+          // Try to find existing user by email
+          const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
+          const existingUser = existingAuthUsers.users?.find(user => user.email === email)
+          if (existingUser) {
+            userId = existingUser.id
+            isNewUser = false
+            // Update password for existing auth user
+            await supabaseAdmin.auth.admin.updateUserById(userId, {
+              password: password,
+              email_confirm: true,
+              user_metadata: { phone, email, tenantId }
+            })
+          } else {
+            throw createError
+          }
+        } else {
           throw createError
         }
-
-        console.log('New user created successfully:', newUser.user.id)
+      } else {
         userId = newUser.user.id
+        console.log('New user created successfully:', userId)
 
-        // Create profile for new user (only if it doesn't exist)
+        // Create profile for new user
         const { error: profileCreateError } = await supabaseAdmin
           .from('user_profiles')
           .insert({
             id: userId,
             phone: phone,
+            preferred_language: 'hi',
+            country: 'India',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
 
         if (profileCreateError) {
           console.error('Error creating profile:', profileCreateError)
-          // Don't fail the auth if profile creation fails
+        }
+
+        // Create tenant association for new user if tenantId is provided and not default
+        if (tenantId && tenantId !== 'default') {
+          const { error: tenantAssocError } = await supabaseAdmin
+            .from('user_tenants')
+            .insert({
+              user_id: userId,
+              tenant_id: tenantId,
+              role: 'farmer',
+              is_primary: true,
+              is_active: true,
+              joined_at: new Date().toISOString()
+            })
+
+          if (tenantAssocError) {
+            console.error('Error creating tenant association:', tenantAssocError)
+          }
         }
       }
     }
@@ -233,31 +243,23 @@ serve(async (req) => {
     if (authError) {
       console.error('Sign-in failed:', authError.message)
       
-      // Handle specific auth errors
       if (authError.message.includes('Email not confirmed')) {
-        // Try to confirm the email and retry
         console.log('Email not confirmed, attempting to confirm...')
-        const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(userId!, {
+        await supabaseAdmin.auth.admin.updateUserById(userId!, {
           email_confirm: true
         })
         
-        if (!confirmError) {
-          console.log('Email confirmed, retrying sign in...')
-          // Retry sign in
-          const { data: retryAuthData, error: retryAuthError } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-          })
-          
-          if (retryAuthError) {
-            throw retryAuthError
-          } else {
-            authData.session = retryAuthData.session
-            authData.user = retryAuthData.user
-          }
-        } else {
-          throw authError
+        // Retry sign in
+        const { data: retryAuthData, error: retryAuthError } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        })
+        
+        if (retryAuthError) {
+          throw retryAuthError
         }
+        
+        Object.assign(authData, retryAuthData)
       } else {
         throw authError
       }
@@ -277,12 +279,12 @@ serve(async (req) => {
       userEmail: authData.user?.email
     })
 
-    // Return complete session response
     const sessionResponse = {
       success: true,
-      isNewUser: !existingProfile,
+      isNewUser,
       session: authData.session,
       user: authData.user,
+      tenantId,
       debugInfo: {
         phoneSearched: phone,
         foundExistingProfile: !!existingProfile,
@@ -297,7 +299,7 @@ serve(async (req) => {
       success: sessionResponse.success,
       isNewUser: sessionResponse.isNewUser,
       userId: sessionResponse.user?.id,
-      debugInfo: sessionResponse.debugInfo
+      tenantId: sessionResponse.tenantId
     })
 
     return new Response(

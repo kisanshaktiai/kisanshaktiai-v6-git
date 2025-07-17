@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Retry up to 5 times with shorter delays for better UX
         if (retryCount < 5) {
-          const delay = Math.min((retryCount + 1) * 1000, 5000); // Cap at 5 seconds
+          const delay = Math.min((retryCount + 1) * 1000, 5000);
           console.log(`Retrying profile fetch in ${delay}ms...`);
           setTimeout(() => {
             handleFetchProfile(userId, retryCount + 1);
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // Fetch profile immediately when user is authenticated
             setTimeout(() => {
               handleFetchProfile(session.user.id);
-            }, 100); // Small delay to ensure session is fully established
+            }, 100);
           } else {
             console.log('No user session, clearing profile');
             setProfile(null);

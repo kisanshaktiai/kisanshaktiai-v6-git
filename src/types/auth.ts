@@ -2,16 +2,37 @@
 export interface Profile {
   id: string;
   phone: string;
+  phone_verified?: boolean;
   full_name?: string;
   display_name?: string;
+  date_of_birth?: string;
+  gender?: string;
+  address_line1?: string;
+  address_line2?: string;
   village?: string;
   taluka?: string;
   district?: string;
   state?: string;
   pincode?: string;
+  country?: string;
+  coordinates?: any;
+  preferred_language?: string;
+  notification_preferences?: {
+    sms: boolean;
+    push: boolean;
+    email: boolean;
+    whatsapp: boolean;
+    calls: boolean;
+  };
   avatar_url?: string;
-  farmer_id?: string;
+  bio?: string;
+  expertise_areas?: string[];
+  device_tokens?: string[];
+  last_active_at?: string;
+  metadata?: any;
   aadhaar_number?: string;
+  farmer_id?: string;
+  shc_id?: string;
   created_at?: string;
   updated_at?: string;
 }

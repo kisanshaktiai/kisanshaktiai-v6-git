@@ -57,14 +57,14 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Check in user_profiles table (correct table name)
+    // Check in user_profiles table
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, phone, full_name')
       .eq('phone', phone)
       .maybeSingle()
 
-    if (profileError) {
+    if (profileError && profileError.code !== 'PGRST116') {
       console.error('Error checking for existing profile:', profileError)
       return new Response(
         JSON.stringify({ 

@@ -1,9 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
+import { TenantDetectionService } from '@/services/TenantDetectionService';
 
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
+    console.log('Fetching user profile for:', userId);
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -29,7 +31,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     
     // Clean phone number - ensure it's a 10-digit string
     const cleanPhone = phone.replace(/\D/g, '');
-    console.log('Cleaned phone number (string):', cleanPhone);
+    console.log('Cleaned phone number:', cleanPhone);
     
     if (cleanPhone.length !== 10) {
       console.log('Invalid phone number length:', cleanPhone.length);
@@ -43,7 +45,6 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
 
     if (error) {
       console.error('Error checking user existence via edge function:', error);
-      // Fallback to direct database check
       return await checkUserExistsDirect(cleanPhone);
     }
 
@@ -51,7 +52,6 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     return data?.userExists || false;
   } catch (error) {
     console.error('Error in checkUserExists:', error);
-    // Fallback to direct database check
     return await checkUserExistsDirect(phone.replace(/\D/g, ''));
   }
 };
@@ -61,7 +61,6 @@ const checkUserExistsDirect = async (cleanPhone: string): Promise<boolean> => {
   try {
     console.log('=== FALLBACK DIRECT DATABASE CHECK ===');
     
-    // Query the user_profiles table with the correct phone field
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id, phone, full_name')
@@ -94,9 +93,18 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
       throw new Error('Invalid phone number. Please enter a valid 10-digit mobile number.');
     }
     
-    // Call our mobile auth edge function
+    // Detect current tenant before authentication
+    const tenantService = TenantDetectionService.getInstance();
+    const currentTenant = await tenantService.detectTenant();
+    
+    console.log('Current tenant for auth:', currentTenant);
+    
+    // Call our mobile auth edge function with tenant context
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
-      body: { phone: cleanPhone }
+      body: { 
+        phone: cleanPhone,
+        tenantId: currentTenant?.id || 'default'
+      }
     });
 
     if (error) {
