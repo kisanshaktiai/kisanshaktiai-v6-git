@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,6 @@ import { AuthContext } from '@/contexts/AuthContext';
 import { fetchProfile, checkUserExists, updateProfile as updateProfileService, signOut as signOutService, signInWithPhone as signInWithPhoneService } from '@/services/authService';
 import { LanguageService } from '@/services/LanguageService';
 import { sessionService } from '@/services/sessionService';
-import { authHealthService } from '@/services/authHealthService';
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
@@ -24,10 +24,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleFetchProfile = async (userId: string, retryCount = 0) => {
     try {
-      console.log('Fetching profile for user:', userId, 'retry count:', retryCount);
+      console.log('Fetching profile for user:', userId);
       const profileData = await fetchProfile(userId);
+      
       if (profileData) {
-        console.log('Profile fetched successfully:', profileData);
+        console.log('Profile fetched successfully');
         setProfile(profileData);
         
         // Apply user's saved language preference
@@ -41,21 +42,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         return profileData;
+      } else if (retryCount < 3) {
+        // Retry with exponential backoff
+        const delay = Math.min((retryCount + 1) * 1000, 3000);
+        console.log(`Retrying profile fetch in ${delay}ms...`);
+        setTimeout(() => {
+          handleFetchProfile(userId, retryCount + 1);
+        }, delay);
       } else {
-        console.log('No profile found for user');
-        
-        // Retry up to 5 times with shorter delays for better UX
-        if (retryCount < 5) {
-          const delay = Math.min((retryCount + 1) * 1000, 5000);
-          console.log(`Retrying profile fetch in ${delay}ms...`);
-          setTimeout(() => {
-            handleFetchProfile(userId, retryCount + 1);
-          }, delay);
-        } else {
-          console.log('Max retry attempts reached, profile may not exist yet');
-        }
-        return null;
+        console.log('Profile not found after retries');
       }
+      
+      return null;
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;
@@ -64,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithPhone = async (phone: string) => {
     try {
-      console.log('Starting sign in process for phone:', phone);
+      console.log('Starting sign in process...');
       setLoading(true);
       
       await signInWithPhoneService(phone);
@@ -85,8 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(null);
       setProfile(null);
       
-      // Clear language preference from localStorage but keep device language selection
-      // This allows the app to recheck location-based language on next login
+      // Clear language preference
       localStorage.removeItem('languageSelectedAt');
     } catch (error) {
       console.error('Error during sign out:', error);
@@ -99,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) return;
     
     try {
-      // If language preference is being updated, apply it immediately
+      // Apply language preference immediately if being updated
       if (updates.preferred_language) {
         await LanguageService.getInstance().changeLanguage(updates.preferred_language);
         localStorage.setItem('selectedLanguage', updates.preferred_language);
@@ -118,30 +115,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initAuth = async () => {
       try {
         console.log('Initializing auth...');
-        await authHealthService.logAuthEvent('auth_init_started', {});
         
         // Set up auth state listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state changed:', {
-            event,
-            hasSession: !!session,
-            hasUser: !!session?.user,
-            userId: session?.user?.id
-          });
+          console.log('Auth state changed:', event, !!session);
           
-          await authHealthService.logAuthEvent('auth_state_changed', {
-            event,
-            hasSession: !!session,
-            userId: session?.user?.id
-          });
-          
-          // Update state immediately (synchronous to prevent deadlock)
+          // Update state immediately
           setSession(session);
           setUser(session?.user ?? null);
           
           if (session?.user) {
             console.log('User authenticated, fetching profile...');
-            // Defer profile fetch to avoid deadlock
+            // Use setTimeout to prevent auth callback deadlock
             setTimeout(() => {
               handleFetchProfile(session.user.id);
             }, 100);
@@ -150,36 +135,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setProfile(null);
           }
           
-          // Set loading to false when we have a definitive auth state
           setLoading(false);
         });
 
-        // Try to restore session from storage first
-        console.log('Attempting to restore session from storage...');
+        // Try to restore session from storage
+        console.log('Attempting to restore session...');
         const restoredSession = await sessionService.restoreSession();
         
         if (restoredSession) {
           console.log('Session restored from storage');
-          await authHealthService.logAuthEvent('session_restored', {
-            userId: restoredSession.user?.id
-          });
           // Auth state change will be triggered automatically
         } else {
-          // THEN check for existing session in Supabase
+          // Check for existing session in Supabase
           const { data: { session: initialSession } } = await supabase.auth.getSession();
-          
-          console.log('Initial session check:', {
-            hasSession: !!initialSession,
-            hasUser: !!initialSession?.user,
-            userId: initialSession?.user?.id
-          });
           
           if (initialSession?.user) {
             console.log('Found existing session');
-            await authHealthService.logAuthEvent('existing_session_found', {
-              userId: initialSession.user.id
-            });
-            
             setSession(initialSession);
             setUser(initialSession.user);
             await handleFetchProfile(initialSession.user.id);
@@ -188,21 +159,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             await sessionService.storeSession(initialSession);
           } else {
             console.log('No existing session found');
-            await authHealthService.logAuthEvent('no_session_found', {});
           }
         }
         
         setLoading(false);
-        await authHealthService.logAuthEvent('auth_init_completed', {});
         
         return () => {
           subscription.unsubscribe();
         };
       } catch (error) {
         console.error('Error during auth initialization:', error);
-        await authHealthService.logAuthEvent('auth_init_error', {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
         setLoading(false);
       }
     };

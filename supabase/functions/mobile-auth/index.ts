@@ -17,57 +17,42 @@ serve(async (req) => {
     console.log('=== MOBILE AUTH EDGE FUNCTION START ===');
     
     const { phone, tenantId = 'default', preferredLanguage = 'hi' } = await req.json();
-    console.log('Received phone number, tenant, and language:', { phone, tenantId, preferredLanguage });
+    console.log('Received request:', { phone: phone?.slice(-4), tenantId, preferredLanguage });
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Validate phone number
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      console.error('Invalid phone number length:', cleanPhone.length);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Please enter a valid 10-digit mobile number' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Use the known default tenant ID for KisanShakti AI
     const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
     let resolvedTenantId = defaultTenantId;
 
-    // Only try to resolve if it's not the default or a valid UUID
-    if (tenantId !== 'default' && tenantId !== defaultTenantId && tenantId.length > 10) {
-      console.log('Resolving tenant slug to UUID:', tenantId);
-      const { data: tenant, error: tenantError } = await supabase
+    // Only try to resolve if it's not the default
+    if (tenantId !== 'default' && tenantId !== defaultTenantId) {
+      const { data: tenant } = await supabase
         .from('tenants')
         .select('id')
         .eq('slug', tenantId)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (tenantError) {
-        console.error('Tenant resolution error:', tenantError);
-      }
-
       if (tenant) {
         resolvedTenantId = tenant.id;
-        console.log('Resolved tenant ID:', resolvedTenantId);
-      } else {
-        console.log('Tenant not found, using default KisanShakti AI tenant');
-        resolvedTenantId = defaultTenantId;
       }
-    } else {
-      console.log('Using default KisanShakti AI tenant UUID:', resolvedTenantId);
     }
 
-    // Validate phone number
-    const cleanPhone = phone.replace(/\D/g, '');
-    console.log('Phone number to search:', cleanPhone);
-
-    if (cleanPhone.length !== 10) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid phone number format' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('=== CHECKING FOR EXISTING USER ===');
+    console.log('Using tenant ID:', resolvedTenantId);
 
     // Check if user profile exists
     const { data: existingProfile, error: profileError } = await supabase
@@ -77,239 +62,134 @@ serve(async (req) => {
       .maybeSingle();
 
     if (profileError) {
-      console.error('Error checking existing profile:', profileError);
+      console.error('Profile check error:', profileError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Database error. Please try again.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    console.log('Profile check result:', { 
-      found: !!existingProfile, 
-      profileId: existingProfile?.id,
-      storedPhone: existingProfile?.phone
-    });
 
     let authUser;
     let isNewUser = false;
 
     if (existingProfile) {
-      console.log('=== EXISTING USER SIGN IN ===');
+      console.log('Existing user found:', existingProfile.id);
       
       // Get the auth user by user ID
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(existingProfile.id);
       
       if (userError || !userData.user) {
-        console.error('Error getting auth user:', userError);
+        console.error('Auth user not found:', userError);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'User authentication record not found. Please contact support.' 
-          }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ success: false, error: 'Account not found. Please contact support.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
       authUser = userData.user;
-      console.log('Found existing auth user:', authUser.id);
-
     } else {
-      console.log('=== NEW USER CREATION ===');
+      console.log('Creating new user');
       isNewUser = true;
 
-      try {
-        // Create new user with phone as email (temporary approach)
-        const tempEmail = `${cleanPhone}@temp.kisanshakti.app`;
-        const tempPassword = `temp_${cleanPhone}_${Date.now()}`;
+      // Create new user with phone as identifier
+      const tempEmail = `${cleanPhone}@kisanshakti.app`;
+      const tempPassword = `temp_${cleanPhone}_${Date.now()}`;
 
-        const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
-          email: tempEmail,
-          password: tempPassword,
-          phone: `+91${cleanPhone}`,
-          phone_confirmed: true,
-          email_confirmed: true,
-          user_metadata: {
-            phone: cleanPhone,
-            is_mobile_user: true,
-            tenant_id: resolvedTenantId,
-            preferred_language: preferredLanguage
-          }
-        });
-
-        if (createError) {
-          console.error('User creation error:', createError);
-          
-          if (createError.message?.includes('already been registered')) {
-            // Try to find the user by email instead
-            const { data: existingUsers } = await supabase.auth.admin.listUsers();
-            const existingUser = existingUsers.users?.find(u => 
-              u.email === tempEmail || 
-              u.phone === `+91${cleanPhone}` ||
-              u.user_metadata?.phone === cleanPhone
-            );
-            
-            if (existingUser) {
-              authUser = existingUser;
-              isNewUser = false;
-              console.log('Found existing user by email/phone:', existingUser.id);
-            } else {
-              throw createError;
-            }
-          } else {
-            throw createError;
-          }
-        } else {
-          authUser = newUserData.user;
-          console.log('Created new auth user:', authUser.id);
-
-          // Create user profile
-          const { error: profileInsertError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: authUser.id,
-              phone: cleanPhone,
-              phone_verified: true,
-              preferred_language: preferredLanguage as any,
-              country: 'India',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (profileInsertError) {
-            console.error('Error creating profile:', profileInsertError);
-            // Don't fail the entire process, profile can be created later
-          } else {
-            console.log('User profile created successfully');
-          }
-
-          // Link user to tenant
-          try {
-            const { error: tenantLinkError } = await supabase
-              .from('user_tenants')
-              .insert({
-                user_id: authUser.id,
-                tenant_id: resolvedTenantId,
-                role: 'farmer' as any,
-                is_primary: true,
-                is_active: true,
-                joined_at: new Date().toISOString()
-              });
-
-            if (tenantLinkError) {
-              console.error('Error linking user to tenant:', tenantLinkError);
-              // Don't fail the process
-            } else {
-              console.log('User linked to KisanShakti AI tenant successfully');
-            }
-          } catch (error) {
-            console.error('Tenant linking failed:', error);
-          }
+      const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
+        email: tempEmail,
+        password: tempPassword,
+        phone: `+91${cleanPhone}`,
+        phone_confirmed: true,
+        email_confirmed: true,
+        user_metadata: {
+          phone: cleanPhone,
+          is_mobile_user: true,
+          tenant_id: resolvedTenantId,
+          preferred_language: preferredLanguage
         }
-      } catch (error) {
-        console.error('=== MOBILE AUTH ERROR ===');
-        console.error('Error details:', error);
-        
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Failed to create user account. Please try again.' 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-    }
-
-    if (!authUser) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to authenticate user' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('=== GENERATING SESSION ===');
-
-    try {
-      // Create a proper session using admin API
-      console.log('Creating session for user:', authUser.id);
-      
-      const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-        user_id: authUser.id,
-        expires_in: 3600 // 1 hour
       });
 
-      if (sessionError || !sessionData.session) {
-        console.error('Session creation failed:', sessionError);
+      if (createError) {
+        console.error('User creation error:', createError);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Failed to create authentication session. Please try again.' 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ success: false, error: 'Failed to create account. Please try again.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log('Session created successfully for KisanShakti AI user:', authUser.id);
+      authUser = newUserData.user;
 
-      // Prepare session response
-      const sessionResponse = {
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
-        expires_at: sessionData.session.expires_at || Math.floor(Date.now() / 1000) + 3600,
-        expires_in: sessionData.session.expires_in || 3600,
-        token_type: 'bearer',
-        user: sessionData.session.user
-      };
+      // Create user profile
+      const { error: profileInsertError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: authUser.id,
+          phone: cleanPhone,
+          phone_verified: true,
+          preferred_language: preferredLanguage as any,
+          country: 'India',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
+      if (profileInsertError) {
+        console.error('Profile creation error:', profileInsertError);
+        // Continue anyway, profile can be created later
+      }
+
+      // Link user to tenant
+      const { error: tenantLinkError } = await supabase
+        .from('user_tenants')
+        .insert({
+          user_id: authUser.id,
+          tenant_id: resolvedTenantId,
+          role: 'farmer' as any,
+          is_primary: true,
+          is_active: true,
+          joined_at: new Date().toISOString()
+        });
+
+      if (tenantLinkError) {
+        console.error('Tenant linking error:', tenantLinkError);
+        // Continue anyway
+      }
+    }
+
+    console.log('Creating session for user:', authUser.id);
+
+    // Create session using simplified approach
+    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
+      user_id: authUser.id,
+      expires_in: 3600 // 1 hour
+    });
+
+    if (sessionError || !sessionData.session) {
+      console.error('Session creation failed:', sessionError);
       return new Response(
-        JSON.stringify({
-          success: true,
-          user: authUser,
-          session: sessionResponse,
-          isNewUser,
-          tenantId: resolvedTenantId,
-          message: isNewUser ? 'Welcome to KisanShakti AI!' : 'Welcome back to KisanShakti AI!'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-
-    } catch (sessionGenerationError) {
-      console.error('Session generation failed:', sessionGenerationError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to generate session. Please try again.' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: false, error: 'Failed to create session. Please try again.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-  } catch (error) {
-    console.error('=== MOBILE AUTH CRITICAL ERROR ===');
-    console.error('Critical error in mobile auth:', error);
-    
+    console.log('Session created successfully');
+
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Authentication service temporarily unavailable. Please try again.' 
+      JSON.stringify({
+        success: true,
+        user: authUser,
+        session: sessionData.session,
+        isNewUser,
+        tenantId: resolvedTenantId,
+        message: isNewUser ? 'Welcome to KisanShakti AI!' : 'Welcome back!'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Critical error:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: 'Service temporarily unavailable. Please try again.' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

@@ -1,3 +1,4 @@
+
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,16 +12,9 @@ interface StoredSession {
   stored_at: number;
 }
 
-interface SessionValidationResult {
-  isValid: boolean;
-  session?: Session;
-  error?: string;
-}
-
 export class SessionService {
   private static instance: SessionService;
   private readonly SESSION_KEY = 'kisanshakti_session';
-  private readonly SESSION_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 minutes buffer
 
   static getInstance(): SessionService {
     if (!SessionService.instance) {
@@ -30,56 +24,10 @@ export class SessionService {
   }
 
   /**
-   * Validate JWT token structure
+   * Basic session validation - simplified approach
    */
-  private isValidJWT(token: string): boolean {
-    try {
-      if (!token || typeof token !== 'string') {
-        console.log('Invalid token: not a string or empty');
-        return false;
-      }
-
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        console.log('Invalid JWT: wrong number of parts');
-        return false;
-      }
-
-      // Try to decode the header and payload
-      const header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-
-      // Check for required fields
-      if (!header.alg || !payload.sub || !payload.exp) {
-        console.log('Invalid JWT: missing required fields');
-        return false;
-      }
-
-      // Check if token is not expired (with buffer)
-      const now = Math.floor(Date.now() / 1000);
-      if (payload.exp <= now) {
-        console.log('Invalid JWT: token expired');
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.log('JWT validation error:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Validate session data structure and tokens
-   */
-  validateSessionData(sessionData: any): SessionValidationResult {
-    console.log('Validating session data:', {
-      hasAccessToken: !!sessionData?.access_token,
-      hasRefreshToken: !!sessionData?.refresh_token,
-      hasUser: !!sessionData?.user,
-      accessTokenType: typeof sessionData?.access_token,
-      refreshTokenType: typeof sessionData?.refresh_token
-    });
+  validateSessionData(sessionData: any): { isValid: boolean; session?: Session; error?: string } {
+    console.log('Validating session data');
 
     if (!sessionData || typeof sessionData !== 'object') {
       return { isValid: false, error: 'Invalid session data structure' };
@@ -93,13 +41,9 @@ export class SessionService {
       return { isValid: false, error: 'Missing user data' };
     }
 
-    // Validate JWT token structure
-    if (!this.isValidJWT(sessionData.access_token)) {
-      return { isValid: false, error: 'Invalid access token format' };
-    }
-
-    if (!this.isValidJWT(sessionData.refresh_token)) {
-      return { isValid: false, error: 'Invalid refresh token format' };
+    // Basic token format check - just ensure they're strings
+    if (typeof sessionData.access_token !== 'string' || typeof sessionData.refresh_token !== 'string') {
+      return { isValid: false, error: 'Invalid token format' };
     }
 
     const session: Session = {
@@ -115,7 +59,7 @@ export class SessionService {
   }
 
   /**
-   * Store session securely using Capacitor Preferences
+   * Store session securely
    */
   async storeSession(sessionData: any): Promise<void> {
     try {
@@ -168,7 +112,7 @@ export class SessionService {
 
       const stored: StoredSession = JSON.parse(sessionData);
 
-      // Check if session is expired
+      // Simple expiry check
       const now = Math.floor(Date.now() / 1000);
       if (stored.expires_at <= now) {
         console.log('Stored session is expired, removing...');
@@ -179,7 +123,7 @@ export class SessionService {
       return stored;
     } catch (error) {
       console.error('Error retrieving stored session:', error);
-      await this.clearSession(); // Clear corrupted session
+      await this.clearSession();
       return null;
     }
   }
@@ -213,17 +157,7 @@ export class SessionService {
         return null;
       }
 
-      console.log('Found stored session, validating...');
-      
-      // Validate the stored session
-      const validation = this.validateSessionData(storedSession);
-      if (!validation.isValid || !validation.session) {
-        console.log('Stored session is invalid:', validation.error);
-        await this.clearSession();
-        return null;
-      }
-
-      console.log('Stored session is valid, attempting to restore...');
+      console.log('Found stored session, restoring...');
       
       // Try to set the session with Supabase
       const { data, error } = await supabase.auth.setSession({
@@ -245,7 +179,7 @@ export class SessionService {
 
       console.log('Session restored successfully');
       
-      // Update stored session with refreshed data if needed
+      // Update stored session if tokens refreshed
       if (data.session.access_token !== storedSession.access_token) {
         await this.storeSession(data.session);
       }
@@ -259,22 +193,17 @@ export class SessionService {
   }
 
   /**
-   * Set session with validation and retry mechanism
+   * Set session with simplified retry mechanism
    */
-  async setSession(sessionData: any, retryCount = 0): Promise<Session> {
-    const maxRetries = 3;
-    const retryDelay = 1000 * (retryCount + 1); // Progressive delay
-
+  async setSession(sessionData: any): Promise<Session> {
     try {
-      console.log(`Setting session (attempt ${retryCount + 1}/${maxRetries + 1})`);
+      console.log('Setting session...');
 
-      // Validate session data before attempting to set
+      // Validate session data
       const validation = this.validateSessionData(sessionData);
       if (!validation.isValid || !validation.session) {
         throw new Error(`Invalid session data: ${validation.error}`);
       }
-
-      console.log('Session data validated, setting session...');
 
       // Set session with Supabase
       const { data, error } = await supabase.auth.setSession({
@@ -284,23 +213,10 @@ export class SessionService {
 
       if (error) {
         console.error('Supabase setSession error:', error);
-        
-        if (retryCount < maxRetries) {
-          console.log(`Retrying in ${retryDelay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return this.setSession(sessionData, retryCount + 1);
-        }
-        
-        throw new Error(`Failed to set session after ${maxRetries + 1} attempts: ${error.message}`);
+        throw new Error(`Failed to set session: ${error.message}`);
       }
 
       if (!data.session) {
-        if (retryCount < maxRetries) {
-          console.log('No session returned, retrying...');
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return this.setSession(sessionData, retryCount + 1);
-        }
-        
         throw new Error('Session establishment failed - no session returned');
       }
 
@@ -314,20 +230,13 @@ export class SessionService {
 
       return data.session;
     } catch (error) {
-      console.error(`Session setting failed (attempt ${retryCount + 1}):`, error);
-      
-      if (retryCount < maxRetries) {
-        console.log(`Retrying in ${retryDelay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-        return this.setSession(sessionData, retryCount + 1);
-      }
-      
+      console.error('Session setting failed:', error);
       throw error;
     }
   }
 
   /**
-   * Track session in database for monitoring
+   * Track session in database
    */
   private async trackSession(session: Session): Promise<void> {
     try {
@@ -340,7 +249,7 @@ export class SessionService {
 
       await supabase.from('user_sessions').insert({
         user_id: session.user.id,
-        session_id: session.access_token.substring(0, 32), // Use first 32 chars as session ID
+        session_id: session.access_token.substring(0, 32),
         access_token_hash: await this.hashToken(session.access_token),
         refresh_token_hash: await this.hashToken(session.refresh_token),
         expires_at: new Date(session.expires_at! * 1000).toISOString(),
@@ -355,7 +264,7 @@ export class SessionService {
   }
 
   /**
-   * Hash token for storage (basic hashing for tracking)
+   * Hash token for storage
    */
   private async hashToken(token: string): Promise<string> {
     const encoder = new TextEncoder();
@@ -363,47 +272,6 @@ export class SessionService {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
-  }
-
-  /**
-   * Check if session needs refresh
-   */
-  isSessionExpiringSoon(session: Session): boolean {
-    if (!session.expires_at) return false;
-    
-    const now = Math.floor(Date.now() / 1000);
-    const expiryWithBuffer = session.expires_at - (this.SESSION_EXPIRY_BUFFER / 1000);
-    
-    return now >= expiryWithBuffer;
-  }
-
-  /**
-   * Refresh session if needed
-   */
-  async refreshSessionIfNeeded(session: Session): Promise<Session> {
-    if (!this.isSessionExpiringSoon(session)) {
-      return session;
-    }
-
-    console.log('Session expiring soon, refreshing...');
-    
-    try {
-      const { data, error } = await supabase.auth.refreshSession({
-        refresh_token: session.refresh_token
-      });
-
-      if (error || !data.session) {
-        console.error('Session refresh failed:', error);
-        throw new Error('Failed to refresh session');
-      }
-
-      console.log('Session refreshed successfully');
-      await this.storeSession(data.session);
-      return data.session;
-    } catch (error) {
-      console.error('Error refreshing session:', error);
-      throw error;
-    }
   }
 }
 
