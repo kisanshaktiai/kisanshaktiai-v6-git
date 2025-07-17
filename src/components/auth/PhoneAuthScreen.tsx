@@ -130,12 +130,12 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-full max-w-sm mx-auto px-6">
+      <div className="w-full max-w-sm mx-auto px-4">
         <Card className="border-0 shadow-none bg-transparent">
           <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
           
           <CardContent className="px-0">
-            <form onSubmit={handleAuth} className="space-y-6">
+            <form onSubmit={handleAuth} className="space-y-4">
               <PhoneInput
                 phone={phone}
                 onPhoneChange={handlePhoneChange}

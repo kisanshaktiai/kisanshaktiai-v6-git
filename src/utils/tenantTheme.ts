@@ -8,6 +8,16 @@ interface TenantBranding {
   font_family?: string;
   neutral_color?: string;
   muted_color?: string;
+  gray_50?: string;
+  gray_100?: string;
+  gray_200?: string;
+  gray_300?: string;
+  gray_400?: string;
+  gray_500?: string;
+  gray_600?: string;
+  gray_700?: string;
+  gray_800?: string;
+  gray_900?: string;
 }
 
 export const applyTenantTheme = (branding: TenantBranding | null) => {
@@ -47,7 +57,7 @@ export const applyTenantTheme = (branding: TenantBranding | null) => {
     root.style.setProperty('--splash-text', branding.text_color);
   }
 
-  // Gray/neutral colors
+  // Gray/neutral colors from tenant branding
   if (branding.neutral_color) {
     const neutralHSL = hexToHSL(branding.neutral_color);
     root.style.setProperty('--neutral', neutralHSL);
@@ -57,6 +67,16 @@ export const applyTenantTheme = (branding: TenantBranding | null) => {
     const mutedHSL = hexToHSL(branding.muted_color);
     root.style.setProperty('--muted-foreground', mutedHSL);
   }
+
+  // Apply tenant-specific gray colors
+  const grayColors = ['gray_50', 'gray_100', 'gray_200', 'gray_300', 'gray_400', 'gray_500', 'gray_600', 'gray_700', 'gray_800', 'gray_900'];
+  grayColors.forEach(grayColor => {
+    if (branding[grayColor as keyof TenantBranding]) {
+      const grayHSL = hexToHSL(branding[grayColor as keyof TenantBranding] as string);
+      const cssVar = `--${grayColor.replace('_', '-')}`;
+      root.style.setProperty(cssVar, grayHSL);
+    }
+  });
   
   if (branding.font_family) {
     root.style.setProperty('--font-family', branding.font_family);
@@ -86,19 +106,18 @@ const createThemeVariants = (root: HTMLElement, branding: TenantBranding) => {
     root.style.setProperty('--input', `${h} ${s} 90%`);
   }
 
-  // Create neutral gray variants
-  if (branding.neutral_color) {
-    const neutral = hexToHSL(branding.neutral_color);
-    const [h, s] = neutral.split(' ');
+  // Use tenant gray colors or create neutral gray variants
+  if (branding.gray_500) {
+    const gray500 = hexToHSL(branding.gray_500);
+    const [h, s] = gray500.split(' ');
     
-    // Create gray variants for buttons and UI elements
-    root.style.setProperty('--gray-50', `${h} ${s} 98%`);
-    root.style.setProperty('--gray-100', `${h} ${s} 95%`);
-    root.style.setProperty('--gray-200', `${h} ${s} 90%`);
-    root.style.setProperty('--gray-300', `${h} ${s} 80%`);
-    root.style.setProperty('--gray-400', `${h} ${s} 60%`);
-    root.style.setProperty('--gray-500', `${h} ${s} 50%`);
-    root.style.setProperty('--gray-600', `${h} ${s} 40%`);
+    // Create gray variants for buttons and UI elements using tenant colors
+    if (!branding.gray_50) root.style.setProperty('--gray-50', `${h} ${s} 98%`);
+    if (!branding.gray_100) root.style.setProperty('--gray-100', `${h} ${s} 95%`);
+    if (!branding.gray_200) root.style.setProperty('--gray-200', `${h} ${s} 90%`);
+    if (!branding.gray_300) root.style.setProperty('--gray-300', `${h} ${s} 80%`);
+    if (!branding.gray_400) root.style.setProperty('--gray-400', `${h} ${s} 60%`);
+    if (!branding.gray_600) root.style.setProperty('--gray-600', `${h} ${s} 40%`);
   }
 
   // Create card variants
@@ -163,7 +182,7 @@ export const resetTenantTheme = () => {
     '--font-family', '--splash-primary', '--splash-background', '--splash-text',
     '--muted', '--muted-foreground', '--border', '--input', '--card', '--card-foreground',
     '--sidebar-primary', '--neutral', '--gray-50', '--gray-100', '--gray-200', 
-    '--gray-300', '--gray-400', '--gray-500', '--gray-600'
+    '--gray-300', '--gray-400', '--gray-500', '--gray-600', '--gray-700', '--gray-800', '--gray-900'
   ];
   
   defaultProperties.forEach(prop => {

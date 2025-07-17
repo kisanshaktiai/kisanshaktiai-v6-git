@@ -15,8 +15,8 @@ export const AuthHeader = ({ userCheckComplete, isNewUser }: AuthHeaderProps) =>
   const tagline = tenantBranding?.app_tagline || 'Your smart farming journey starts here';
 
   return (
-    <div className="text-center pt-8 pb-6">
-      <div className="flex justify-center items-center mb-6">
+    <div className="text-center pt-4 pb-2">
+      <div className="flex justify-center items-center mb-4">
         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-gray-100">
           <img 
             src={logoUrl}
@@ -30,7 +30,7 @@ export const AuthHeader = ({ userCheckComplete, isNewUser }: AuthHeaderProps) =>
         Welcome Back
       </h1>
       
-      <p className="text-gray-600 text-base px-4">
+      <p className="text-gray-600 text-base whitespace-nowrap overflow-hidden">
         {tagline}
       </p>
     </div>

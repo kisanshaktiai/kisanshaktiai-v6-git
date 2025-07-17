@@ -13,6 +13,22 @@ interface TenantBranding {
   font_family?: string;
   neutral_color?: string;
   muted_color?: string;
+  gray_50?: string;
+  gray_100?: string;
+  gray_200?: string;
+  gray_300?: string;
+  gray_400?: string;
+  gray_500?: string;
+  gray_600?: string;
+  gray_700?: string;
+  gray_800?: string;
+  gray_900?: string;
+  feature_icons?: {
+    ai_chat?: string;
+    community?: string;
+    smart_farming?: string;
+    secure?: string;
+  };
 }
 
 interface TenantFeatures {
@@ -49,6 +65,16 @@ const initialState: TenantState = {
     text_color: '#1F2937',
     neutral_color: '#6B7280',
     muted_color: '#9CA3AF',
+    gray_50: '#F9FAFB',
+    gray_100: '#F3F4F6',
+    gray_200: '#E5E7EB',
+    gray_300: '#D1D5DB',
+    gray_400: '#9CA3AF',
+    gray_500: '#6B7280',
+    gray_600: '#4B5563',
+    gray_700: '#374151',
+    gray_800: '#1F2937',
+    gray_900: '#111827',
     app_name: 'KisanShakti AI',
     app_tagline: 'Your smart farming journey starts here',
     logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
