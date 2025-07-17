@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { PhoneInput } from './PhoneInput';
@@ -50,7 +51,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
             icon: <LogIn className="w-4 h-4" />
           });
         } else {
-          toast.info('New number detected', {
+          toast.info('New user detected - Welcome to KisanShakti AI!', {
             duration: 2000,
             icon: <UserPlus className="w-4 h-4" />
           });
@@ -59,7 +60,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
         console.error('Error checking user existence:', error);
         setIsNewUser(true);
         setUserCheckComplete(true);
-        toast.error('New number detected', {
+        toast.error('New user detected', {
           duration: 3000
         });
       } finally {
@@ -85,15 +86,15 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
 
     setLoading(true);
     try {
-      console.log('Starting authentication for phone:', phone);
+      console.log('Starting KisanShakti AI authentication for phone:', phone);
       await signInWithPhone(phone);
       
       if (isNewUser) {
-        toast.success('🎉 Account created successfully!', {
+        toast.success('🌱 Welcome to KisanShakti AI! Account created successfully!', {
           duration: 4000
         });
       } else {
-        toast.success('🌱 Welcome back! Login successful.', {
+        toast.success('🌱 Welcome back to KisanShakti AI! Login successful.', {
           duration: 4000
         });
       }
@@ -103,7 +104,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
       console.error('Authentication error:', error);
       if (isNewUser) {
         if (error?.message?.includes('already exists') || error?.message?.includes('duplicate')) {
-          toast.error('Account already exists', {
+          toast.error('Account already exists on KisanShakti AI', {
             duration: 5000
           });
         } else {
@@ -113,7 +114,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
         }
       } else {
         if (error?.message?.includes('User not found') || error?.message?.includes('Invalid')) {
-          toast.error('Account not found', {
+          toast.error('Account not found on KisanShakti AI', {
             duration: 5000
           });
         } else {
@@ -128,8 +129,8 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-card">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white">
         <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
         
         <CardContent>
@@ -162,7 +163,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
           <FeaturesInfo />
           
           <p className="text-xs text-muted-foreground text-center mt-4">
-            Secure authentication powered by Supabase. No OTP required for demo.
+            Secure authentication powered by KisanShakti AI. No OTP required for demo.
           </p>
         </CardContent>
       </Card>

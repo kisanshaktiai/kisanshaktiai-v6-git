@@ -1,4 +1,3 @@
-
 // Enhanced TenantDetectionService with Build-Time Config Support
 
 import { Preferences } from '@capacitor/preferences';
@@ -14,6 +13,8 @@ interface DetectedTenant {
     app_name?: string;
     app_tagline?: string;
     primary_color?: string;
+    secondary_color?: string;
+    accent_color?: string;
     background_color?: string;
   };
 }
@@ -32,7 +33,6 @@ export class TenantDetectionService {
   async detectTenant(): Promise<DetectedTenant | null> {
     try {
       // PRIORITY 1: Check for hardcoded tenant in build (white-label deployments)
-      // Remove VITE_ env vars as they're not supported by Lovable
       const buildTimeTenantId = null; // Set via build config if needed
       const buildTimeTenantSlug = null; // Set via build config if needed
       
@@ -95,7 +95,7 @@ export class TenantDetectionService {
         console.log('Location-based detection failed:', error);
       }
 
-      // PRIORITY 5: Default tenant
+      // PRIORITY 5: Default KisanShakti AI tenant
       const defaultTenant = await this.getDefaultTenant();
       if (defaultTenant) {
         await this.cacheTenant(defaultTenant.id);
@@ -140,6 +140,8 @@ export class TenantDetectionService {
           app_name: branding.app_name,
           app_tagline: branding.app_tagline,
           primary_color: branding.primary_color,
+          secondary_color: branding.secondary_color,
+          accent_color: branding.accent_color,
           background_color: branding.background_color,
         } : undefined
       };
@@ -175,6 +177,8 @@ export class TenantDetectionService {
           app_name: branding.app_name,
           app_tagline: branding.app_tagline,
           primary_color: branding.primary_color,
+          secondary_color: branding.secondary_color,
+          accent_color: branding.accent_color,
           background_color: branding.background_color,
         } : undefined
       };
@@ -191,11 +195,13 @@ export class TenantDetectionService {
 
   private async getDefaultTenant(): Promise<DetectedTenant | null> {
     try {
+      const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
+      
       // Try to get the default tenant from database
       const { data: tenant, error } = await supabase
         .from('tenants')
         .select('*')
-        .eq('slug', 'default')
+        .eq('id', defaultTenantId)
         .eq('status', 'active')
         .maybeSingle();
 
@@ -204,17 +210,19 @@ export class TenantDetectionService {
       }
 
       if (!tenant) {
-        console.log('No default tenant found in database, using hardcoded fallback');
-        // Return hardcoded fallback with a consistent UUID format
+        console.log('No default tenant found in database, using hardcoded KisanShakti AI fallback');
+        // Return hardcoded fallback with existing tenant ID
         return {
-          id: '66372c6f-c996-4425-8749-a7561e5d6ae3', // Use existing default tenant ID
+          id: defaultTenantId,
           name: 'KisanShakti AI',
           slug: 'default',
           branding: {
-            logo_url: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
-            app_name: 'KisanShaktiAI',
-            app_tagline: 'Intelligent Guru for Farmers',
-            primary_color: '#4D7C0F',
+            logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+            app_name: 'KisanShakti AI',
+            app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
+            primary_color: '#8BC34A',
+            secondary_color: '#4CAF50',
+            accent_color: '#689F38',
             background_color: '#FFFFFF',
           }
         };
@@ -235,6 +243,8 @@ export class TenantDetectionService {
           app_name: branding.app_name,
           app_tagline: branding.app_tagline,
           primary_color: branding.primary_color,
+          secondary_color: branding.secondary_color,
+          accent_color: branding.accent_color,
           background_color: branding.background_color,
         } : undefined
       };
@@ -242,14 +252,16 @@ export class TenantDetectionService {
       console.error('Error fetching default tenant:', error);
       // Return hardcoded fallback with existing tenant ID
       return {
-        id: '66372c6f-c996-4425-8749-a7561e5d6ae3', // Use existing default tenant ID
+        id: '66372c6f-c996-4425-8749-a7561e5d6ae3',
         name: 'KisanShakti AI',
         slug: 'default',
         branding: {
-          logo_url: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
-          app_name: 'KisanShaktiAI',
-          app_tagline: 'Intelligent Guru for Farmers',
-          primary_color: '#4D7C0F',
+          logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+          app_name: 'KisanShakti AI',
+          app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
+          primary_color: '#8BC34A',
+          secondary_color: '#4CAF50',
+          accent_color: '#689F38',
           background_color: '#FFFFFF',
         }
       };

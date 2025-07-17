@@ -24,14 +24,17 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Resolve tenant ID if it's a slug or handle default UUID
-    let resolvedTenantId = tenantId;
-    if (tenantId === 'default' || !tenantId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    // Use the known default tenant ID for KisanShakti AI
+    const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
+    let resolvedTenantId = defaultTenantId;
+
+    // Only try to resolve if it's not the default or a valid UUID
+    if (tenantId !== 'default' && tenantId !== defaultTenantId && tenantId.length > 10) {
       console.log('Resolving tenant slug to UUID:', tenantId);
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('id')
-        .eq('slug', tenantId === '66372c6f-c996-4425-8749-a7561e5d6ae3' ? 'default' : tenantId)
+        .eq('slug', tenantId)
         .eq('status', 'active')
         .maybeSingle();
 
@@ -39,18 +42,15 @@ serve(async (req) => {
         console.error('Tenant resolution error:', tenantError);
       }
 
-      if (!tenant) {
-        console.log('Tenant not found in database, using default fallback UUID');
-        // Use the existing default tenant UUID
-        resolvedTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
-      } else {
+      if (tenant) {
         resolvedTenantId = tenant.id;
         console.log('Resolved tenant ID:', resolvedTenantId);
+      } else {
+        console.log('Tenant not found, using default KisanShakti AI tenant');
+        resolvedTenantId = defaultTenantId;
       }
-    } else if (tenantId === '66372c6f-c996-4425-8749-a7561e5d6ae3') {
-      // Handle the default UUID case
-      resolvedTenantId = tenantId;
-      console.log('Using default tenant UUID:', resolvedTenantId);
+    } else {
+      console.log('Using default KisanShakti AI tenant UUID:', resolvedTenantId);
     }
 
     // Validate phone number
@@ -66,7 +66,6 @@ serve(async (req) => {
         }
       );
     }
-
 
     console.log('=== CHECKING FOR EXISTING USER ===');
 
@@ -128,12 +127,12 @@ serve(async (req) => {
           phone: `+91${cleanPhone}`,
           phone_confirmed: true,
           email_confirmed: true,
-            user_metadata: {
-              phone: cleanPhone,
-              is_mobile_user: true,
-              tenant_id: resolvedTenantId,
-              preferred_language: preferredLanguage
-            }
+          user_metadata: {
+            phone: cleanPhone,
+            is_mobile_user: true,
+            tenant_id: resolvedTenantId,
+            preferred_language: preferredLanguage
+          }
         });
 
         if (createError) {
@@ -199,7 +198,7 @@ serve(async (req) => {
               console.error('Error linking user to tenant:', tenantLinkError);
               // Don't fail the process
             } else {
-              console.log('User linked to tenant successfully');
+              console.log('User linked to KisanShakti AI tenant successfully');
             }
           } catch (error) {
             console.error('Tenant linking failed:', error);
@@ -257,11 +256,7 @@ serve(async (req) => {
         );
       }
 
-      console.log('Session created successfully:', {
-        hasAccessToken: !!sessionData.session.access_token,
-        hasRefreshToken: !!sessionData.session.refresh_token,
-        expiresAt: sessionData.session.expires_at
-      });
+      console.log('Session created successfully for KisanShakti AI user:', authUser.id);
 
       // Prepare session response
       const sessionResponse = {
@@ -273,15 +268,14 @@ serve(async (req) => {
         user: sessionData.session.user
       };
 
-      console.log('Session generated successfully for user:', authUser.id);
-
       return new Response(
         JSON.stringify({
           success: true,
           user: authUser,
           session: sessionResponse,
           isNewUser,
-          message: isNewUser ? 'Account created successfully' : 'Welcome back!'
+          tenantId: resolvedTenantId,
+          message: isNewUser ? 'Welcome to KisanShakti AI!' : 'Welcome back to KisanShakti AI!'
         }),
         { 
           status: 200, 

@@ -18,10 +18,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [status, setStatus] = useState('');
   const [currentLogo, setCurrentLogo] = useState('kisanshakti'); // 'kisanshakti' or 'tenant'
   const [tenantBranding, setTenantBranding] = useState({
-    logo: '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
-    appName: 'KisanShaktiAI',
-    tagline: t('splash.tagline'),
-    primaryColor: '#4D7C0F',
+    logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+    appName: 'KisanShakti AI',
+    tagline: 'INTELLIGENT AI GURU FOR FARMERS',
+    primaryColor: '#8BC34A',
     backgroundColor: '#FFFFFF'
   });
 
@@ -31,7 +31,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const initializeApp = async () => {
     try {
-      // Step 1: Show KisanShaktiAI logo first
+      // Step 1: Show KisanShakti AI logo first
       setStatus(t('common.initializing'));
       setProgress(10);
       
@@ -53,10 +53,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         
         // Update branding with tenant-specific data
         setTenantBranding({
-          logo: detectedTenant.branding?.logo_url || '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png',
-          appName: detectedTenant.branding?.app_name || 'KisanShaktiAI',
-          tagline: detectedTenant.branding?.app_tagline || t('splash.tagline'),
-          primaryColor: detectedTenant.branding?.primary_color || '#4D7C0F',
+          logo: detectedTenant.branding?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+          appName: detectedTenant.branding?.app_name || 'KisanShakti AI',
+          tagline: detectedTenant.branding?.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
+          primaryColor: detectedTenant.branding?.primary_color || '#8BC34A',
           backgroundColor: detectedTenant.branding?.background_color || '#FFFFFF'
         });
 
@@ -95,21 +95,21 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const getCurrentLogo = () => {
     if (currentLogo === 'kisanshakti') {
-      return '/lovable-uploads/180cdfdf-9869-4c78-ace0-fdb76e9273b4.png';
+      return '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
     }
     return tenantBranding.logo;
   };
 
   const getCurrentAppName = () => {
     if (currentLogo === 'kisanshakti') {
-      return 'KisanShaktiAI';
+      return 'KisanShakti AI';
     }
     return tenantBranding.appName;
   };
 
   const getCurrentTagline = () => {
     if (currentLogo === 'kisanshakti') {
-      return t('splash.tagline');
+      return 'INTELLIGENT AI GURU FOR FARMERS';
     }
     return tenantBranding.tagline;
   };
@@ -137,7 +137,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         >
           {getCurrentAppName()}
         </h1>
-        <p className="text-gray-600 text-base transition-all duration-500">
+        <p className="text-gray-600 text-base transition-all duration-500 font-medium">
           {getCurrentTagline()}
         </p>
       </div>
