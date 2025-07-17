@@ -31,7 +31,7 @@ serve(async (req) => {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('id')
-        .eq('slug', tenantId === '00000000-0000-0000-0000-000000000000' ? 'default' : tenantId)
+        .eq('slug', tenantId === '66372c6f-c996-4425-8749-a7561e5d6ae3' ? 'default' : tenantId)
         .eq('status', 'active')
         .maybeSingle();
 
@@ -41,13 +41,13 @@ serve(async (req) => {
 
       if (!tenant) {
         console.log('Tenant not found in database, using default fallback UUID');
-        // Use the hardcoded default UUID for fallback
-        resolvedTenantId = '00000000-0000-0000-0000-000000000000';
+        // Use the existing default tenant UUID
+        resolvedTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
       } else {
         resolvedTenantId = tenant.id;
         console.log('Resolved tenant ID:', resolvedTenantId);
       }
-    } else if (tenantId === '00000000-0000-0000-0000-000000000000') {
+    } else if (tenantId === '66372c6f-c996-4425-8749-a7561e5d6ae3') {
       // Handle the default UUID case
       resolvedTenantId = tenantId;
       console.log('Using default tenant UUID:', resolvedTenantId);

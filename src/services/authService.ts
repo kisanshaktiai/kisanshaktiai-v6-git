@@ -140,6 +140,8 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     
     // Detect current tenant before authentication
     const tenantService = TenantDetectionService.getInstance();
+    // Clear cache to ensure fresh tenant detection
+    await tenantService.clearCache();
     const currentTenant = await tenantService.detectTenant();
     
     console.log('Current tenant for auth:', currentTenant);

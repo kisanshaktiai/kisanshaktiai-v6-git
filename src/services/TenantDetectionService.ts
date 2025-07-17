@@ -205,9 +205,9 @@ export class TenantDetectionService {
 
       if (!tenant) {
         console.log('No default tenant found in database, using hardcoded fallback');
-        // Return hardcoded fallback with UUID format
+        // Return hardcoded fallback with a consistent UUID format
         return {
-          id: '00000000-0000-0000-0000-000000000000',
+          id: '66372c6f-c996-4425-8749-a7561e5d6ae3', // Use existing default tenant ID
           name: 'KisanShakti AI',
           slug: 'default',
           branding: {
@@ -240,9 +240,9 @@ export class TenantDetectionService {
       };
     } catch (error) {
       console.error('Error fetching default tenant:', error);
-      // Return hardcoded fallback with UUID format
+      // Return hardcoded fallback with existing tenant ID
       return {
-        id: '00000000-0000-0000-0000-000000000000',
+        id: '66372c6f-c996-4425-8749-a7561e5d6ae3', // Use existing default tenant ID
         name: 'KisanShakti AI',
         slug: 'default',
         branding: {
