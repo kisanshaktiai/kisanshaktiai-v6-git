@@ -7,7 +7,7 @@ import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
-import { PinAuthScreen } from '../auth/PinAuthScreen';
+import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
@@ -79,7 +79,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Authentication step - only show if not authenticated
   if (currentStep === 'auth') {
-    return <PinAuthScreen onComplete={handleAuthComplete} />;
+    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // Fallback - should not reach here
