@@ -38,13 +38,33 @@ serve(async (req) => {
       }
     )
 
-    const { phone } = await req.json()
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error('Invalid JSON in request body:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid request format' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const { phone } = requestBody;
     console.log('Received phone number in edge function:', phone)
 
-    if (!phone || phone.length !== 10) {
+    if (!phone || typeof phone !== 'string' || phone.length !== 10) {
       console.log('Invalid phone number provided to edge function')
       return new Response(
-        JSON.stringify({ error: 'Valid 10-digit phone number required' }),
+        JSON.stringify({ 
+          success: false,
+          error: 'Valid 10-digit phone number required' 
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -55,7 +75,7 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Check in user_profiles table
+    // Check in user_profiles table (correct table name)
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, phone, full_name')
@@ -87,32 +107,61 @@ serve(async (req) => {
       
       if (authUserError || !authUser.user) {
         console.log('Auth user not found, creating auth entry for existing profile...')
-        // Create auth user for existing profile
-        const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-          id: userId, // Use existing profile ID
-          email,
-          password: password,
-          email_confirm: true,
-          phone_confirm: true,
-          user_metadata: { phone, email }
-        })
+        
+        // First check if email already exists to avoid conflicts
+        const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
+        const emailExists = existingAuthUsers.users?.some(user => user.email === email)
+        
+        if (emailExists) {
+          console.log('Email already exists in auth, finding and updating existing user...')
+          const existingUser = existingAuthUsers.users?.find(user => user.email === email)
+          if (existingUser) {
+            userId = existingUser.id
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+              password: password,
+              email_confirm: true,
+              user_metadata: { phone, email }
+            })
+            if (updateError) {
+              console.error('Error updating existing auth user:', updateError)
+            }
+          }
+        } else {
+          // Create auth user for existing profile
+          const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
+            id: userId,
+            email,
+            password: password,
+            email_confirm: true,
+            phone_confirm: true,
+            user_metadata: { phone, email }
+          })
 
-        if (createAuthError) {
-          console.error('Error creating auth user for existing profile:', createAuthError)
-          throw createAuthError
+          if (createAuthError) {
+            console.error('Error creating auth user for existing profile:', createAuthError)
+            // If creation fails, try to find existing user by email
+            const { data: existingAuthUsers } = await supabaseAdmin.auth.admin.listUsers()
+            const existingUser = existingAuthUsers.users?.find(user => user.email === email)
+            if (existingUser) {
+              userId = existingUser.id
+            } else {
+              throw createAuthError
+            }
+          } else {
+            console.log('Auth user created for existing profile:', newAuthUser.user.id)
+          }
         }
-        console.log('Auth user created for existing profile:', newAuthUser.user.id)
       } else {
         console.log('Auth user already exists, updating password...')
         // Update password for existing auth user
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
           password: password,
+          email_confirm: true,
           user_metadata: { phone, email }
         })
 
         if (updateError) {
           console.error('Error updating existing user:', updateError)
-          throw updateError
         }
       }
     } else {
@@ -131,11 +180,11 @@ serve(async (req) => {
           // Update password for existing auth user
           const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
             password: password,
+            email_confirm: true,
             user_metadata: { phone, email }
           })
           if (updateError) {
             console.error('Error updating existing auth user:', updateError)
-            throw updateError
           }
         }
       } else {
@@ -183,7 +232,35 @@ serve(async (req) => {
 
     if (authError) {
       console.error('Sign-in failed:', authError.message)
-      throw authError
+      
+      // Handle specific auth errors
+      if (authError.message.includes('Email not confirmed')) {
+        // Try to confirm the email and retry
+        console.log('Email not confirmed, attempting to confirm...')
+        const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(userId!, {
+          email_confirm: true
+        })
+        
+        if (!confirmError) {
+          console.log('Email confirmed, retrying sign in...')
+          // Retry sign in
+          const { data: retryAuthData, error: retryAuthError } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+          })
+          
+          if (retryAuthError) {
+            throw retryAuthError
+          } else {
+            authData.session = retryAuthData.session
+            authData.user = retryAuthData.user
+          }
+        } else {
+          throw authError
+        }
+      } else {
+        throw authError
+      }
     }
 
     if (!authData.session) {

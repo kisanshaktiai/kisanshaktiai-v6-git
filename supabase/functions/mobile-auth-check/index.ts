@@ -26,10 +26,24 @@ serve(async (req) => {
       }
     )
 
-    const { phone, checkOnly } = await req.json()
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error('Invalid JSON in request body:', error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid request format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const { phone, checkOnly } = requestBody;
     console.log('Received request:', { phone, checkOnly })
 
-    if (!phone || phone.length !== 10) {
+    if (!phone || typeof phone !== 'string' || phone.length !== 10) {
       console.log('Invalid phone number provided')
       return new Response(
         JSON.stringify({ error: 'Valid 10-digit phone number required' }),
@@ -52,6 +66,16 @@ serve(async (req) => {
 
     if (profileError) {
       console.error('Error checking for existing profile:', profileError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Database error while checking user',
+          details: profileError.message 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     console.log('Profile check result:', {
