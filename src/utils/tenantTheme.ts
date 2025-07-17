@@ -6,6 +6,8 @@ interface TenantBranding {
   background_color?: string;
   text_color?: string;
   font_family?: string;
+  neutral_color?: string;
+  muted_color?: string;
 }
 
 export const applyTenantTheme = (branding: TenantBranding | null) => {
@@ -44,6 +46,17 @@ export const applyTenantTheme = (branding: TenantBranding | null) => {
     root.style.setProperty('--foreground', textHSL);
     root.style.setProperty('--splash-text', branding.text_color);
   }
+
+  // Gray/neutral colors
+  if (branding.neutral_color) {
+    const neutralHSL = hexToHSL(branding.neutral_color);
+    root.style.setProperty('--neutral', neutralHSL);
+  }
+
+  if (branding.muted_color) {
+    const mutedHSL = hexToHSL(branding.muted_color);
+    root.style.setProperty('--muted-foreground', mutedHSL);
+  }
   
   if (branding.font_family) {
     root.style.setProperty('--font-family', branding.font_family);
@@ -67,11 +80,25 @@ const createThemeVariants = (root: HTMLElement, branding: TenantBranding) => {
     
     // Create lighter variant for muted backgrounds
     root.style.setProperty('--muted', `${h} ${s} 95%`);
-    root.style.setProperty('--muted-foreground', `${h} ${s} 45%`);
     
     // Create border variant
     root.style.setProperty('--border', `${h} ${s} 90%`);
     root.style.setProperty('--input', `${h} ${s} 90%`);
+  }
+
+  // Create neutral gray variants
+  if (branding.neutral_color) {
+    const neutral = hexToHSL(branding.neutral_color);
+    const [h, s] = neutral.split(' ');
+    
+    // Create gray variants for buttons and UI elements
+    root.style.setProperty('--gray-50', `${h} ${s} 98%`);
+    root.style.setProperty('--gray-100', `${h} ${s} 95%`);
+    root.style.setProperty('--gray-200', `${h} ${s} 90%`);
+    root.style.setProperty('--gray-300', `${h} ${s} 80%`);
+    root.style.setProperty('--gray-400', `${h} ${s} 60%`);
+    root.style.setProperty('--gray-500', `${h} ${s} 50%`);
+    root.style.setProperty('--gray-600', `${h} ${s} 40%`);
   }
 
   // Create card variants
@@ -135,7 +162,8 @@ export const resetTenantTheme = () => {
     '--primary', '--secondary', '--accent', '--background', '--foreground',
     '--font-family', '--splash-primary', '--splash-background', '--splash-text',
     '--muted', '--muted-foreground', '--border', '--input', '--card', '--card-foreground',
-    '--sidebar-primary'
+    '--sidebar-primary', '--neutral', '--gray-50', '--gray-100', '--gray-200', 
+    '--gray-300', '--gray-400', '--gray-500', '--gray-600'
   ];
   
   defaultProperties.forEach(prop => {

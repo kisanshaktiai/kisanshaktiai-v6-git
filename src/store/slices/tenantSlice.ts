@@ -11,6 +11,8 @@ interface TenantBranding {
   background_color?: string;
   text_color?: string;
   font_family?: string;
+  neutral_color?: string;
+  muted_color?: string;
 }
 
 interface TenantFeatures {
@@ -39,7 +41,18 @@ interface TenantState {
 
 const initialState: TenantState = {
   currentTenant: null,
-  tenantBranding: null,
+  tenantBranding: {
+    primary_color: '#8BC34A',
+    secondary_color: '#4CAF50',
+    accent_color: '#689F38',
+    background_color: '#FFFFFF',
+    text_color: '#1F2937',
+    neutral_color: '#6B7280',
+    muted_color: '#9CA3AF',
+    app_name: 'KisanShakti AI',
+    app_tagline: 'Your smart farming journey starts here',
+    logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
+  },
   tenantFeatures: null,
   loading: false,
   error: null,

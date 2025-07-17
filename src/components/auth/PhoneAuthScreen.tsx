@@ -129,44 +129,42 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-lime-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white">
-        <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
-        
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-6">
-            <PhoneInput
-              phone={phone}
-              onPhoneChange={handlePhoneChange}
-              loading={loading}
-              checkingUser={checkingUser}
-              userCheckComplete={userCheckComplete}
-              isNewUser={isNewUser}
-            />
-            
-            <UserStatusIndicator
-              phone={phone}
-              checkingUser={checkingUser}
-              userCheckComplete={userCheckComplete}
-              isNewUser={isNewUser}
-            />
-            
-            <AuthButton
-              loading={loading}
-              phone={phone}
-              checkingUser={checkingUser}
-              userCheckComplete={userCheckComplete}
-              isNewUser={isNewUser}
-            />
-          </form>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="w-full max-w-sm mx-auto px-6">
+        <Card className="border-0 shadow-none bg-transparent">
+          <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
           
-          <FeaturesInfo />
-          
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            Secure authentication powered by KisanShakti AI. No OTP required for demo.
-          </p>
-        </CardContent>
-      </Card>
+          <CardContent className="px-0">
+            <form onSubmit={handleAuth} className="space-y-6">
+              <PhoneInput
+                phone={phone}
+                onPhoneChange={handlePhoneChange}
+                loading={loading}
+                checkingUser={checkingUser}
+                userCheckComplete={userCheckComplete}
+                isNewUser={isNewUser}
+              />
+              
+              <UserStatusIndicator
+                phone={phone}
+                checkingUser={checkingUser}
+                userCheckComplete={userCheckComplete}
+                isNewUser={isNewUser}
+              />
+              
+              <AuthButton
+                loading={loading}
+                phone={phone}
+                checkingUser={checkingUser}
+                userCheckComplete={userCheckComplete}
+                isNewUser={isNewUser}
+              />
+            </form>
+            
+            <FeaturesInfo />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

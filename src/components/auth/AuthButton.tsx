@@ -1,5 +1,8 @@
+
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface AuthButtonProps {
   loading: boolean;
@@ -16,32 +19,35 @@ export const AuthButton = ({
   userCheckComplete, 
   isNewUser 
 }: AuthButtonProps) => {
+  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  
+  const isDisabled = loading || phone.length < 10 || checkingUser;
+  const primaryColor = tenantBranding?.primary_color || '#8BC34A';
+  
   return (
     <Button 
       type="submit" 
-      className={`w-full text-lg font-semibold transition-all duration-300 ${
-        userCheckComplete && isNewUser 
-          ? 'bg-green-600 hover:bg-green-700 border-green-500' 
-          : userCheckComplete && !isNewUser 
-          ? 'bg-blue-600 hover:bg-blue-700 border-blue-500' 
-          : 'bg-primary hover:bg-primary/90'
+      className={`w-full h-12 text-base font-medium rounded-xl transition-all duration-200 ${
+        isDisabled 
+          ? 'bg-gray-200 text-gray-500 cursor-not-allowed hover:bg-gray-200' 
+          : `text-white hover:opacity-90`
       }`}
-      disabled={loading || phone.length < 10 || checkingUser}
+      style={{
+        backgroundColor: isDisabled ? undefined : primaryColor,
+      }}
+      disabled={isDisabled}
     >
       {loading ? (
-        <>
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          {userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...'}
-        </>
+        <div className="flex items-center space-x-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>
+            {userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...'}
+          </span>
+        </div>
       ) : (
-        <>
-          {userCheckComplete && isNewUser 
-            ? 'Create Account & Continue' 
-            : userCheckComplete && !isNewUser 
-            ? 'Sign In & Continue' 
-            : 'Continue'
-          }
-        </>
+        <span>
+          Continue
+        </span>
       )}
     </Button>
   );
