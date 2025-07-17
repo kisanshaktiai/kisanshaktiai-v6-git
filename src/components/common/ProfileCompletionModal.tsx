@@ -276,34 +276,34 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <User className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
-              <p className="text-sm text-muted-foreground">Tell us about yourself</p>
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <User className="w-8 h-8 mx-auto mb-2 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">Personal Information</h3>
+              <p className="text-xs text-muted-foreground">Tell us about yourself</p>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm font-medium">Full Name *</Label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="fullName" className="text-xs font-medium">Full Name *</Label>
                 <Input
                   id="fullName"
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="text-sm font-medium">Date of Birth *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="dateOfBirth" className="text-xs font-medium">Date of Birth *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
@@ -312,72 +312,72 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <MapPin className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Location Details</h3>
-              <p className="text-sm text-muted-foreground">Where are you located?</p>
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <MapPin className="w-8 h-8 mx-auto mb-2 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">Location Details</h3>
+              <p className="text-xs text-muted-foreground">Where are you located?</p>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={getLocationData}
                 disabled={gettingLocation}
-                className="w-full h-12 text-sm"
+                className="w-full h-9 text-xs"
               >
-                <MapPin className="w-4 h-4 mr-2" />
+                <MapPin className="w-3 h-3 mr-1" />
                 {gettingLocation ? 'Getting Location...' : 'Auto-fill from GPS'}
               </Button>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="village" className="text-sm font-medium">Village *</Label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="village" className="text-xs font-medium">Village *</Label>
                 <Input
                   id="village"
                   type="text"
                   placeholder="Enter your village"
                   value={formData.village}
                   onChange={(e) => handleInputChange('village', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="tahsil" className="text-sm font-medium">Tahsil</Label>
+              <div className="space-y-1">
+                <Label htmlFor="tahsil" className="text-xs font-medium">Tahsil</Label>
                 <Input
                   id="tahsil"
                   type="text"
                   placeholder="Enter your tahsil"
                   value={formData.tahsil}
                   onChange={(e) => handleInputChange('tahsil', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="district" className="text-sm font-medium">District *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="district" className="text-xs font-medium">District *</Label>
                 <Input
                   id="district"
                   type="text"
                   placeholder="Enter your district"
                   value={formData.district}
                   onChange={(e) => handleInputChange('district', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="state" className="text-sm font-medium">State *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="state" className="text-xs font-medium">State *</Label>
                 <Input
                   id="state"
                   type="text"
                   placeholder="Enter your state"
                   value={formData.state}
                   onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
@@ -386,16 +386,16 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <IdCard className="w-12 h-12 mx-auto mb-3 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">ID & Verification</h3>
-              <p className="text-sm text-muted-foreground">Your identification details</p>
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <IdCard className="w-8 h-8 mx-auto mb-2 text-primary" />
+              <h3 className="text-base font-semibold text-foreground">ID & Verification</h3>
+              <p className="text-xs text-muted-foreground">Your identification details</p>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="aadhaarNumber" className="text-sm font-medium">Aadhaar Number *</Label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="aadhaarNumber" className="text-xs font-medium">Aadhaar Number *</Label>
                 <Input
                   id="aadhaarNumber"
                   type="text"
@@ -403,33 +403,33 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                   value={formData.aadhaarNumber}
                   onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
                   maxLength={12}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="farmerId" className="text-sm font-medium">Farmer ID *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="farmerId" className="text-xs font-medium">Farmer ID *</Label>
                 <Input
                   id="farmerId"
                   type="text"
                   placeholder="Enter your farmer ID"
                   value={formData.farmerId}
                   onChange={(e) => handleInputChange('farmerId', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="shcId" className="text-sm font-medium">SHC ID (Optional)</Label>
+              <div className="space-y-1">
+                <Label htmlFor="shcId" className="text-xs font-medium">SHC ID (Optional)</Label>
                 <Input
                   id="shcId"
                   type="text"
                   placeholder="Enter your SHC ID"
                   value={formData.shcId}
                   onChange={(e) => handleInputChange('shcId', e.target.value)}
-                  className="h-12"
+                  className="h-10 text-sm"
                 />
-                <p className="text-xs text-muted-foreground">Soil Health Card ID (if available)</p>
+                <p className="text-[10px] text-muted-foreground">Soil Health Card ID (if available)</p>
               </div>
             </div>
           </div>
@@ -442,40 +442,37 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-4 p-0 gap-0">
+      <DialogContent className="w-full max-w-sm mx-2 p-0 gap-0 h-[90vh] flex flex-col">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 text-center border-b border-border">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Tractor className="w-8 h-8 text-primary" />
-          </div>
-          <DialogTitle className="text-xl font-bold text-foreground">Complete Your Profile</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+        <DialogHeader className="px-4 py-3 text-center border-b border-border shrink-0">
+          <DialogTitle className="text-lg font-semibold text-foreground">Complete Your Profile</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             Complete your profile to access {featureName} and get personalized farming insights
           </DialogDescription>
         </DialogHeader>
 
         {/* Progress Bar */}
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-4 py-3 border-b border-border shrink-0">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-foreground">Step {currentStep} of {steps.length}</span>
-            <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+            <span className="text-xs font-medium text-foreground">Step {currentStep} of {steps.length}</span>
+            <span className="text-xs text-muted-foreground">{Math.round(progress)}% Complete</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-1.5" />
           
           {/* Step indicators */}
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-3">
             {steps.map((step) => {
               const Icon = step.icon;
               return (
                 <div key={step.id} className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${
                     currentStep >= step.id 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3 h-3" />
                   </div>
-                  <span className="text-xs text-muted-foreground text-center">{step.title}</span>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">{step.title}</span>
                 </div>
               );
             })}
@@ -483,20 +480,22 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <form onSubmit={handleSubmit}>
-            {renderStepContent()}
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <form onSubmit={handleSubmit} className="h-full flex flex-col">
+            <div className="flex-1">
+              {renderStepContent()}
+            </div>
 
             {/* Navigation */}
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-2 mt-4 pt-3 border-t border-border shrink-0">
               {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
-                  className="flex-1 h-12"
+                  className="flex-1 h-10 text-sm"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  <ChevronLeft className="w-3 h-3 mr-1" />
                   Previous
                 </Button>
               )}
@@ -506,7 +505,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                   type="button"
                   variant="outline"
                   onClick={onClose}
-                  className="flex-1 h-12"
+                  className="flex-1 h-10 text-sm"
                 >
                   Skip for now
                 </Button>
@@ -517,16 +516,16 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                   type="button"
                   onClick={nextStep}
                   disabled={!validateStep(currentStep)}
-                  className="flex-1 h-12"
+                  className="flex-1 h-10 text-sm"
                 >
                   Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <ChevronRight className="w-3 h-3 ml-1" />
                 </Button>
               ) : (
                 <Button
                   type="submit"
                   disabled={loading || !validateStep(currentStep)}
-                  className="flex-1 h-12"
+                  className="flex-1 h-10 text-sm"
                 >
                   {loading ? 'Saving...' : 'Complete Profile'}
                 </Button>
