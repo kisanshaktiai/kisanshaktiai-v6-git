@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
@@ -54,7 +55,7 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Enhanced query to check user_profiles table
+    // Check in user_profiles table
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, phone, full_name')
@@ -118,35 +119,56 @@ serve(async (req) => {
       console.log('=== NEW USER CREATION ===')
       console.log('No existing profile found, creating new user...')
       
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: password,
-        email_confirm: true,
-        phone_confirm: true,
-        user_metadata: { phone, email }
-      })
-
-      if (createError) {
-        console.error('User creation error:', createError)
-        throw createError
-      }
-
-      console.log('New user created successfully:', newUser.user.id)
-      userId = newUser.user.id
-
-      // Create profile for new user
-      const { error: profileCreateError } = await supabaseAdmin
-        .from('user_profiles')
-        .insert({
-          id: userId,
-          phone: phone,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      // First check if email already exists in auth.users to avoid conflict
+      const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers()
+      const emailExists = existingAuthUser.users?.some(user => user.email === email)
+      
+      if (emailExists) {
+        console.log('Email already exists in auth, finding existing user...')
+        const existingUser = existingAuthUser.users?.find(user => user.email === email)
+        if (existingUser) {
+          userId = existingUser.id
+          // Update password for existing auth user
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            password: password,
+            user_metadata: { phone, email }
+          })
+          if (updateError) {
+            console.error('Error updating existing auth user:', updateError)
+            throw updateError
+          }
+        }
+      } else {
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: password,
+          email_confirm: true,
+          phone_confirm: true,
+          user_metadata: { phone, email }
         })
 
-      if (profileCreateError) {
-        console.error('Error creating profile:', profileCreateError)
-        // Don't fail the auth if profile creation fails
+        if (createError) {
+          console.error('User creation error:', createError)
+          throw createError
+        }
+
+        console.log('New user created successfully:', newUser.user.id)
+        userId = newUser.user.id
+
+        // Create profile for new user (only if it doesn't exist)
+        const { error: profileCreateError } = await supabaseAdmin
+          .from('user_profiles')
+          .insert({
+            id: userId,
+            phone: phone,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (profileCreateError) {
+          console.error('Error creating profile:', profileCreateError)
+          // Don't fail the auth if profile creation fails
+        }
       }
     }
 

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
@@ -42,7 +43,7 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Check in user_profiles table
+    // Check in user_profiles table (correct table name)
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, phone, full_name')

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 
@@ -35,7 +36,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
       return false;
     }
     
-    // Call the mobile-auth-check edge function to check user existence
+    // Call the mobile-auth-check edge function
     const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
       body: { phone: cleanPhone, checkOnly: true }
     });
@@ -60,7 +61,7 @@ const checkUserExistsDirect = async (cleanPhone: string): Promise<boolean> => {
   try {
     console.log('=== FALLBACK DIRECT DATABASE CHECK ===');
     
-    // Query with phone number
+    // Query the user_profiles table with the correct phone field
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id, phone, full_name')
