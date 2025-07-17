@@ -92,6 +92,7 @@ export type Database = {
           preferred_dealer_id: string | null
           primary_crops: string[] | null
           shc_id: string | null
+          tenant_id: string | null
           total_app_opens: number | null
           total_land_acres: number | null
           total_queries: number | null
@@ -121,6 +122,7 @@ export type Database = {
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
           shc_id?: string | null
+          tenant_id?: string | null
           total_app_opens?: number | null
           total_land_acres?: number | null
           total_queries?: number | null
@@ -150,6 +152,7 @@ export type Database = {
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
           shc_id?: string | null
+          tenant_id?: string | null
           total_app_opens?: number | null
           total_land_acres?: number | null
           total_queries?: number | null
@@ -158,7 +161,15 @@ export type Database = {
           verified_at?: string | null
           verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "farmers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       land_activities: {
         Row: {
@@ -1639,6 +1650,10 @@ export type Database = {
         Args: { "": string }
         Returns: unknown
       }
+      get_current_tenant_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_proj4_from_srid: {
         Args: { "": number }
         Returns: string
@@ -1674,6 +1689,10 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      is_tenant_admin: {
+        Args: { _tenant_id: string }
+        Returns: boolean
       }
       json: {
         Args: { "": unknown }
