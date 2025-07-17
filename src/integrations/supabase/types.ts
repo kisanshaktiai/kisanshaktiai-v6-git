@@ -809,6 +809,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          access_token_hash: string | null
+          created_at: string
+          device_info: Json | null
+          expires_at: string
+          id: string
+          is_active: boolean | null
+          last_activity_at: string | null
+          refresh_token_hash: string | null
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_hash?: string | null
+          created_at?: string
+          device_info?: Json | null
+          expires_at: string
+          id?: string
+          is_active?: boolean | null
+          last_activity_at?: string | null
+          refresh_token_hash?: string | null
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_hash?: string | null
+          created_at?: string
+          device_info?: Json | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_activity_at?: string | null
+          refresh_token_hash?: string | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_tenants: {
         Row: {
           created_at: string | null
@@ -1113,6 +1155,10 @@ export type Database = {
       calculate_land_health_score: {
         Args: { land_uuid: string }
         Returns: number
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>

@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
 import { Database } from '@/integrations/supabase/types';
+import { sessionService } from './sessionService';
+import { authHealthService } from './authHealthService';
 
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 
@@ -123,6 +125,9 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
   try {
     console.log('Starting mobile authentication for phone:', phone);
     
+    // Log authentication event
+    await authHealthService.logAuthEvent('sign_in_started', { phone: phone.replace(/\d/g, '*') });
+    
     // Clean phone number
     const cleanPhone = phone.replace(/\D/g, '');
     
@@ -150,62 +155,67 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
     if (error) {
       console.error('Edge function error:', error);
+      await authHealthService.logAuthEvent('edge_function_error', { error: error.message });
       throw new Error(error.message || 'Authentication service error. Please try again.');
     }
 
     console.log('Edge function response:', data);
+    await authHealthService.logAuthEvent('edge_function_success', { 
+      hasSession: !!data?.session,
+      isNewUser: data?.isNewUser 
+    });
 
     if (!data?.success) {
+      await authHealthService.logAuthEvent('auth_response_error', { error: data?.error });
       throw new Error(data?.error || 'Authentication failed. Please try again.');
     }
 
-    // Validate session data structure
-    if (!data.session || !data.session.access_token || !data.session.refresh_token) {
+    // Enhanced session validation using SessionService
+    const validation = sessionService.validateSessionData(data.session);
+    if (!validation.isValid || !validation.session) {
       console.error('Invalid session data received:', data);
-      throw new Error('Invalid authentication response. Please try again.');
+      await authHealthService.logAuthEvent('session_validation_failed', { 
+        error: validation.error,
+        sessionData: {
+          hasAccessToken: !!data.session?.access_token,
+          hasRefreshToken: !!data.session?.refresh_token,
+          hasUser: !!data.session?.user
+        }
+      });
+      throw new Error(`Invalid authentication response: ${validation.error}`);
     }
 
-    console.log('Setting session with tokens:', {
-      hasAccessToken: !!data.session.access_token,
-      hasRefreshToken: !!data.session.refresh_token,
+    console.log('Setting session with validated tokens...');
+    await authHealthService.logAuthEvent('session_setting_started', {
       userId: data.user?.id,
-      expiresAt: data.session.expires_at,
       isNewUser: data.isNewUser
     });
     
-    // Set the session using Supabase client
-    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token
-    });
-
-    if (sessionError) {
-      console.error('Session setting error:', sessionError);
-      throw new Error('Failed to establish session. Please try again.');
-    }
+    // Use enhanced session service to set session with retry mechanism
+    const session = await sessionService.setSession(data.session);
 
     console.log('Session set successfully:', {
-      hasUser: !!sessionData.user,
-      hasSession: !!sessionData.session,
-      userId: sessionData.user?.id
+      hasUser: !!session.user,
+      userId: session.user?.id
     });
     
-    // Verify the session was actually set
-    const { data: { session: verifySession } } = await supabase.auth.getSession();
-    
-    if (!verifySession) {
-      console.error('Session verification failed - session not found after setting');
-      throw new Error('Failed to establish authenticated session. Please try again.');
-    }
-
-    console.log('Session verification successful:', {
-      userId: verifySession.user?.id,
+    await authHealthService.logAuthEvent('session_set_success', {
+      userId: session.user?.id,
       isNewUser: data.isNewUser
     });
 
     console.log('Mobile authentication completed successfully');
+    await authHealthService.logAuthEvent('sign_in_completed', {
+      userId: session.user?.id,
+      isNewUser: data.isNewUser
+    });
+    
   } catch (error) {
     console.error('Mobile authentication failed:', error);
+    
+    await authHealthService.logAuthEvent('sign_in_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     // Provide user-friendly error messages
     if (error instanceof Error) {
@@ -215,6 +225,10 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
         throw new Error('Request timed out. Please try again.');
       } else if (error.message.includes('Invalid phone')) {
         throw error; // Already user-friendly
+      } else if (error.message.includes('Invalid access token format') || 
+                 error.message.includes('Invalid refresh token format') ||
+                 error.message.includes('Invalid JWT structure')) {
+        throw new Error('Authentication service error. Please try again or contact support.');
       } else {
         throw new Error(error.message || 'Authentication failed. Please try again.');
       }
@@ -226,12 +240,21 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
 export const signOut = async (): Promise<void> => {
   try {
+    await authHealthService.logAuthEvent('sign_out_started', {});
+    
+    // Clear stored session first
+    await sessionService.clearSession();
+    
+    // Then sign out from Supabase
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Sign out error:', error);
+      await authHealthService.logAuthEvent('sign_out_error', { error: error.message });
       throw error;
     }
+    
     console.log('Sign out successful');
+    await authHealthService.logAuthEvent('sign_out_completed', {});
   } catch (error) {
     console.error('Error in signOut:', error);
     throw error;

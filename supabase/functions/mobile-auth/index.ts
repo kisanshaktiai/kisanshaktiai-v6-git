@@ -222,22 +222,23 @@ serve(async (req) => {
       );
     }
 
-    // Create a new temporary password for session generation
-    const tempPassword = `KS_${cleanPhone}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate proper session tokens using admin generateLink for consistency
+    console.log('Generating authentication tokens...');
+    
+    const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: userEmail,
+      options: {
+        redirectTo: `${req.headers.get('origin') || 'https://kisanshakti.app'}/`
+      }
+    });
 
-    console.log('Updating user password for session generation...');
-    // Update user password for session generation
-    const { error: updateError } = await supabase.auth.admin.updateUserById(
-      authUser.id,
-      { password: tempPassword }
-    );
-
-    if (updateError) {
-      console.error('Error updating user password:', updateError);
+    if (authError || !authData.properties) {
+      console.error('Token generation failed:', authError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Failed to prepare authentication. Please try again.' 
+          error: 'Failed to generate authentication tokens. Please try again.' 
         }),
         { 
           status: 500, 
@@ -246,73 +247,56 @@ serve(async (req) => {
       );
     }
 
-    console.log('Signing in to generate JWT tokens...');
-    // Sign in to generate proper JWT session tokens
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: userEmail,
-      password: tempPassword
+    // Validate that we got proper JWT tokens
+    const validateJWT = (token: string): boolean => {
+      try {
+        if (!token || typeof token !== 'string') return false;
+        const parts = token.split('.');
+        if (parts.length !== 3) return false;
+        
+        // Try to decode payload
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        
+        // Check for required fields and expiry
+        const now = Math.floor(Date.now() / 1000);
+        return payload.sub && payload.exp && payload.exp > now;
+      } catch {
+        return false;
+      }
+    };
+
+    const accessToken = authData.properties.access_token;
+    const refreshToken = authData.properties.refresh_token;
+
+    console.log('Token validation:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenValid: validateJWT(accessToken),
+      refreshTokenValid: validateJWT(refreshToken)
     });
 
-    if (signInError || !signInData.session) {
-      console.error('Session generation failed:', signInError);
-      
-      // If password sign-in fails, try to generate a magic link and extract tokens
-      console.log('Attempting magic link token generation...');
-      
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: userEmail
-      });
-      
-      if (linkError || !linkData.properties) {
-        console.error('Magic link generation failed:', linkError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Authentication service error. Please try again later.' 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-      
-      // Extract tokens from magic link data
-      const sessionResponse = {
-        access_token: linkData.properties.access_token,
-        refresh_token: linkData.properties.refresh_token,
-        expires_at: linkData.properties.expires_at,
-        expires_in: linkData.properties.expires_in || 3600,
-        token_type: 'bearer',
-        user: authUser
-      };
-      
-      console.log('Generated session using magic link tokens');
-      
+    if (!validateJWT(accessToken) || !validateJWT(refreshToken)) {
+      console.error('Generated tokens are invalid');
       return new Response(
-        JSON.stringify({
-          success: true,
-          user: authUser,
-          session: sessionResponse,
-          isNewUser,
-          message: isNewUser ? 'Account created successfully' : 'Welcome back!'
+        JSON.stringify({ 
+          success: false, 
+          error: 'Authentication service returned invalid tokens. Please try again.' 
         }),
         { 
-          status: 200, 
+          status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    // Use the actual JWT session from successful sign in
+    // Prepare session response with validated tokens
     const sessionResponse = {
-      access_token: signInData.session.access_token,
-      refresh_token: signInData.session.refresh_token,
-      expires_at: signInData.session.expires_at,
-      expires_in: signInData.session.expires_in,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_at: authData.properties.expires_at || Math.floor(Date.now() / 1000) + 3600,
+      expires_in: authData.properties.expires_in || 3600,
       token_type: 'bearer',
-      user: signInData.user
+      user: authUser
     };
 
     console.log('Session generated successfully for user:', authUser.id);

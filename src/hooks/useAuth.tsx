@@ -5,6 +5,8 @@ import { Profile, AuthContextType } from '@/types/auth';
 import { AuthContext } from '@/contexts/AuthContext';
 import { fetchProfile, checkUserExists, updateProfile as updateProfileService, signOut as signOutService, signInWithPhone as signInWithPhoneService } from '@/services/authService';
 import { LanguageService } from '@/services/LanguageService';
+import { sessionService } from '@/services/sessionService';
+import { authHealthService } from '@/services/authHealthService';
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
@@ -116,6 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initAuth = async () => {
       try {
         console.log('Initializing auth...');
+        await authHealthService.logAuthEvent('auth_init_started', {});
         
         // Set up auth state listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -126,13 +129,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             userId: session?.user?.id
           });
           
-          // Update state immediately
+          await authHealthService.logAuthEvent('auth_state_changed', {
+            event,
+            hasSession: !!session,
+            userId: session?.user?.id
+          });
+          
+          // Update state immediately (synchronous to prevent deadlock)
           setSession(session);
           setUser(session?.user ?? null);
           
           if (session?.user) {
             console.log('User authenticated, fetching profile...');
-            // Fetch profile immediately when user is authenticated
+            // Defer profile fetch to avoid deadlock
             setTimeout(() => {
               handleFetchProfile(session.user.id);
             }, 100);
@@ -145,31 +154,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
         });
 
-        // THEN check for existing session
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        // Try to restore session from storage first
+        console.log('Attempting to restore session from storage...');
+        const restoredSession = await sessionService.restoreSession();
         
-        console.log('Initial session check:', {
-          hasSession: !!initialSession,
-          hasUser: !!initialSession?.user,
-          userId: initialSession?.user?.id
-        });
-        
-        if (initialSession?.user) {
-          console.log('Found existing session');
-          setSession(initialSession);
-          setUser(initialSession.user);
-          await handleFetchProfile(initialSession.user.id);
+        if (restoredSession) {
+          console.log('Session restored from storage');
+          await authHealthService.logAuthEvent('session_restored', {
+            userId: restoredSession.user?.id
+          });
+          // Auth state change will be triggered automatically
         } else {
-          console.log('No existing session found');
+          // THEN check for existing session in Supabase
+          const { data: { session: initialSession } } = await supabase.auth.getSession();
+          
+          console.log('Initial session check:', {
+            hasSession: !!initialSession,
+            hasUser: !!initialSession?.user,
+            userId: initialSession?.user?.id
+          });
+          
+          if (initialSession?.user) {
+            console.log('Found existing session');
+            await authHealthService.logAuthEvent('existing_session_found', {
+              userId: initialSession.user.id
+            });
+            
+            setSession(initialSession);
+            setUser(initialSession.user);
+            await handleFetchProfile(initialSession.user.id);
+            
+            // Store the session for future restoration
+            await sessionService.storeSession(initialSession);
+          } else {
+            console.log('No existing session found');
+            await authHealthService.logAuthEvent('no_session_found', {});
+          }
         }
         
         setLoading(false);
+        await authHealthService.logAuthEvent('auth_init_completed', {});
         
         return () => {
           subscription.unsubscribe();
         };
       } catch (error) {
         console.error('Error during auth initialization:', error);
+        await authHealthService.logAuthEvent('auth_init_error', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         setLoading(false);
       }
     };
