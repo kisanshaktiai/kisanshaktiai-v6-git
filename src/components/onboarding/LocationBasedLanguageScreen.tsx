@@ -156,22 +156,20 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 flex flex-col">
       {/* Compact Header with Logo */}
-      <div className="pt-8 pb-4 text-center">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-lg shadow-md bg-white flex items-center justify-center overflow-hidden">
+      <div className="pt-4 pb-2 text-center">
+        <div className="w-8 h-8 mx-auto mb-1 rounded-lg shadow-md bg-white flex items-center justify-center overflow-hidden">
           <img 
             src={logoUrl} 
             alt={appName}
-            className="w-10 h-10 object-contain"
+            className="w-6 h-6 object-contain"
           />
         </div>
-        <h1 className="text-xl font-bold text-gray-800 mb-1">{appName}</h1>
-        <p className="text-sm text-gray-600 mb-1">Choose Your Language</p>
-        <p className="text-xs text-gray-500">भाषा चुनें • Choose Language</p>
+        <h1 className="text-lg font-bold text-gray-800">{appName}</h1>
       </div>
 
       {/* Compact Location Info */}
       {location && (
-        <div className="px-4 mb-4">
+        <div className="px-4 mb-2">
           <div className="flex items-center justify-center space-x-2 text-xs text-gray-600 bg-white/70 backdrop-blur-sm rounded-full px-3 py-1.5 mx-auto w-fit shadow-sm">
             <MapPin className="w-3 h-3" style={{ color: primaryColor }} />
             <span>{location}</span>
@@ -179,11 +177,11 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
         </div>
       )}
 
-      {/* Language Selection - No Side Padding, No Card Padding */}
+      {/* Language Selection */}
       <div className="flex-1">
         <Card className="mx-0 rounded-none shadow-none border-0 bg-transparent">
           <CardContent className="p-0">
-            <div className="space-y-2 px-4">
+            <div className="space-y-1 px-2">
               {prioritizedLanguages.map((language, index) => (
                 <Button
                   key={language.code}
@@ -236,7 +234,7 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
                     <span>Setting Language...</span>
                   </div>
                 ) : (
-                  'Continue • जारी रखें'
+                  'Continue'
                 )}
               </Button>
             </div>
