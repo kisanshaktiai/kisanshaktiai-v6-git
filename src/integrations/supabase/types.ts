@@ -59,6 +59,116 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          api_key_hash: string
+          api_key_prefix: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_name: string
+          last_used_at: string | null
+          permissions: Json
+          rate_limit_per_hour: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_key_hash: string
+          api_key_prefix: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_name: string
+          last_used_at?: string | null
+          permissions?: Json
+          rate_limit_per_hour?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_key_hash?: string
+          api_key_prefix?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_name?: string
+          last_used_at?: string | null
+          permissions?: Json
+          rate_limit_per_hour?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      api_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          method: string
+          request_body: Json | null
+          request_headers: Json | null
+          response_body: Json | null
+          response_headers: Json | null
+          response_time_ms: number | null
+          status_code: number
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_body?: Json | null
+          response_headers?: Json | null
+          response_time_ms?: number | null
+          status_code: number
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_body?: Json | null
+          response_headers?: Json | null
+          response_time_ms?: number | null
+          status_code?: number
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crop_health_assessments: {
         Row: {
           alert_level: string | null
@@ -77,6 +187,7 @@ export type Database = {
           problem_areas: Json | null
           recommendations: Json | null
           stress_indicators: Json | null
+          tenant_id: string
           updated_at: string | null
         }
         Insert: {
@@ -96,6 +207,7 @@ export type Database = {
           problem_areas?: Json | null
           recommendations?: Json | null
           stress_indicators?: Json | null
+          tenant_id: string
           updated_at?: string | null
         }
         Update: {
@@ -115,6 +227,7 @@ export type Database = {
           problem_areas?: Json | null
           recommendations?: Json | null
           stress_indicators?: Json | null
+          tenant_id?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -123,6 +236,13 @@ export type Database = {
             columns: ["land_id"]
             isOneToOne: false
             referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_crop_health_assessments_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -139,6 +259,7 @@ export type Database = {
           planting_date: string | null
           season: string | null
           status: string | null
+          tenant_id: string
           updated_at: string
           variety: string | null
           yield_kg_per_acre: number | null
@@ -154,6 +275,7 @@ export type Database = {
           planting_date?: string | null
           season?: string | null
           status?: string | null
+          tenant_id: string
           updated_at?: string
           variety?: string | null
           yield_kg_per_acre?: number | null
@@ -169,6 +291,7 @@ export type Database = {
           planting_date?: string | null
           season?: string | null
           status?: string | null
+          tenant_id?: string
           updated_at?: string
           variety?: string | null
           yield_kg_per_acre?: number | null
@@ -181,7 +304,440 @@ export type Database = {
             referencedRelation: "lands"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_crop_history_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      data_transformations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          source_format: string
+          target_format: string
+          tenant_id: string
+          transformation_rules: Json
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          source_format: string
+          target_format: string
+          tenant_id: string
+          transformation_rules: Json
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          source_format?: string
+          target_format?: string
+          tenant_id?: string
+          transformation_rules?: Json
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: []
+      }
+      dealer_commissions: {
+        Row: {
+          base_amount: number
+          calculation_details: Json | null
+          commission_amount: number
+          commission_rate: number
+          commission_type: string
+          created_at: string
+          dealer_id: string
+          id: string
+          notes: string | null
+          payment_date: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          period_end: string
+          period_start: string
+          tenant_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_amount: number
+          calculation_details?: Json | null
+          commission_amount: number
+          commission_rate: number
+          commission_type: string
+          created_at?: string
+          dealer_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          period_end: string
+          period_start: string
+          tenant_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_amount?: number
+          calculation_details?: Json | null
+          commission_amount?: number
+          commission_rate?: number
+          commission_type?: string
+          created_at?: string
+          dealer_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          period_end?: string
+          period_start?: string
+          tenant_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dealer_communications: {
+        Row: {
+          attachments: Json | null
+          communication_type: string
+          content: string | null
+          created_at: string
+          delivery_status: Json | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          priority: string | null
+          read_receipts: Json | null
+          recipient_ids: string[]
+          scheduled_at: string | null
+          sender_id: string
+          sent_at: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json | null
+          communication_type: string
+          content?: string | null
+          created_at?: string
+          delivery_status?: Json | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          priority?: string | null
+          read_receipts?: Json | null
+          recipient_ids: string[]
+          scheduled_at?: string | null
+          sender_id: string
+          sent_at?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json | null
+          communication_type?: string
+          content?: string | null
+          created_at?: string
+          delivery_status?: Json | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          priority?: string | null
+          read_receipts?: Json | null
+          recipient_ids?: string[]
+          scheduled_at?: string | null
+          sender_id?: string
+          sent_at?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dealer_documents: {
+        Row: {
+          created_at: string
+          dealer_id: string
+          document_name: string
+          document_type: string
+          expiry_date: string | null
+          file_url: string
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          rejection_reason: string | null
+          tenant_id: string
+          updated_at: string
+          verification_status: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          dealer_id: string
+          document_name: string
+          document_type: string
+          expiry_date?: string | null
+          file_url: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          rejection_reason?: string | null
+          tenant_id: string
+          updated_at?: string
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          dealer_id?: string
+          document_name?: string
+          document_type?: string
+          expiry_date?: string | null
+          file_url?: string
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          rejection_reason?: string | null
+          tenant_id?: string
+          updated_at?: string
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      dealer_performance: {
+        Row: {
+          achievements: Json | null
+          average_response_time_hours: number | null
+          bonus_earned: number | null
+          commission_earned: number | null
+          created_at: string
+          customer_satisfaction_score: number | null
+          dealer_id: string
+          farmers_acquired: number | null
+          farmers_target: number | null
+          id: string
+          orders_processed: number | null
+          performance_score: number | null
+          period_end: string
+          period_start: string
+          ranking: number | null
+          sales_achieved: number | null
+          sales_target: number | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          achievements?: Json | null
+          average_response_time_hours?: number | null
+          bonus_earned?: number | null
+          commission_earned?: number | null
+          created_at?: string
+          customer_satisfaction_score?: number | null
+          dealer_id: string
+          farmers_acquired?: number | null
+          farmers_target?: number | null
+          id?: string
+          orders_processed?: number | null
+          performance_score?: number | null
+          period_end: string
+          period_start: string
+          ranking?: number | null
+          sales_achieved?: number | null
+          sales_target?: number | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          achievements?: Json | null
+          average_response_time_hours?: number | null
+          bonus_earned?: number | null
+          commission_earned?: number | null
+          created_at?: string
+          customer_satisfaction_score?: number | null
+          dealer_id?: string
+          farmers_acquired?: number | null
+          farmers_target?: number | null
+          id?: string
+          orders_processed?: number | null
+          performance_score?: number | null
+          period_end?: string
+          period_start?: string
+          ranking?: number | null
+          sales_achieved?: number | null
+          sales_target?: number | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dealer_territories: {
+        Row: {
+          assigned_dealer_id: string | null
+          assignment_date: string | null
+          coverage_status: string | null
+          created_at: string
+          description: string | null
+          geographic_bounds: Json | null
+          id: string
+          is_active: boolean | null
+          market_potential: Json | null
+          performance_metrics: Json | null
+          population_data: Json | null
+          tenant_id: string
+          territory_code: string
+          territory_name: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_dealer_id?: string | null
+          assignment_date?: string | null
+          coverage_status?: string | null
+          created_at?: string
+          description?: string | null
+          geographic_bounds?: Json | null
+          id?: string
+          is_active?: boolean | null
+          market_potential?: Json | null
+          performance_metrics?: Json | null
+          population_data?: Json | null
+          tenant_id: string
+          territory_code: string
+          territory_name: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_dealer_id?: string | null
+          assignment_date?: string | null
+          coverage_status?: string | null
+          created_at?: string
+          description?: string | null
+          geographic_bounds?: Json | null
+          id?: string
+          is_active?: boolean | null
+          market_potential?: Json | null
+          performance_metrics?: Json | null
+          population_data?: Json | null
+          tenant_id?: string
+          territory_code?: string
+          territory_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dealers: {
+        Row: {
+          agreement_signed_at: string | null
+          agreement_url: string | null
+          bank_details: Json | null
+          business_address: Json | null
+          business_name: string
+          business_type: string | null
+          commission_rate: number | null
+          contact_person: string
+          created_at: string
+          credit_limit: number | null
+          dealer_code: string
+          email: string
+          gst_number: string | null
+          id: string
+          is_active: boolean | null
+          kyc_status: string | null
+          metadata: Json | null
+          onboarding_date: string | null
+          pan_number: string | null
+          payment_terms: string | null
+          performance_rating: number | null
+          phone: string
+          product_authorizations: Json | null
+          registration_status: string | null
+          tenant_id: string
+          territory_ids: string[] | null
+          updated_at: string
+          verification_status: string | null
+        }
+        Insert: {
+          agreement_signed_at?: string | null
+          agreement_url?: string | null
+          bank_details?: Json | null
+          business_address?: Json | null
+          business_name: string
+          business_type?: string | null
+          commission_rate?: number | null
+          contact_person: string
+          created_at?: string
+          credit_limit?: number | null
+          dealer_code: string
+          email: string
+          gst_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          kyc_status?: string | null
+          metadata?: Json | null
+          onboarding_date?: string | null
+          pan_number?: string | null
+          payment_terms?: string | null
+          performance_rating?: number | null
+          phone: string
+          product_authorizations?: Json | null
+          registration_status?: string | null
+          tenant_id: string
+          territory_ids?: string[] | null
+          updated_at?: string
+          verification_status?: string | null
+        }
+        Update: {
+          agreement_signed_at?: string | null
+          agreement_url?: string | null
+          bank_details?: Json | null
+          business_address?: Json | null
+          business_name?: string
+          business_type?: string | null
+          commission_rate?: number | null
+          contact_person?: string
+          created_at?: string
+          credit_limit?: number | null
+          dealer_code?: string
+          email?: string
+          gst_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          kyc_status?: string | null
+          metadata?: Json | null
+          onboarding_date?: string | null
+          pan_number?: string | null
+          payment_terms?: string | null
+          performance_rating?: number | null
+          phone?: string
+          product_authorizations?: Json | null
+          registration_status?: string | null
+          tenant_id?: string
+          territory_ids?: string[] | null
+          updated_at?: string
+          verification_status?: string | null
+        }
+        Relationships: []
       }
       farmers: {
         Row: {
@@ -344,6 +900,107 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_sync_logs: {
+        Row: {
+          completed_at: string | null
+          direction: string
+          error_details: Json | null
+          id: string
+          integration_id: string
+          records_failed: number
+          records_processed: number
+          records_success: number
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          direction: string
+          error_details?: Json | null
+          id?: string
+          integration_id: string
+          records_failed?: number
+          records_processed?: number
+          records_success?: number
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          direction?: string
+          error_details?: Json | null
+          id?: string
+          integration_id?: string
+          records_failed?: number
+          records_processed?: number
+          records_success?: number
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          configuration: Json
+          created_at: string
+          credentials: Json
+          error_log: string | null
+          field_mappings: Json
+          id: string
+          integration_type: string
+          is_active: boolean
+          last_sync_at: string | null
+          name: string
+          sync_settings: Json
+          sync_status: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          configuration?: Json
+          created_at?: string
+          credentials?: Json
+          error_log?: string | null
+          field_mappings?: Json
+          id?: string
+          integration_type: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          name: string
+          sync_settings?: Json
+          sync_status?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string
+          credentials?: Json
+          error_log?: string | null
+          field_mappings?: Json
+          id?: string
+          integration_type?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          name?: string
+          sync_settings?: Json
+          sync_status?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       land_activities: {
         Row: {
           activity_date: string
@@ -355,6 +1012,7 @@ export type Database = {
           land_id: string
           notes: string | null
           quantity: number | null
+          tenant_id: string
           unit: string | null
         }
         Insert: {
@@ -367,6 +1025,7 @@ export type Database = {
           land_id: string
           notes?: string | null
           quantity?: number | null
+          tenant_id: string
           unit?: string | null
         }
         Update: {
@@ -379,9 +1038,17 @@ export type Database = {
           land_id?: string
           notes?: string | null
           quantity?: number | null
+          tenant_id?: string
           unit?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_land_activities_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "land_activities_land_id_fkey"
             columns: ["land_id"]
@@ -615,6 +1282,7 @@ export type Database = {
           id: string
           item_id: string
           item_type: string
+          tenant_id: string
           user_id: string
         }
         Insert: {
@@ -622,6 +1290,7 @@ export type Database = {
           id?: string
           item_id: string
           item_type: string
+          tenant_id: string
           user_id: string
         }
         Update: {
@@ -629,9 +1298,18 @@ export type Database = {
           id?: string
           item_id?: string
           item_type?: string
+          tenant_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_marketplace_saved_items_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_transactions: {
         Row: {
@@ -724,6 +1402,7 @@ export type Database = {
           savi_value: number | null
           scene_id: string | null
           spatial_resolution: number | null
+          tenant_id: string
           tile_id: string | null
         }
         Insert: {
@@ -744,6 +1423,7 @@ export type Database = {
           savi_value?: number | null
           scene_id?: string | null
           spatial_resolution?: number | null
+          tenant_id: string
           tile_id?: string | null
         }
         Update: {
@@ -764,9 +1444,17 @@ export type Database = {
           savi_value?: number | null
           scene_id?: string | null
           spatial_resolution?: number | null
+          tenant_id?: string
           tile_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_ndvi_data_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ndvi_data_land_id_fkey"
             columns: ["land_id"]
@@ -791,6 +1479,7 @@ export type Database = {
           map_data: Json
           map_type: string
           status: string | null
+          tenant_id: string
           total_area_acres: number | null
           updated_at: string | null
           zones: Json
@@ -809,6 +1498,7 @@ export type Database = {
           map_data: Json
           map_type: string
           status?: string | null
+          tenant_id: string
           total_area_acres?: number | null
           updated_at?: string | null
           zones: Json
@@ -827,11 +1517,19 @@ export type Database = {
           map_data?: Json
           map_type?: string
           status?: string | null
+          tenant_id?: string
           total_area_acres?: number | null
           updated_at?: string | null
           zones?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_prescription_maps_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prescription_maps_land_id_fkey"
             columns: ["land_id"]
@@ -1079,6 +1777,7 @@ export type Database = {
           quantity: number
           resource_name: string
           resource_type: string
+          tenant_id: string
           total_cost: number | null
           unit: string
           updated_at: string
@@ -1097,6 +1796,7 @@ export type Database = {
           quantity: number
           resource_name: string
           resource_type: string
+          tenant_id: string
           total_cost?: number | null
           unit: string
           updated_at?: string
@@ -1115,13 +1815,22 @@ export type Database = {
           quantity?: number
           resource_name?: string
           resource_type?: string
+          tenant_id?: string
           total_cost?: number | null
           unit?: string
           updated_at?: string
           usage_date?: string
           weather_conditions?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_resource_usage_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       satellite_alerts: {
         Row: {
@@ -1138,6 +1847,7 @@ export type Database = {
           resolved_at: string | null
           severity: string
           status: string | null
+          tenant_id: string
           title: string
           trigger_values: Json | null
         }
@@ -1155,6 +1865,7 @@ export type Database = {
           resolved_at?: string | null
           severity: string
           status?: string | null
+          tenant_id: string
           title: string
           trigger_values?: Json | null
         }
@@ -1172,10 +1883,18 @@ export type Database = {
           resolved_at?: string | null
           severity?: string
           status?: string | null
+          tenant_id?: string
           title?: string
           trigger_values?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_satellite_alerts_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "satellite_alerts_land_id_fkey"
             columns: ["land_id"]
@@ -1200,6 +1919,7 @@ export type Database = {
           processed_indices: Json | null
           scene_id: string
           spatial_resolution: number | null
+          tenant_id: string
           tile_id: string | null
           updated_at: string | null
         }
@@ -1217,6 +1937,7 @@ export type Database = {
           processed_indices?: Json | null
           scene_id: string
           spatial_resolution?: number | null
+          tenant_id: string
           tile_id?: string | null
           updated_at?: string | null
         }
@@ -1234,10 +1955,18 @@ export type Database = {
           processed_indices?: Json | null
           scene_id?: string
           spatial_resolution?: number | null
+          tenant_id?: string
           tile_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_satellite_imagery_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "satellite_imagery_land_id_fkey"
             columns: ["land_id"]
@@ -1260,6 +1989,7 @@ export type Database = {
           potassium_level: string | null
           soil_type: string | null
           source: string | null
+          tenant_id: string
           test_date: string | null
           test_report_url: string | null
           texture: string | null
@@ -1277,6 +2007,7 @@ export type Database = {
           potassium_level?: string | null
           soil_type?: string | null
           source?: string | null
+          tenant_id: string
           test_date?: string | null
           test_report_url?: string | null
           texture?: string | null
@@ -1294,12 +2025,20 @@ export type Database = {
           potassium_level?: string | null
           soil_type?: string | null
           source?: string | null
+          tenant_id?: string
           test_date?: string | null
           test_report_url?: string | null
           texture?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_soil_health_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "soil_health_land_id_fkey"
             columns: ["land_id"]
@@ -1814,6 +2553,7 @@ export type Database = {
           recommended_time_start: string | null
           status: string | null
           suitability_score: number
+          tenant_id: string
           title: string
           updated_at: string
           weather_conditions: Json | null
@@ -1833,6 +2573,7 @@ export type Database = {
           recommended_time_start?: string | null
           status?: string | null
           suitability_score: number
+          tenant_id: string
           title: string
           updated_at?: string
           weather_conditions?: Json | null
@@ -1852,11 +2593,19 @@ export type Database = {
           recommended_time_start?: string | null
           status?: string | null
           suitability_score?: number
+          tenant_id?: string
           title?: string
           updated_at?: string
           weather_conditions?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_weather_activity_recommendations_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "weather_activity_recommendations_land_id_fkey"
             columns: ["land_id"]
@@ -2218,6 +2967,7 @@ export type Database = {
           rain_probability_alert_percent: number | null
           temperature_max_alert: number | null
           temperature_min_alert: number | null
+          tenant_id: string
           updated_at: string
           wind_speed_alert_kmh: number | null
         }
@@ -2244,6 +2994,7 @@ export type Database = {
           rain_probability_alert_percent?: number | null
           temperature_max_alert?: number | null
           temperature_min_alert?: number | null
+          tenant_id: string
           updated_at?: string
           wind_speed_alert_kmh?: number | null
         }
@@ -2270,10 +3021,18 @@ export type Database = {
           rain_probability_alert_percent?: number | null
           temperature_max_alert?: number | null
           temperature_min_alert?: number | null
+          tenant_id?: string
           updated_at?: string
           wind_speed_alert_kmh?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_weather_preferences_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "weather_preferences_preferred_station_id_fkey"
             columns: ["preferred_station_id"]
@@ -2322,6 +3081,113 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_logs: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_time_ms: number | null
+          status_code: number | null
+          webhook_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          webhook_id: string
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          custom_headers: Json | null
+          event_filters: Json | null
+          events: string[]
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          retry_attempts: number
+          secret_key: string
+          success_count: number
+          tenant_id: string
+          timeout_seconds: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          custom_headers?: Json | null
+          event_filters?: Json | null
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          retry_attempts?: number
+          secret_key: string
+          success_count?: number
+          tenant_id: string
+          timeout_seconds?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          custom_headers?: Json | null
+          event_filters?: Json | null
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          retry_attempts?: number
+          secret_key?: string
+          success_count?: number
+          tenant_id?: string
+          timeout_seconds?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       yield_predictions: {
         Row: {
           actual_yield_per_acre: number | null
@@ -2337,6 +3203,7 @@ export type Database = {
           predicted_yield_per_acre: number
           prediction_accuracy: number | null
           prediction_date: string
+          tenant_id: string
           updated_at: string
           variety: string | null
         }
@@ -2354,6 +3221,7 @@ export type Database = {
           predicted_yield_per_acre: number
           prediction_accuracy?: number | null
           prediction_date: string
+          tenant_id: string
           updated_at?: string
           variety?: string | null
         }
@@ -2371,10 +3239,19 @@ export type Database = {
           predicted_yield_per_acre?: number
           prediction_accuracy?: number | null
           prediction_date?: string
+          tenant_id?: string
           updated_at?: string
           variety?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_yield_predictions_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

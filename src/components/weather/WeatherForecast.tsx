@@ -16,6 +16,37 @@ export const WeatherForecast: React.FC<WeatherForecastProps> = ({ latitude, long
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    loadForecasts();
+  }, []);
+
+  const loadForecasts = async () => {
+    try {
+      // Get user location first
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('coordinates')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (profile?.coordinates) {
+        const { data, error } = await supabase
+          .from('weather_forecasts')
+          .select('*')
+          .gte('forecast_time', new Date().toISOString())
+          .order('forecast_time')
+          .limit(7);
+
+        if (error) throw error;
+        setForecasts(data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load forecasts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const fetchForecast = async () => {
       const { data } = await supabase
         .from('weather_forecasts')

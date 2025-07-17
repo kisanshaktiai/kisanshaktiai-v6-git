@@ -20,10 +20,10 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ type }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCategories();
+    loadCategories();
   }, [type]);
 
-  const fetchCategories = async () => {
+  const loadCategories = async () => {
     try {
       const { data, error } = await supabase
         .from('product_categories')

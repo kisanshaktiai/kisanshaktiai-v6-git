@@ -31,9 +31,10 @@ export class TenantDetectionService {
 
   async detectTenant(): Promise<DetectedTenant | null> {
     try {
-      // PRIORITY 1: Check build-time environment variables (BEST for white-label)
-      const buildTimeTenantId = import.meta.env.VITE_TENANT_ID;
-      const buildTimeTenantSlug = import.meta.env.VITE_TENANT_SLUG;
+      // PRIORITY 1: Check for hardcoded tenant in build (white-label deployments)
+      // Remove VITE_ env vars as they're not supported by Lovable
+      const buildTimeTenantId = null; // Set via build config if needed
+      const buildTimeTenantSlug = null; // Set via build config if needed
       
       if (buildTimeTenantId || buildTimeTenantSlug) {
         console.log('Using build-time tenant configuration');

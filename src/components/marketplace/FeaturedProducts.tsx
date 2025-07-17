@@ -99,13 +99,24 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ viewMode }) 
       } else {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Get current tenant from user tenants
+        const { data: userTenants } = await supabase
+          .from('user_tenants')
+          .select('tenant_id')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single();
+
+        if (!userTenants) return;
         
         const { error } = await supabase
           .from('marketplace_saved_items')
           .insert({
             user_id: user.id,
             item_type: 'product',
-            item_id: productId
+            item_id: productId,
+            tenant_id: userTenants.tenant_id
           });
         
         if (error) throw error;

@@ -67,11 +67,25 @@ const PrescriptionMaps: React.FC<PrescriptionMapsProps> = ({
     const zones = generateZonesFromHealthData(latestAssessment);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get current tenant from user tenants
+      const { data: userTenants } = await supabase
+        .from('user_tenants')
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      if (!userTenants) return;
+
       const { data, error } = await supabase
         .from('prescription_maps')
         .insert({
           land_id: landId,
-          farmer_id: (await supabase.auth.getUser()).data.user?.id,
+          farmer_id: user.id,
+          tenant_id: userTenants.tenant_id,
           map_type: newMap.map_type,
           created_date: new Date().toISOString().split('T')[0],
           zones: zones,
