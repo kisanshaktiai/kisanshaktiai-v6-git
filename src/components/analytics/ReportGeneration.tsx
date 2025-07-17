@@ -169,8 +169,8 @@ export const ReportGeneration: React.FC = () => {
       const { data, error } = await supabase
         .from('analytics_reports')
         .insert({
-          farmer_id: profile?.id,
-          tenant_id: profile?.tenant_id || '',
+          farmer_id: profile?.id || '',
+          tenant_id: (profile as any)?.tenant_id || '',
           report_type: selectedTemplate,
           report_period: selectedPeriod,
           start_date: getStartDate(selectedPeriod),
@@ -186,8 +186,9 @@ export const ReportGeneration: React.FC = () => {
       if (error) throw error;
 
       // Add to local reports list
+      const reportId = Date.now().toString();
       const newReport: GeneratedReport = {
-        id: (data && data[0]?.id) || Date.now().toString(),
+        id: reportId,
         name: `${reportTemplates.find(t => t.id === selectedTemplate)?.name} - ${selectedPeriod}`,
         type: reportTemplates.find(t => t.id === selectedTemplate)?.name || 'Report',
         generatedAt: new Date().toISOString().split('T')[0],
