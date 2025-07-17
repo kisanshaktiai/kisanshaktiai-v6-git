@@ -234,16 +234,67 @@ serve(async (req) => {
 
     console.log('=== GENERATING SESSION ===');
 
-    // For existing users, we need to use their existing email
-    // For new users, we already have their email from creation
-    const userEmail = authUser.email;
-    
-    if (!userEmail) {
-      console.error('No email found for user:', authUser.id);
+    try {
+      // Create a proper session using admin API
+      console.log('Creating session for user:', authUser.id);
+      
+      const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
+        user_id: authUser.id,
+        expires_in: 3600 // 1 hour
+      });
+
+      if (sessionError || !sessionData.session) {
+        console.error('Session creation failed:', sessionError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to create authentication session. Please try again.' 
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      console.log('Session created successfully:', {
+        hasAccessToken: !!sessionData.session.access_token,
+        hasRefreshToken: !!sessionData.session.refresh_token,
+        expiresAt: sessionData.session.expires_at
+      });
+
+      // Prepare session response
+      const sessionResponse = {
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        expires_at: sessionData.session.expires_at || Math.floor(Date.now() / 1000) + 3600,
+        expires_in: sessionData.session.expires_in || 3600,
+        token_type: 'bearer',
+        user: sessionData.session.user
+      };
+
+      console.log('Session generated successfully for user:', authUser.id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user: authUser,
+          session: sessionResponse,
+          isNewUser,
+          message: isNewUser ? 'Account created successfully' : 'Welcome back!'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+
+    } catch (sessionGenerationError) {
+      console.error('Session generation failed:', sessionGenerationError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'User account is incomplete. Please contact support.' 
+          error: 'Failed to generate session. Please try again.' 
         }),
         { 
           status: 500, 
@@ -251,100 +302,6 @@ serve(async (req) => {
         }
       );
     }
-
-    // Generate proper session tokens using admin generateLink for consistency
-    console.log('Generating authentication tokens...');
-    
-    const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email: userEmail,
-      options: {
-        redirectTo: `${req.headers.get('origin') || 'https://kisanshakti.app'}/`
-      }
-    });
-
-    if (authError || !authData.properties) {
-      console.error('Token generation failed:', authError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Failed to generate authentication tokens. Please try again.' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Validate that we got proper JWT tokens
-    const validateJWT = (token: string): boolean => {
-      try {
-        if (!token || typeof token !== 'string') return false;
-        const parts = token.split('.');
-        if (parts.length !== 3) return false;
-        
-        // Try to decode payload
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-        
-        // Check for required fields and expiry
-        const now = Math.floor(Date.now() / 1000);
-        return payload.sub && payload.exp && payload.exp > now;
-      } catch {
-        return false;
-      }
-    };
-
-    const accessToken = authData.properties.access_token;
-    const refreshToken = authData.properties.refresh_token;
-
-    console.log('Token validation:', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      accessTokenValid: validateJWT(accessToken),
-      refreshTokenValid: validateJWT(refreshToken)
-    });
-
-    if (!validateJWT(accessToken) || !validateJWT(refreshToken)) {
-      console.error('Generated tokens are invalid');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Authentication service returned invalid tokens. Please try again.' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Prepare session response with validated tokens
-    const sessionResponse = {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      expires_at: authData.properties.expires_at || Math.floor(Date.now() / 1000) + 3600,
-      expires_in: authData.properties.expires_in || 3600,
-      token_type: 'bearer',
-      user: authUser
-    };
-
-    console.log('Session generated successfully for user:', authUser.id);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        user: authUser,
-        session: sessionResponse,
-        isNewUser,
-        message: isNewUser ? 'Account created successfully' : 'Welcome back!'
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-
 
   } catch (error) {
     console.error('=== MOBILE AUTH CRITICAL ERROR ===');
