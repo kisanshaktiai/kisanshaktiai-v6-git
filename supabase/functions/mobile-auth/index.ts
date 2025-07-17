@@ -91,12 +91,12 @@ serve(async (req) => {
       console.log('Creating new user');
       isNewUser = true;
 
-      // Create new user with phone as identifier
-      const tempEmail = `${cleanPhone}@kisanshakti.app`;
-      const tempPassword = `temp_${cleanPhone}_${Date.now()}`;
+      // Create new user with farmer email format
+      const farmerEmail = `farmer.${cleanPhone}@kisanshaktiai.com`;
+      const tempPassword = `auto_${cleanPhone}_${Date.now()}`;
 
       const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
-        email: tempEmail,
+        email: farmerEmail,
         password: tempPassword,
         phone: `+91${cleanPhone}`,
         phone_confirmed: true,
@@ -105,7 +105,8 @@ serve(async (req) => {
           phone: cleanPhone,
           is_mobile_user: true,
           tenant_id: resolvedTenantId,
-          preferred_language: preferredLanguage
+          preferred_language: preferredLanguage,
+          farmer_email: farmerEmail
         }
       });
 
@@ -135,6 +136,21 @@ serve(async (req) => {
       if (profileInsertError) {
         console.error('Profile creation error:', profileInsertError);
         // Continue anyway, profile can be created later
+      }
+
+      // Create farmer profile automatically
+      const { error: farmerInsertError } = await supabase
+        .from('farmers')
+        .insert({
+          id: authUser.id,
+          tenant_id: resolvedTenantId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (farmerInsertError) {
+        console.error('Farmer profile creation error:', farmerInsertError);
+        // Continue anyway
       }
 
       // Link user to tenant

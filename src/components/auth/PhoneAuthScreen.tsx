@@ -46,12 +46,12 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
 
         // Show feedback toast
         if (userExists) {
-          toast.success('Welcome back! Account found', {
+          toast.success('Welcome back! Ready to continue', {
             duration: 2000,
             icon: <LogIn className="w-4 h-4" />
           });
         } else {
-          toast.info('New user detected - Welcome to KisanShakti AI!', {
+          toast.info('Ready to get started with KisanShakti AI!', {
             duration: 2000,
             icon: <UserPlus className="w-4 h-4" />
           });

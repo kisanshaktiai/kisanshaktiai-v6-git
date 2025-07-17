@@ -46,7 +46,10 @@ export const AuthButton = ({
         </div>
       ) : (
         <span>
-          Continue
+          {userCheckComplete 
+            ? (isNewUser ? 'Get Started' : 'Continue') 
+            : 'Continue'
+          }
         </span>
       )}
     </Button>
