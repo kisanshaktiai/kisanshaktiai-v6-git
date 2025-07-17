@@ -6,14 +6,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
-import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
+import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
 import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
@@ -30,14 +30,42 @@ export const OnboardingFlow: React.FC = () => {
     }
   }, [isAuthenticated, onboardingCompleted]);
 
+  // Initialize app and check for existing language preference
+  useEffect(() => {
+    const initializeApp = async () => {
+      // Check if language was already selected on this device
+      const savedLanguage = localStorage.getItem('selectedLanguage');
+      const languageSelectedAt = localStorage.getItem('languageSelectedAt');
+      
+      if (savedLanguage && languageSelectedAt) {
+        // Apply saved language
+        try {
+          await i18n.changeLanguage(savedLanguage);
+          console.log('Applied saved language:', savedLanguage);
+        } catch (error) {
+          console.error('Error applying saved language:', error);
+        }
+      }
+    };
+
+    initializeApp();
+  }, [i18n]);
+
   const handleSplashComplete = () => {
     setIsInitialized(true);
     
-    // Check if we need language selection (first time users)
-    const hasSelectedLanguage = localStorage.getItem('i18nextLng');
-    if (!hasSelectedLanguage || hasSelectedLanguage === 'undefined') {
+    // Check if language was already selected on this device
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    const languageSelectedAt = localStorage.getItem('languageSelectedAt');
+    
+    // Show language selection if not previously selected or if it was selected more than 30 days ago
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
       setCurrentStep('language');
     } else {
+      // Language recently selected, proceed to auth
       setCurrentStep('auth');
     }
   };
@@ -67,12 +95,11 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Language selection step
+  // Location-based language selection step
   if (currentStep === 'language') {
     return (
-      <EnhancedLanguageScreen 
+      <LocationBasedLanguageScreen 
         onNext={handleLanguageComplete}
-        onSkip={handleLanguageComplete}
       />
     );
   }

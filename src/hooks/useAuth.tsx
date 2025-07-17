@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthContextType } from '@/types/auth';
 import { AuthContext } from '@/contexts/AuthContext';
 import { fetchProfile, checkUserExists, updateProfile as updateProfileService, signOut as signOutService, signInWithPhone as signInWithPhoneService } from '@/services/authService';
+import { LanguageService } from '@/services/LanguageService';
 
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
@@ -27,6 +27,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (profileData) {
         console.log('Profile fetched successfully:', profileData);
         setProfile(profileData);
+        
+        // Apply user's saved language preference
+        if (profileData.preferred_language) {
+          try {
+            await LanguageService.getInstance().changeLanguage(profileData.preferred_language);
+            console.log('Applied user language preference:', profileData.preferred_language);
+          } catch (error) {
+            console.error('Error applying user language preference:', error);
+          }
+        }
+        
         return profileData;
       } else {
         console.log('No profile found for user');
@@ -71,6 +82,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setSession(null);
       setProfile(null);
+      
+      // Clear language preference from localStorage but keep device language selection
+      // This allows the app to recheck location-based language on next login
+      localStorage.removeItem('languageSelectedAt');
     } catch (error) {
       console.error('Error during sign out:', error);
     } finally {
@@ -82,6 +97,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) return;
     
     try {
+      // If language preference is being updated, apply it immediately
+      if (updates.preferred_language) {
+        await LanguageService.getInstance().changeLanguage(updates.preferred_language);
+        localStorage.setItem('selectedLanguage', updates.preferred_language);
+        localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      }
+      
       await updateProfileService(user.id, updates);
       setProfile(prev => prev ? { ...prev, ...updates } : null);
     } catch (error) {

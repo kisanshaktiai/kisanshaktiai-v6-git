@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -129,17 +130,21 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
       throw new Error('Invalid phone number. Please enter a valid 10-digit mobile number.');
     }
     
+    // Get current selected language to save in profile
+    const selectedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+    
     // Detect current tenant before authentication
     const tenantService = TenantDetectionService.getInstance();
     const currentTenant = await tenantService.detectTenant();
     
     console.log('Current tenant for auth:', currentTenant);
     
-    // Call our mobile auth edge function with tenant context
+    // Call our mobile auth edge function with tenant context and language preference
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: { 
         phone: cleanPhone,
-        tenantId: currentTenant?.id || 'default'
+        tenantId: currentTenant?.id || 'default',
+        preferredLanguage: selectedLanguage
       }
     });
 

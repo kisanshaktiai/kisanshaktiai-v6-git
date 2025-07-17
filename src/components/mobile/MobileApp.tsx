@@ -35,6 +35,18 @@ export const MobileApp: React.FC = () => {
           LanguageService.getInstance().initialize(),
           SyncService.getInstance().initialize()
         ]);
+        
+        // Apply saved language if available
+        const savedLanguage = localStorage.getItem('selectedLanguage');
+        if (savedLanguage) {
+          try {
+            await LanguageService.getInstance().changeLanguage(savedLanguage);
+            console.log('Applied saved language on app init:', savedLanguage);
+          } catch (error) {
+            console.error('Error applying saved language on init:', error);
+          }
+        }
+        
         setAppInitialized(true);
       } catch (error) {
         console.error('Failed to initialize services:', error);
