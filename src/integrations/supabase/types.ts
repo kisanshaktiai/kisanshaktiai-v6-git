@@ -59,6 +59,74 @@ export type Database = {
         }
         Relationships: []
       }
+      crop_health_assessments: {
+        Row: {
+          alert_level: string | null
+          assessment_date: string
+          comparison_data: Json | null
+          created_at: string | null
+          growth_stage: string | null
+          id: string
+          land_id: string
+          ndvi_avg: number | null
+          ndvi_max: number | null
+          ndvi_min: number | null
+          ndvi_std: number | null
+          overall_health_score: number | null
+          predicted_yield: number | null
+          problem_areas: Json | null
+          recommendations: Json | null
+          stress_indicators: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_level?: string | null
+          assessment_date: string
+          comparison_data?: Json | null
+          created_at?: string | null
+          growth_stage?: string | null
+          id?: string
+          land_id: string
+          ndvi_avg?: number | null
+          ndvi_max?: number | null
+          ndvi_min?: number | null
+          ndvi_std?: number | null
+          overall_health_score?: number | null
+          predicted_yield?: number | null
+          problem_areas?: Json | null
+          recommendations?: Json | null
+          stress_indicators?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_level?: string | null
+          assessment_date?: string
+          comparison_data?: Json | null
+          created_at?: string | null
+          growth_stage?: string | null
+          id?: string
+          land_id?: string
+          ndvi_avg?: number | null
+          ndvi_max?: number | null
+          ndvi_min?: number | null
+          ndvi_std?: number | null
+          overall_health_score?: number | null
+          predicted_yield?: number | null
+          problem_areas?: Json | null
+          recommendations?: Json | null
+          stress_indicators?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_health_assessments_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crop_history: {
         Row: {
           created_at: string
@@ -640,37 +708,132 @@ export type Database = {
       ndvi_data: {
         Row: {
           cloud_cover: number | null
+          cloud_coverage: number | null
+          collection_id: string | null
           created_at: string
           date: string
+          evi_value: number | null
           id: string
           image_url: string | null
           land_id: string
+          metadata: Json | null
           ndvi_value: number | null
+          ndwi_value: number | null
+          processing_level: string | null
           satellite_source: string | null
+          savi_value: number | null
+          scene_id: string | null
+          spatial_resolution: number | null
+          tile_id: string | null
         }
         Insert: {
           cloud_cover?: number | null
+          cloud_coverage?: number | null
+          collection_id?: string | null
           created_at?: string
           date: string
+          evi_value?: number | null
           id?: string
           image_url?: string | null
           land_id: string
+          metadata?: Json | null
           ndvi_value?: number | null
+          ndwi_value?: number | null
+          processing_level?: string | null
           satellite_source?: string | null
+          savi_value?: number | null
+          scene_id?: string | null
+          spatial_resolution?: number | null
+          tile_id?: string | null
         }
         Update: {
           cloud_cover?: number | null
+          cloud_coverage?: number | null
+          collection_id?: string | null
           created_at?: string
           date?: string
+          evi_value?: number | null
           id?: string
           image_url?: string | null
           land_id?: string
+          metadata?: Json | null
           ndvi_value?: number | null
+          ndwi_value?: number | null
+          processing_level?: string | null
           satellite_source?: string | null
+          savi_value?: number | null
+          scene_id?: string | null
+          spatial_resolution?: number | null
+          tile_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "ndvi_data_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_maps: {
+        Row: {
+          application_method: string | null
+          applied_date: string | null
+          created_at: string | null
+          created_date: string
+          crop_name: string | null
+          estimated_cost: number | null
+          farmer_id: string
+          growth_stage: string | null
+          id: string
+          land_id: string
+          map_data: Json
+          map_type: string
+          status: string | null
+          total_area_acres: number | null
+          updated_at: string | null
+          zones: Json
+        }
+        Insert: {
+          application_method?: string | null
+          applied_date?: string | null
+          created_at?: string | null
+          created_date: string
+          crop_name?: string | null
+          estimated_cost?: number | null
+          farmer_id: string
+          growth_stage?: string | null
+          id?: string
+          land_id: string
+          map_data: Json
+          map_type: string
+          status?: string | null
+          total_area_acres?: number | null
+          updated_at?: string | null
+          zones: Json
+        }
+        Update: {
+          application_method?: string | null
+          applied_date?: string | null
+          created_at?: string | null
+          created_date?: string
+          crop_name?: string | null
+          estimated_cost?: number | null
+          farmer_id?: string
+          growth_stage?: string | null
+          id?: string
+          land_id?: string
+          map_data?: Json
+          map_type?: string
+          status?: string | null
+          total_area_acres?: number | null
+          updated_at?: string | null
+          zones?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_maps_land_id_fkey"
             columns: ["land_id"]
             isOneToOne: false
             referencedRelation: "lands"
@@ -959,6 +1122,130 @@ export type Database = {
           weather_conditions?: Json | null
         }
         Relationships: []
+      }
+      satellite_alerts: {
+        Row: {
+          affected_area_percentage: number | null
+          alert_type: string
+          created_at: string | null
+          description: string | null
+          farmer_id: string
+          id: string
+          land_id: string
+          metadata: Json | null
+          ndvi_change: number | null
+          recommendations: Json | null
+          resolved_at: string | null
+          severity: string
+          status: string | null
+          title: string
+          trigger_values: Json | null
+        }
+        Insert: {
+          affected_area_percentage?: number | null
+          alert_type: string
+          created_at?: string | null
+          description?: string | null
+          farmer_id: string
+          id?: string
+          land_id: string
+          metadata?: Json | null
+          ndvi_change?: number | null
+          recommendations?: Json | null
+          resolved_at?: string | null
+          severity: string
+          status?: string | null
+          title: string
+          trigger_values?: Json | null
+        }
+        Update: {
+          affected_area_percentage?: number | null
+          alert_type?: string
+          created_at?: string | null
+          description?: string | null
+          farmer_id?: string
+          id?: string
+          land_id?: string
+          metadata?: Json | null
+          ndvi_change?: number | null
+          recommendations?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string | null
+          title?: string
+          trigger_values?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satellite_alerts_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      satellite_imagery: {
+        Row: {
+          acquisition_date: string
+          bounds: Json
+          cloud_coverage: number | null
+          collection_id: string
+          created_at: string | null
+          download_status: string | null
+          file_size_mb: number | null
+          id: string
+          image_urls: Json
+          land_id: string
+          processed_indices: Json | null
+          scene_id: string
+          spatial_resolution: number | null
+          tile_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          acquisition_date: string
+          bounds: Json
+          cloud_coverage?: number | null
+          collection_id?: string
+          created_at?: string | null
+          download_status?: string | null
+          file_size_mb?: number | null
+          id?: string
+          image_urls: Json
+          land_id: string
+          processed_indices?: Json | null
+          scene_id: string
+          spatial_resolution?: number | null
+          tile_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          acquisition_date?: string
+          bounds?: Json
+          cloud_coverage?: number | null
+          collection_id?: string
+          created_at?: string | null
+          download_status?: string | null
+          file_size_mb?: number | null
+          id?: string
+          image_urls?: Json
+          land_id?: string
+          processed_indices?: Json | null
+          scene_id?: string
+          spatial_resolution?: number | null
+          tile_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satellite_imagery_land_id_fkey"
+            columns: ["land_id"]
+            isOneToOne: false
+            referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       soil_health: {
         Row: {
