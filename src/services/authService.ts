@@ -137,19 +137,23 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
   } catch (error) {
     console.error('Mobile authentication failed:', error);
     
-    // Provide user-friendly error messages
+    // Enhanced error handling with more specific messages
     if (error instanceof Error) {
       if (error.message.includes('valid 10-digit')) {
         throw error; // Already user-friendly
+      } else if (error.message.includes('Edge Function returned a non-2xx status code')) {
+        throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         throw new Error('Network error. Please check your connection and try again.');
       } else if (error.message.includes('timeout')) {
         throw new Error('Request timed out. Please try again.');
+      } else if (error.message.includes('service temporarily unavailable')) {
+        throw new Error('KisanShakti AI is currently under maintenance. Please try again in a few minutes.');
       } else {
-        throw new Error(error.message || 'Login failed. Please try again.');
+        throw new Error(error.message || 'Unable to access KisanShakti AI. Please try again.');
       }
     } else {
-      throw new Error('An unexpected error occurred. Please try again.');
+      throw new Error('An unexpected error occurred. Please restart the app and try again.');
     }
   }
 };

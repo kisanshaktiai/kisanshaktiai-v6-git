@@ -173,21 +173,59 @@ serve(async (req) => {
 
     console.log('Creating session for user:', authUser.id);
 
-    // Create session using simplified approach
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.createSession({
-      user_id: authUser.id,
-      expires_in: 3600 // 1 hour
-    });
+    // Create session using simplified approach with retry mechanism
+    let sessionData;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    if (sessionError || !sessionData.session) {
-      console.error('Session creation failed:', sessionError);
+    while (retryCount < maxRetries) {
+      try {
+        const { data: sessionResult, error: sessionError } = await supabase.auth.admin.createSession({
+          user_id: authUser.id,
+          expires_in: 3600 // 1 hour
+        });
+
+        if (sessionError) {
+          console.error(`Session creation attempt ${retryCount + 1} failed:`, sessionError);
+          if (retryCount === maxRetries - 1) {
+            throw sessionError;
+          }
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        if (!sessionResult.session) {
+          console.error(`Session creation attempt ${retryCount + 1} - no session returned`);
+          if (retryCount === maxRetries - 1) {
+            throw new Error('Session establishment failed - no session returned');
+          }
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        sessionData = sessionResult;
+        break;
+      } catch (error) {
+        console.error(`Session creation attempt ${retryCount + 1} error:`, error);
+        if (retryCount === maxRetries - 1) {
+          throw error;
+        }
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (!sessionData?.session) {
+      console.error('All session creation attempts failed');
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to create session. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Session created successfully');
+    console.log('Session created successfully after', retryCount + 1, 'attempt(s)');
 
     return new Response(
       JSON.stringify({
