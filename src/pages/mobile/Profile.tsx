@@ -32,8 +32,10 @@ export const Profile: React.FC = () => {
   const { phoneNumber } = useSelector((state: RootState) => state.auth);
   const { profile, location } = useSelector((state: RootState) => state.farmer);
   
+  // Get language preference from localStorage or default to Hindi
+  const storedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
   const [isEditingLanguage, setIsEditingLanguage] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(profile?.language_preference || 'hi');
+  const [selectedLanguage, setSelectedLanguage] = useState(storedLanguage);
   const [updatingLanguage, setUpdatingLanguage] = useState(false);
 
   const handleLogout = () => {
@@ -44,7 +46,7 @@ export const Profile: React.FC = () => {
   const supportedLanguages = languageService.getSupportedLanguages();
 
   const handleLanguageUpdate = async () => {
-    if (selectedLanguage === profile?.language_preference) {
+    if (selectedLanguage === storedLanguage) {
       setIsEditingLanguage(false);
       return;
     }
@@ -94,7 +96,7 @@ export const Profile: React.FC = () => {
   };
 
   const getCurrentLanguageName = () => {
-    const currentLang = profile?.language_preference || selectedLanguage;
+    const currentLang = selectedLanguage;
     const lang = supportedLanguages.find(l => l.code === currentLang);
     return lang ? lang.nativeName : 'हिंदी';
   };
