@@ -332,6 +332,155 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_reviews: {
+        Row: {
+          created_at: string
+          helpful_count: number | null
+          id: string
+          images: string[] | null
+          is_verified: boolean | null
+          rating: number | null
+          review_text: string | null
+          reviewed_entity_id: string
+          reviewed_entity_type: string
+          reviewer_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          rating?: number | null
+          review_text?: string | null
+          reviewed_entity_id: string
+          reviewed_entity_type: string
+          reviewer_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          rating?: number | null
+          review_text?: string | null
+          reviewed_entity_id?: string
+          reviewed_entity_type?: string
+          reviewer_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_reviews_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_saved_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_transactions: {
+        Row: {
+          buyer_id: string
+          commission_amount: number | null
+          created_at: string
+          delivery_address: Json | null
+          delivery_date: string | null
+          delivery_method: string | null
+          escrow_enabled: boolean | null
+          id: string
+          listing_id: string | null
+          notes: string | null
+          payment_method: string | null
+          payment_status: string | null
+          product_id: string | null
+          quantity: number
+          seller_id: string | null
+          status: string | null
+          tenant_id: string
+          total_amount: number
+          transaction_type: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          commission_amount?: number | null
+          created_at?: string
+          delivery_address?: Json | null
+          delivery_date?: string | null
+          delivery_method?: string | null
+          escrow_enabled?: boolean | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity: number
+          seller_id?: string | null
+          status?: string | null
+          tenant_id: string
+          total_amount: number
+          transaction_type: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          commission_amount?: number | null
+          created_at?: string
+          delivery_address?: Json | null
+          delivery_date?: string | null
+          delivery_method?: string | null
+          escrow_enabled?: boolean | null
+          id?: string
+          listing_id?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity?: number
+          seller_id?: string | null
+          status?: string | null
+          tenant_id?: string
+          total_amount?: number
+          transaction_type?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ndvi_data: {
         Row: {
           cloud_cover: number | null
@@ -369,6 +518,231 @@ export type Database = {
             columns: ["land_id"]
             isOneToOne: false
             referencedRelation: "lands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produce_listings: {
+        Row: {
+          available_until: string | null
+          category_id: string | null
+          created_at: string
+          crop_name: string
+          description: string | null
+          farmer_id: string
+          harvest_date: string | null
+          id: string
+          images: string[] | null
+          is_organic: boolean | null
+          location_details: Json | null
+          minimum_order: number | null
+          payment_options: string[] | null
+          pickup_options: string[] | null
+          price_per_unit: number
+          quality_grade: string | null
+          quantity_available: number
+          status: string | null
+          storage_type: string | null
+          tenant_id: string
+          unit_type: string | null
+          updated_at: string
+          variety: string | null
+        }
+        Insert: {
+          available_until?: string | null
+          category_id?: string | null
+          created_at?: string
+          crop_name: string
+          description?: string | null
+          farmer_id: string
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          is_organic?: boolean | null
+          location_details?: Json | null
+          minimum_order?: number | null
+          payment_options?: string[] | null
+          pickup_options?: string[] | null
+          price_per_unit: number
+          quality_grade?: string | null
+          quantity_available: number
+          status?: string | null
+          storage_type?: string | null
+          tenant_id: string
+          unit_type?: string | null
+          updated_at?: string
+          variety?: string | null
+        }
+        Update: {
+          available_until?: string | null
+          category_id?: string | null
+          created_at?: string
+          crop_name?: string
+          description?: string | null
+          farmer_id?: string
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          is_organic?: boolean | null
+          location_details?: Json | null
+          minimum_order?: number | null
+          payment_options?: string[] | null
+          pickup_options?: string[] | null
+          price_per_unit?: number
+          quality_grade?: string | null
+          quantity_available?: number
+          status?: string | null
+          storage_type?: string | null
+          tenant_id?: string
+          unit_type?: string | null
+          updated_at?: string
+          variety?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produce_listings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          availability_status: string | null
+          brand: string | null
+          bulk_pricing: Json | null
+          category_id: string | null
+          created_at: string
+          credit_options: Json | null
+          dealer_locations: Json | null
+          description: string | null
+          discount_percentage: number | null
+          id: string
+          images: string[] | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          max_order_quantity: number | null
+          min_order_quantity: number | null
+          name: string
+          price_per_unit: number | null
+          sku: string | null
+          specifications: Json | null
+          stock_quantity: number | null
+          tags: string[] | null
+          tenant_id: string
+          unit_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          availability_status?: string | null
+          brand?: string | null
+          bulk_pricing?: Json | null
+          category_id?: string | null
+          created_at?: string
+          credit_options?: Json | null
+          dealer_locations?: Json | null
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_order_quantity?: number | null
+          min_order_quantity?: number | null
+          name: string
+          price_per_unit?: number | null
+          sku?: string | null
+          specifications?: Json | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          tenant_id: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          availability_status?: string | null
+          brand?: string | null
+          bulk_pricing?: Json | null
+          category_id?: string | null
+          created_at?: string
+          credit_options?: Json | null
+          dealer_locations?: Json | null
+          description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          images?: string[] | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_order_quantity?: number | null
+          min_order_quantity?: number | null
+          name?: string
+          price_per_unit?: number | null
+          sku?: string | null
+          specifications?: Json | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          tenant_id?: string
+          unit_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
             referencedColumns: ["id"]
           },
         ]
