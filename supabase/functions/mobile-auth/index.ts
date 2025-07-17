@@ -87,13 +87,17 @@ serve(async (req) => {
       }
 
       authUser = userData.user;
-    } else {
+    }
+
+    // For new users, create them and return credentials
+    let tempPassword;
+    if (!existingProfile) {
       console.log('Creating new user');
       isNewUser = true;
 
       // Create new user with farmer email format
       const farmerEmail = `farmer.${cleanPhone}@kisanshaktiai.com`;
-      const tempPassword = `auto_${cleanPhone}_${Date.now()}`;
+      tempPassword = `auto_${cleanPhone}_${Date.now()}`;
 
       const { data: newUserData, error: createError } = await supabase.auth.admin.createUser({
         email: farmerEmail,
@@ -171,70 +175,64 @@ serve(async (req) => {
       }
     }
 
-    console.log('Creating session for user:', authUser.id);
+    console.log('User setup complete, returning credentials for frontend sign-in');
 
-    // Create session using simplified approach with retry mechanism
-    let sessionData;
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount < maxRetries) {
-      try {
-        const { data: sessionResult, error: sessionError } = await supabase.auth.admin.createSession({
-          user_id: authUser.id,
-          expires_in: 3600 // 1 hour
-        });
-
-        if (sessionError) {
-          console.error(`Session creation attempt ${retryCount + 1} failed:`, sessionError);
-          if (retryCount === maxRetries - 1) {
-            throw sessionError;
-          }
-          retryCount++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-
-        if (!sessionResult.session) {
-          console.error(`Session creation attempt ${retryCount + 1} - no session returned`);
-          if (retryCount === maxRetries - 1) {
-            throw new Error('Session establishment failed - no session returned');
-          }
-          retryCount++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-
-        sessionData = sessionResult;
-        break;
-      } catch (error) {
-        console.error(`Session creation attempt ${retryCount + 1} error:`, error);
-        if (retryCount === maxRetries - 1) {
-          throw error;
-        }
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    // For existing users, generate a new temporary password and update it
+    if (!isNewUser) {
+      const farmerEmail = `farmer.${cleanPhone}@kisanshaktiai.com`;
+      const newTempPassword = `auto_${cleanPhone}_${Date.now()}`;
+      
+      // Update the existing user's password so frontend can sign in
+      const { error: updateError } = await supabase.auth.admin.updateUserById(authUser.id, {
+        password: newTempPassword
+      });
+      
+      if (updateError) {
+        console.error('Failed to update user password:', updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Authentication failed. Please try again.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-    }
-
-    if (!sessionData?.session) {
-      console.error('All session creation attempts failed');
+      
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to create session. Please try again.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: true,
+          user: {
+            id: authUser.id,
+            email: farmerEmail,
+            phone: authUser.phone
+          },
+          credentials: {
+            email: farmerEmail,
+            password: newTempPassword
+          },
+          isNewUser: false,
+          tenantId: resolvedTenantId,
+          message: 'Welcome back!'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Session created successfully after', retryCount + 1, 'attempt(s)');
+    // For new users, return credentials for frontend sign-in
+    const farmerEmail = `farmer.${cleanPhone}@kisanshaktiai.com`;
 
     return new Response(
       JSON.stringify({
         success: true,
-        user: authUser,
-        session: sessionData.session,
-        isNewUser,
+        user: {
+          id: authUser.id,
+          email: farmerEmail,
+          phone: authUser.phone
+        },
+        credentials: {
+          email: farmerEmail,
+          password: tempPassword
+        },
+        isNewUser: true,
         tenantId: resolvedTenantId,
-        message: isNewUser ? 'Welcome to KisanShakti AI!' : 'Welcome back!'
+        message: 'Welcome to KisanShakti AI!'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

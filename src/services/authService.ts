@@ -127,12 +127,31 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
       throw new Error(data?.error || 'Authentication failed. Please try again.');
     }
 
-    console.log('Edge function completed successfully');
+    console.log('Edge function completed successfully:', data);
 
-    // Use simplified session service
-    const session = await sessionService.setSession(data.session);
+    // Handle authentication flow - both new and existing users get credentials
+    if (data.credentials) {
+      console.log('Signing in user with credentials...');
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.credentials.email,
+        password: data.credentials.password
+      });
 
-    console.log('Authentication completed successfully for user:', session.user?.id);
+      if (signInError) {
+        console.error('Sign in error:', signInError);
+        throw new Error('Failed to complete authentication. Please try again.');
+      }
+
+      if (!authData.session) {
+        throw new Error('Authentication failed. Please try again.');
+      }
+
+      // Use session service to track the session
+      await sessionService.setSession(authData.session);
+      console.log('User authentication completed successfully');
+    } else {
+      throw new Error('Authentication failed - no credentials provided by server.');
+    }
     
   } catch (error) {
     console.error('Mobile authentication failed:', error);
