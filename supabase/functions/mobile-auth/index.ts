@@ -19,6 +19,40 @@ serve(async (req) => {
     const { phone, tenantId = 'default', preferredLanguage = 'hi' } = await req.json();
     console.log('Received phone number, tenant, and language:', { phone, tenantId, preferredLanguage });
 
+    // Initialize Supabase client with service role
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Resolve tenant ID if it's a slug
+    let resolvedTenantId = tenantId;
+    if (tenantId === 'default' || !tenantId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      console.log('Resolving tenant slug to UUID:', tenantId);
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', tenantId)
+        .eq('status', 'active')
+        .single();
+
+      if (tenantError || !tenant) {
+        console.error('Tenant resolution error:', tenantError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Invalid tenant: ${tenantId}. Please check your configuration.` 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      resolvedTenantId = tenant.id;
+      console.log('Resolved tenant ID:', resolvedTenantId);
+    }
+
     // Validate phone number
     const cleanPhone = phone.replace(/\D/g, '');
     console.log('Phone number to search:', cleanPhone);
@@ -33,10 +67,6 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('=== CHECKING FOR EXISTING USER ===');
 
@@ -98,12 +128,12 @@ serve(async (req) => {
           phone: `+91${cleanPhone}`,
           phone_confirmed: true,
           email_confirmed: true,
-          user_metadata: {
-            phone: cleanPhone,
-            is_mobile_user: true,
-            tenant_id: tenantId,
-            preferred_language: preferredLanguage
-          }
+            user_metadata: {
+              phone: cleanPhone,
+              is_mobile_user: true,
+              tenant_id: resolvedTenantId,
+              preferred_language: preferredLanguage
+            }
         });
 
         if (createError) {
@@ -158,7 +188,7 @@ serve(async (req) => {
               .from('user_tenants')
               .insert({
                 user_id: authUser.id,
-                tenant_id: tenantId,
+                tenant_id: resolvedTenantId,
                 role: 'farmer' as any,
                 is_primary: true,
                 is_active: true,
