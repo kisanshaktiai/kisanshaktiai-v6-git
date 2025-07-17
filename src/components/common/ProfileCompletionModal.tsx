@@ -174,16 +174,24 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     setLoading(true);
 
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session?.user) {
-        throw new Error('Please log in again to continue');
+      // Use userId from Redux store instead of session
+      if (!userId) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to save your profile",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
       }
 
-      const currentUserId = session.user.id;
-      const phone = session.user.user_metadata?.phone || 
-                   session.user.email?.split('@')[0] || 
-                   session.user.phone || '';
+      const currentUserId = userId;
+      // Get phone from current user data or generate fallback
+      const { data: { user } } = await supabase.auth.getUser();
+      const phone = user?.user_metadata?.phone || 
+                   user?.email?.split('@')[0] || 
+                   user?.phone || 
+                   `temp_${currentUserId.slice(0, 8)}`;
 
       // Check if profile exists
       const { data: existingProfile } = await supabase

@@ -66,23 +66,61 @@ export class LocationService {
     state: string;
   }> {
     try {
-      // This would integrate with a geocoding service
-      // For now, return mock data based on coordinates
-      const mockLocations = [
-        { lat: 28.6, lng: 77.2, district: "New Delhi", state: "Delhi", address: "Central Delhi" },
-        { lat: 19.0, lng: 72.8, district: "Mumbai", state: "Maharashtra", address: "Mumbai Central" },
-        { lat: 13.0, lng: 80.2, district: "Chennai", state: "Tamil Nadu", address: "Chennai Central" },
-        { lat: 22.5, lng: 88.3, district: "Kolkata", state: "West Bengal", address: "Kolkata Central" },
-        { lat: 17.3, lng: 78.4, district: "Hyderabad", state: "Telangana", address: "Hyderabad Central" },
-        { lat: 12.9, lng: 77.6, district: "Bangalore", state: "Karnataka", address: "Bangalore Central" },
+      // Use OpenStreetMap Nominatim API for reverse geocoding (free and reliable)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
+        {
+          headers: {
+            'User-Agent': 'KisanShakti-App/1.0'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch location data');
+      }
+
+      const data = await response.json();
+      
+      if (!data || !data.address) {
+        throw new Error('No address data found');
+      }
+
+      const address = data.address;
+      
+      // Extract location details with fallbacks
+      const tahsil = address.county || address.state_district || address.suburb || address.neighbourhood || '';
+      const district = address.state_district || address.county || address.city_district || address.city || '';
+      const state = address.state || address.region || '';
+
+      return {
+        address: tahsil, // Use tahsil-level data for address
+        district: district,
+        state: state,
+      };
+    } catch (error) {
+      console.log('Geocoding error:', error);
+      
+      // Fallback to approximate location based on coordinates
+      const indiaStates = [
+        { lat: 28.6, lng: 77.2, district: "New Delhi", state: "Delhi", tahsil: "New Delhi" },
+        { lat: 19.0, lng: 72.8, district: "Mumbai", state: "Maharashtra", tahsil: "Mumbai City" },
+        { lat: 13.0, lng: 80.2, district: "Chennai", state: "Tamil Nadu", tahsil: "Chennai" },
+        { lat: 22.5, lng: 88.3, district: "Kolkata", state: "West Bengal", tahsil: "Kolkata" },
+        { lat: 17.3, lng: 78.4, district: "Hyderabad", state: "Telangana", tahsil: "Hyderabad" },
+        { lat: 12.9, lng: 77.6, district: "Bangalore Urban", state: "Karnataka", tahsil: "Bangalore North" },
+        { lat: 21.1, lng: 79.0, district: "Nagpur", state: "Maharashtra", tahsil: "Nagpur Rural" },
+        { lat: 26.9, lng: 75.8, district: "Jaipur", state: "Rajasthan", tahsil: "Jaipur" },
+        { lat: 23.0, lng: 72.5, district: "Ahmedabad", state: "Gujarat", tahsil: "Ahmedabad City" },
+        { lat: 18.5, lng: 73.8, district: "Pune", state: "Maharashtra", tahsil: "Pune City" },
       ];
 
-      // Find closest mock location
-      let closest = mockLocations[0];
-      let minDistance = Math.abs(lat - closest.lat) + Math.abs(lng - closest.lng);
+      // Find closest location
+      let closest = indiaStates[0];
+      let minDistance = Math.sqrt(Math.pow(lat - closest.lat, 2) + Math.pow(lng - closest.lng, 2));
 
-      for (const location of mockLocations) {
-        const distance = Math.abs(lat - location.lat) + Math.abs(lng - location.lng);
+      for (const location of indiaStates) {
+        const distance = Math.sqrt(Math.pow(lat - location.lat, 2) + Math.pow(lng - location.lng, 2));
         if (distance < minDistance) {
           closest = location;
           minDistance = distance;
@@ -90,13 +128,10 @@ export class LocationService {
       }
 
       return {
-        address: closest.address,
+        address: closest.tahsil,
         district: closest.district,
         state: closest.state,
       };
-    } catch (error) {
-      console.log('Geocoding error:', error);
-      throw new Error('Unable to get address from coordinates');
     }
   }
 
