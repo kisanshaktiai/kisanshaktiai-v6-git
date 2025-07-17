@@ -204,10 +204,28 @@ serve(async (req) => {
 
     console.log('=== GENERATING SESSION ===');
 
-    // Generate proper session tokens using sign in
-    const syntheticEmail = authUser.email || `${cleanPhone}@kisanshakti.app`;
+    // For existing users, we need to use their existing email
+    // For new users, we already have their email from creation
+    const userEmail = authUser.email;
+    
+    if (!userEmail) {
+      console.error('No email found for user:', authUser.id);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'User account is incomplete. Please contact support.' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create a new temporary password for session generation
     const tempPassword = `KS_${cleanPhone}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    console.log('Updating user password for session generation...');
     // Update user password for session generation
     const { error: updateError } = await supabase.auth.admin.updateUserById(
       authUser.id,
@@ -216,34 +234,67 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Error updating user password:', updateError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to prepare authentication. Please try again.' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    // Sign in to generate proper session tokens
+    console.log('Signing in to generate JWT tokens...');
+    // Sign in to generate proper JWT session tokens
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: syntheticEmail,
+      email: userEmail,
       password: tempPassword
     });
 
     if (signInError || !signInData.session) {
-      console.error('Session generation error:', signInError);
+      console.error('Session generation failed:', signInError);
       
-      // Fallback: Create manual session tokens
-      const manualSession = {
-        access_token: btoa(`${authUser.id}:${Date.now()}:access`),
-        refresh_token: btoa(`${authUser.id}:${Date.now()}:refresh`),
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
-        expires_in: 3600,
+      // If password sign-in fails, try to generate a magic link and extract tokens
+      console.log('Attempting magic link token generation...');
+      
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: userEmail
+      });
+      
+      if (linkError || !linkData.properties) {
+        console.error('Magic link generation failed:', linkError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Authentication service error. Please try again later.' 
+          }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // Extract tokens from magic link data
+      const sessionResponse = {
+        access_token: linkData.properties.access_token,
+        refresh_token: linkData.properties.refresh_token,
+        expires_at: linkData.properties.expires_at,
+        expires_in: linkData.properties.expires_in || 3600,
         token_type: 'bearer',
         user: authUser
       };
       
-      console.log('Using manual session tokens as fallback');
+      console.log('Generated session using magic link tokens');
       
       return new Response(
         JSON.stringify({
           success: true,
           user: authUser,
-          session: manualSession,
+          session: sessionResponse,
           isNewUser,
           message: isNewUser ? 'Account created successfully' : 'Welcome back!'
         }),
@@ -254,7 +305,7 @@ serve(async (req) => {
       );
     }
 
-    // Use the actual session from sign in
+    // Use the actual JWT session from successful sign in
     const sessionResponse = {
       access_token: signInData.session.access_token,
       refresh_token: signInData.session.refresh_token,
@@ -279,6 +330,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
+
 
   } catch (error) {
     console.error('=== MOBILE AUTH CRITICAL ERROR ===');
