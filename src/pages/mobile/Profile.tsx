@@ -1,13 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { logout } from '@/store/slices/authSlice';
+import { useAuth } from '@/hooks/useAuth';
+import { LanguageService } from '@/services/LanguageService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
 import { 
   User, 
   Phone, 
@@ -16,17 +20,63 @@ import {
   Settings, 
   LogOut,
   Shield,
-  Bell
+  Bell,
+  Edit2,
+  Check
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
+  const { updateProfile } = useAuth();
   const { phoneNumber } = useSelector((state: RootState) => state.auth);
-  const { profile, location, selectedLanguage } = useSelector((state: RootState) => state.farmer);
+  const { profile, location } = useSelector((state: RootState) => state.farmer);
+  
+  const [isEditingLanguage, setIsEditingLanguage] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(profile?.language_preference || 'hi');
+  const [updatingLanguage, setUpdatingLanguage] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const languageService = LanguageService.getInstance();
+  const supportedLanguages = languageService.getSupportedLanguages();
+
+  const handleLanguageUpdate = async () => {
+    if (selectedLanguage === profile?.language_preference) {
+      setIsEditingLanguage(false);
+      return;
+    }
+
+    setUpdatingLanguage(true);
+    try {
+      // Update language preference in profile
+      await updateProfile({ preferred_language: selectedLanguage });
+      
+      // Apply language change
+      await languageService.changeLanguage(selectedLanguage);
+      
+      // Store language selection
+      localStorage.setItem('selectedLanguage', selectedLanguage);
+      localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      
+      toast({
+        title: t('profile.languageUpdated'),
+        description: t('profile.languageUpdatedDesc'),
+      });
+      
+      setIsEditingLanguage(false);
+    } catch (error) {
+      console.error('Error updating language:', error);
+      toast({
+        title: t('profile.languageUpdateError'),
+        description: t('profile.languageUpdateErrorDesc'),
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingLanguage(false);
+    }
   };
 
   // Helper function to safely convert translation result to string
@@ -41,6 +91,12 @@ export const Profile: React.FC = () => {
     if (!profile?.name) return getTranslation('common.farmer', 'Farmer');
     if (typeof profile.name === 'string') return profile.name;
     return profile.name.en || profile.name.hi || getTranslation('common.farmer', 'Farmer');
+  };
+
+  const getCurrentLanguageName = () => {
+    const currentLang = profile?.language_preference || selectedLanguage;
+    const lang = supportedLanguages.find(l => l.code === currentLang);
+    return lang ? lang.nativeName : 'हिंदी';
   };
 
   const menuItems = [
@@ -58,12 +114,6 @@ export const Profile: React.FC = () => {
       icon: Shield,
       title: t('profile.privacySecurity'),
       subtitle: t('profile.privacySecurityDesc'),
-    },
-    {
-      icon: Languages,
-      title: t('profile.language'),
-      subtitle: t('profile.languageDesc'),
-      value: selectedLanguage?.toUpperCase(),
     },
   ];
 
@@ -99,7 +149,7 @@ export const Profile: React.FC = () => {
             <div className="flex items-center justify-center space-x-1">
               <Languages className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">
-                {selectedLanguage?.toUpperCase() || 'HI'}
+                {getCurrentLanguageName()}
               </span>
             </div>
           </div>
@@ -128,6 +178,70 @@ export const Profile: React.FC = () => {
         </Card>
       </div>
 
+      {/* Language Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <Languages className="w-5 h-5 mr-2 text-green-600" />
+            {t('profile.languageSettings')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-gray-900">{t('profile.preferredLanguage')}</h3>
+              <p className="text-sm text-gray-600">{t('profile.preferredLanguageDesc')}</p>
+            </div>
+            {!isEditingLanguage ? (
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="px-3 py-1">
+                  {getCurrentLanguageName()}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsEditingLanguage(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Select 
+                  value={selectedLanguage} 
+                  onValueChange={setSelectedLanguage}
+                  disabled={updatingLanguage}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.nativeName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleLanguageUpdate}
+                  disabled={updatingLanguage}
+                  className="h-8 w-8 p-0"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-gray-500">
+            {t('profile.languageNote')}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Menu Items */}
       <div className="space-y-3">
         {menuItems.map((item, index) => {
@@ -143,9 +257,6 @@ export const Profile: React.FC = () => {
                     <h3 className="font-medium text-gray-900">{item.title}</h3>
                     <p className="text-sm text-gray-600">{item.subtitle}</p>
                   </div>
-                  {item.value && (
-                    <Badge variant="outline">{item.value}</Badge>
-                  )}
                 </div>
               </CardContent>
             </Card>

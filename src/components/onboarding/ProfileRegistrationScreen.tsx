@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { setProfile } from '@/store/slices/farmerSlice';
-import { User, Calendar, Briefcase, Loader } from 'lucide-react';
+import { LanguageService } from '@/services/LanguageService';
+import { User, Calendar, Briefcase, Loader, Languages } from 'lucide-react';
 
 interface ProfileRegistrationScreenProps {
   onNext: () => void;
@@ -23,13 +25,31 @@ export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps>
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  
+  // Get selected language from localStorage (set during onboarding)
+  const savedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+  
   const [formData, setFormData] = useState({
     fullName: '',
     gender: '',
     dateOfBirth: '',
     primaryOccupation: '',
-    aadhaarNumber: ''
+    aadhaarNumber: '',
+    preferredLanguage: savedLanguage
   });
+
+  const languageService = LanguageService.getInstance();
+  const supportedLanguages = languageService.getSupportedLanguages();
+
+  useEffect(() => {
+    // Ensure the language preference matches what was selected during onboarding
+    if (savedLanguage && savedLanguage !== formData.preferredLanguage) {
+      setFormData(prev => ({
+        ...prev,
+        preferredLanguage: savedLanguage
+      }));
+    }
+  }, [savedLanguage]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -45,7 +65,7 @@ export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps>
 
     setLoading(true);
     try {
-      // Create profile object
+      // Create profile object with language preference
       const profile = {
         id: `farmer_${Date.now()}`,
         name: formData.fullName,
@@ -56,13 +76,20 @@ export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps>
         phone_number: '', // Will be set from auth state
         tenant_id: null,
         location: null,
-        language_preference: 'hi',
+        language_preference: formData.preferredLanguage,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
       dispatch(setProfile(profile as any));
       dispatch(setOnboardingCompleted());
+      
+      // Ensure language preference is applied
+      if (formData.preferredLanguage !== savedLanguage) {
+        await languageService.changeLanguage(formData.preferredLanguage);
+        localStorage.setItem('selectedLanguage', formData.preferredLanguage);
+        localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      }
       
       // Navigate to dashboard
       onNext();
@@ -152,6 +179,32 @@ export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Preferred Language */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Languages className="w-4 h-4 inline mr-1" />
+              Preferred Language
+            </label>
+            <Select 
+              value={formData.preferredLanguage} 
+              onValueChange={(value) => handleInputChange('preferredLanguage', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {supportedLanguages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.nativeName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              This was selected during registration. You can change it anytime in settings.
+            </p>
           </div>
 
           {/* Aadhaar Number (Optional) */}
