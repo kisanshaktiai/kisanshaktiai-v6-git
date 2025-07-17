@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -238,11 +237,26 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
   try {
     // Convert Profile updates to database format, handling type conversions
     const dbUpdates: Partial<UserProfileRow> = {
-      ...updates,
       updated_at: new Date().toISOString()
     };
 
-    // Ensure preferred_language is a valid enum value
+    // Only include fields that exist in both types and handle special cases
+    const allowedFields: (keyof UserProfileRow)[] = [
+      'phone', 'phone_verified', 'full_name', 'display_name', 'date_of_birth',
+      'gender', 'address_line1', 'address_line2', 'village', 'taluka', 'district',
+      'state', 'pincode', 'country', 'avatar_url', 'bio', 'aadhaar_number',
+      'farmer_id', 'shc_id', 'coordinates', 'last_active_at', 'device_tokens',
+      'notification_preferences', 'metadata', 'expertise_areas'
+    ];
+
+    // Copy allowed fields
+    allowedFields.forEach(field => {
+      if (updates[field] !== undefined) {
+        (dbUpdates as any)[field] = updates[field];
+      }
+    });
+
+    // Handle preferred_language separately with validation
     if (updates.preferred_language) {
       const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn'] as const;
       if (validLanguages.includes(updates.preferred_language as any)) {
