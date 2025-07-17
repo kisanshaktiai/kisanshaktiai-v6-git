@@ -2,6 +2,39 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
+import { Database } from '@/integrations/supabase/types';
+
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+
+// Helper function to safely parse JSON
+const safeJsonParse = (value: any, fallback: any = null) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return value;
+};
+
+// Helper function to convert database row to Profile type
+const convertToProfile = (data: UserProfileRow): Profile => {
+  return {
+    ...data,
+    notification_preferences: safeJsonParse(data.notification_preferences, {
+      sms: true,
+      push: true,
+      email: false,
+      whatsapp: true,
+      calls: false
+    }),
+    device_tokens: safeJsonParse(data.device_tokens, []),
+    expertise_areas: Array.isArray(data.expertise_areas) ? data.expertise_areas : [],
+    metadata: safeJsonParse(data.metadata, {})
+  };
+};
 
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
@@ -17,7 +50,11 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       return null;
     }
     
-    return data;
+    if (!data) {
+      return null;
+    }
+    
+    return convertToProfile(data);
   } catch (error) {
     console.error('Error in fetchProfile:', error);
     return null;
@@ -199,12 +236,23 @@ export const signOut = async (): Promise<void> => {
 
 export const updateProfile = async (userId: string, updates: Partial<Profile>): Promise<void> => {
   try {
+    // Convert Profile updates to database format, handling type conversions
+    const dbUpdates: Partial<UserProfileRow> = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    // Ensure preferred_language is a valid enum value
+    if (updates.preferred_language) {
+      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn'] as const;
+      if (validLanguages.includes(updates.preferred_language as any)) {
+        dbUpdates.preferred_language = updates.preferred_language as any;
+      }
+    }
+
     const { error } = await supabase
       .from('user_profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(dbUpdates)
       .eq('id', userId);
     
     if (error) {
