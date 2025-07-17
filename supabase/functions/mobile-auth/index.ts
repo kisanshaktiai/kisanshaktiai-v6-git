@@ -24,33 +24,33 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Resolve tenant ID if it's a slug
+    // Resolve tenant ID if it's a slug or handle default UUID
     let resolvedTenantId = tenantId;
     if (tenantId === 'default' || !tenantId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
       console.log('Resolving tenant slug to UUID:', tenantId);
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('id')
-        .eq('slug', tenantId)
+        .eq('slug', tenantId === '00000000-0000-0000-0000-000000000000' ? 'default' : tenantId)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
-      if (tenantError || !tenant) {
+      if (tenantError) {
         console.error('Tenant resolution error:', tenantError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `Invalid tenant: ${tenantId}. Please check your configuration.` 
-          }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
       }
 
-      resolvedTenantId = tenant.id;
-      console.log('Resolved tenant ID:', resolvedTenantId);
+      if (!tenant) {
+        console.log('Tenant not found in database, using default fallback UUID');
+        // Use the hardcoded default UUID for fallback
+        resolvedTenantId = '00000000-0000-0000-0000-000000000000';
+      } else {
+        resolvedTenantId = tenant.id;
+        console.log('Resolved tenant ID:', resolvedTenantId);
+      }
+    } else if (tenantId === '00000000-0000-0000-0000-000000000000') {
+      // Handle the default UUID case
+      resolvedTenantId = tenantId;
+      console.log('Using default tenant UUID:', resolvedTenantId);
     }
 
     // Validate phone number

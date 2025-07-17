@@ -191,16 +191,23 @@ export class TenantDetectionService {
 
   private async getDefaultTenant(): Promise<DetectedTenant | null> {
     try {
-      const { data: tenant } = await supabase
+      // Try to get the default tenant from database
+      const { data: tenant, error } = await supabase
         .from('tenants')
         .select('*')
         .eq('slug', 'default')
-        .single();
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching default tenant:', error);
+      }
 
       if (!tenant) {
-        // Fallback to hardcoded default if no default tenant in DB
+        console.log('No default tenant found in database, using hardcoded fallback');
+        // Return hardcoded fallback with UUID format
         return {
-          id: 'default',
+          id: '00000000-0000-0000-0000-000000000000',
           name: 'KisanShakti AI',
           slug: 'default',
           branding: {
@@ -233,9 +240,9 @@ export class TenantDetectionService {
       };
     } catch (error) {
       console.error('Error fetching default tenant:', error);
-      // Return hardcoded fallback
+      // Return hardcoded fallback with UUID format
       return {
-        id: 'default',
+        id: '00000000-0000-0000-0000-000000000000',
         name: 'KisanShakti AI',
         slug: 'default',
         branding: {
@@ -291,5 +298,21 @@ export class TenantDetectionService {
   async clearCache(): Promise<void> {
     this.cachedTenant = null;
     await Preferences.remove({ key: 'currentTenantId' });
+    
+    // Clear all tenant branding cache
+    try {
+      const keys = ['currentTenantId'];
+      for (const key of keys) {
+        await Preferences.remove({ key });
+      }
+    } catch (error) {
+      console.error('Error clearing tenant cache:', error);
+    }
+  }
+
+  // Force refresh tenant data
+  async refreshTenant(): Promise<DetectedTenant | null> {
+    await this.clearCache();
+    return await this.detectTenant();
   }
 }
