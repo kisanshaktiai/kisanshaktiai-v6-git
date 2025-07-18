@@ -17,16 +17,35 @@ const stateLanguageMapping: Record<string, string[]> = {
   'maharashtra': ['mr', 'hi', 'en'],
   'gujarat': ['gu', 'hi', 'en'],
   'punjab': ['pa', 'hi', 'en'],
-  'haryana': ['pa', 'hi', 'en'],
-  'tamil nadu': ['ta', 'hi', 'en'],
+  'haryana': ['hi', 'pa', 'en'],
+  'tamil nadu': ['ta', 'en', 'hi'],
   'telangana': ['te', 'hi', 'en'],
   'andhra pradesh': ['te', 'hi', 'en'],
   'karnataka': ['kn', 'hi', 'en'],
-  'kerala': ['ml', 'hi', 'en'],
+  'kerala': ['ml', 'en', 'hi'],
   'odisha': ['or', 'hi', 'en'],
   'west bengal': ['bn', 'hi', 'en'],
+  'uttar pradesh': ['hi', 'en'],
+  'bihar': ['hi', 'en'],
+  'rajasthan': ['hi', 'en'],
+  'madhya pradesh': ['hi', 'en'],
+  'chhattisgarh': ['hi', 'en'],
+  'jharkhand': ['hi', 'bn', 'en'],
+  'uttarakhand': ['hi', 'en'],
+  'jammu and kashmir': ['ur', 'hi', 'en'],
+  'ladakh': ['ur', 'hi', 'en'],
+  'manipur': ['en', 'hi'],
+  'nagaland': ['en', 'hi'],
+  'mizoram': ['en', 'hi'],
+  'tripura': ['bn', 'en', 'hi'],
+  'assam': ['bn', 'hi', 'en'],
+  'meghalaya': ['en', 'hi'],
+  'sikkim': ['ne', 'en', 'hi'], // 'ne' = Nepali
+  'goa': ['en', 'mr', 'kn'],
+  'delhi': ['hi', 'en', 'pa'],
   'default': ['hi', 'en', 'mr', 'pa', 'gu', 'te', 'ta', 'kn']
 };
+
 
 export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenProps> = ({ onNext }) => {
   const { t, i18n } = useTranslation();
