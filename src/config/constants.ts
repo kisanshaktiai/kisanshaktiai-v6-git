@@ -8,6 +8,12 @@ export const STORAGE_KEYS = {
   FARMER_DATA: 'farmer_data',
   LANGUAGE: 'language',
   ONBOARDING_COMPLETED: 'onboarding_completed',
+  MOBILE_NUMBER: 'mobile_number',
+  PIN_HASH: 'pin_hash',
+  USER_ID: 'user_id',
+  USER_METADATA: 'user_metadata',
+  OTP_PREFIX: 'otp_',
+  OTP_TIMESTAMP_PREFIX: 'otp_timestamp_',
 };
 
 export const APP_CONFIG = {

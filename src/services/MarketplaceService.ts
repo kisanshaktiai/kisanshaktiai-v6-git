@@ -7,20 +7,25 @@ export interface Product {
   tenant_id: string;
   name: any; // JSON object with translations
   description?: any;
-  category: string;
-  subcategory?: string;
   brand?: string;
   price?: number;
-  currency: string;
-  unit: string;
-  discount_percentage: number;
-  stock_quantity: number;
-  minimum_order_quantity: number;
-  specifications?: any;
+  currency?: string;
+  availability_status: string;
+  bulk_pricing?: any;
+  category_id?: string;
+  credit_options?: any;
+  dealer_locations?: any;
+  discount_percentage?: number;
+  expected_delivery_days?: number;
   images?: string[];
   is_active: boolean;
-  is_featured: boolean;
+  is_featured?: boolean;
+  minimum_order_quantity?: number;
+  product_code?: string;
+  specifications?: any;
+  stock_quantity?: number;
   tags?: string[];
+  unit?: string;
   created_at: string;
   updated_at: string;
 }
@@ -89,13 +94,13 @@ export class MarketplaceService {
     }
   }
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('tenant_id', tenantService.getCurrentTenantId())
-        .eq('category', category)
+        .eq('category_id', categoryId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 

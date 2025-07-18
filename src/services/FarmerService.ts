@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { tenantService } from './TenantService';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
@@ -15,6 +14,7 @@ export interface FarmerProfile {
   tenant_id: string;
   farmer_code: string;
   mobile_number: string;
+  pin_hash?: string;
   total_land_acres?: number;
   farming_experience_years?: number;
   farm_type?: string;
