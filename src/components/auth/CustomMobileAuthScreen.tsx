@@ -30,6 +30,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
 
   const primaryColor = tenantBranding?.primary_color || '#10B981';
   const appName = tenantBranding?.app_name || 'KisanShakti AI';
+  const logoUrl = tenantBranding?.logo_url;
 
   const handleMobileNumberChange = async (value: string) => {
     // Remove all non-digits and ensure only 10 digits for Indian mobile numbers
@@ -73,8 +74,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleCreatePin = async () => {
-    if (pin.length < 4) {
-      setError('PIN must be at least 4 digits');
+    if (pin.length !== 4) {
+      setError('PIN must be exactly 4 digits');
       return;
     }
 
@@ -86,8 +87,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleVerifyNewPin = async () => {
-    if (pin.length < 4) {
-      setError('Please enter your PIN again to confirm');
+    if (pin.length !== 4) {
+      setError('Please enter your 4-digit PIN again to confirm');
       return;
     }
 
@@ -129,8 +130,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleLogin = async () => {
-    if (pin.length < 4) {
-      setError('Please enter your PIN');
+    if (pin.length !== 4) {
+      setError('Please enter your 4-digit PIN');
       return;
     }
 
@@ -162,7 +163,15 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
           className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg"
           style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
         >
-          <Phone className="w-10 h-10" style={{ color: primaryColor }} />
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`}
+              className="w-12 h-12 object-contain"
+            />
+          ) : (
+            <Phone className="w-10 h-10" style={{ color: primaryColor }} />
+          )}
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
           {t('auth.welcome_to')} {appName}
@@ -238,87 +247,93 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
           </div>
         </Button>
       </div>
+
+      <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 px-4">
+        <Shield className="w-4 h-4" />
+        <span>{t('auth.privacy_notice')}</span>
+      </div>
     </div>
   );
 
   const renderCreatePinStep = () => (
     <div className="space-y-6">
-      {/* Enhanced popup-style card */}
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 transform scale-105">
-        <div className="text-center space-y-4">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
+      <div className="text-center space-y-3">
+        <div 
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg"
+          style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
+        >
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
             <Shield className="w-8 h-8" style={{ color: primaryColor }} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Create Your Secure PIN</h2>
-            <p className="text-gray-600 text-sm">
-              Set a 4-6 digit PIN to secure your account
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4 mt-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block text-center">
-              New PIN
-            </label>
-            <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={pin}
-                onChange={setPin}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={4} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={5} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-start space-x-2">
-              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-800">
-                <p className="font-medium">PIN Security Tips:</p>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Use 4-6 digits</li>
-                  <li>Avoid simple patterns like 1234</li>
-                  <li>Keep it memorable but secure</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
-              {error}
-            </div>
           )}
-
-          <Button 
-            onClick={handleCreatePin}
-            disabled={pin.length < 4 || loading}
-            className="w-full h-12 text-base font-semibold rounded-xl"
-            style={{ backgroundColor: primaryColor }}
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Creating Account...</span>
-              </div>
-            ) : (
-              'Create PIN'
-            )}
-          </Button>
         </div>
+        <h2 className="text-xl font-bold text-gray-900">Create Your Secure PIN</h2>
+        <p className="text-gray-600 text-sm">
+          Set a 4-digit PIN to secure your account
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 block text-center">
+            New PIN
+          </label>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={4}
+              value={pin}
+              onChange={setPin}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-blue-800">
+              <p className="font-medium">PIN Security Tips:</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Use exactly 4 digits</li>
+                <li>Avoid simple patterns like 1234</li>
+                <li>Keep it memorable but secure</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
+        <Button 
+          onClick={handleCreatePin}
+          disabled={pin.length !== 4 || loading}
+          className="w-full h-12 text-base font-semibold rounded-xl"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {loading ? (
+            <div className="flex items-center space-x-2">
+              <Loader className="w-4 h-4 animate-spin" />
+              <span>Creating Account...</span>
+            </div>
+          ) : (
+            'Create PIN'
+          )}
+        </Button>
       </div>
 
       <Button
@@ -333,67 +348,68 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
 
   const renderVerifyNewPinStep = () => (
     <div className="space-y-6">
-      {/* Enhanced popup-style card with different styling */}
-      <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl shadow-2xl border border-green-200 p-6 transform scale-105">
-        <div className="text-center space-y-4">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg bg-green-100"
-            style={{ border: `2px solid ${primaryColor}` }}
-          >
+      <div className="text-center space-y-3">
+        <div 
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg bg-green-100"
+          style={{ border: `2px solid ${primaryColor}` }}
+        >
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
             <CheckCircle2 className="w-8 h-8 text-green-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Confirm Your PIN</h2>
-            <p className="text-gray-600 text-sm">
-              Please enter your PIN again to confirm and create your account
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4 mt-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block text-center">
-              Confirm PIN
-            </label>
-            <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={pin}
-                onChange={setPin}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                  <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                  <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                  <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                  <InputOTPSlot index={4} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                  <InputOTPSlot index={5} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
-              {error}
-            </div>
           )}
-
-          <Button 
-            onClick={handleVerifyNewPin}
-            disabled={pin.length < 4 || loading}
-            className="w-full h-12 text-base font-semibold rounded-xl bg-green-600 hover:bg-green-700"
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Verifying...</span>
-              </div>
-            ) : (
-              'Confirm & Create Account'
-            )}
-          </Button>
         </div>
+        <h2 className="text-xl font-bold text-gray-900">Confirm Your PIN</h2>
+        <p className="text-gray-600 text-sm">
+          Please enter your 4-digit PIN again to confirm
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 block text-center">
+            Confirm PIN
+          </label>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={4}
+              value={pin}
+              onChange={setPin}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
+                <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
+                <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
+                <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold border-2 border-green-300" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
+        <Button 
+          onClick={handleVerifyNewPin}
+          disabled={pin.length !== 4 || loading}
+          className="w-full h-12 text-base font-semibold rounded-xl bg-green-600 hover:bg-green-700"
+        >
+          {loading ? (
+            <div className="flex items-center space-x-2">
+              <Loader className="w-4 h-4 animate-spin" />
+              <span>Verifying...</span>
+            </div>
+          ) : (
+            'Confirm & Create Account'
+          )}
+        </Button>
       </div>
 
       <Button
@@ -413,68 +429,69 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
 
   const renderEnterPinStep = () => (
     <div className="space-y-6">
-      {/* Enhanced popup-style card for existing users */}
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 transform scale-105">
-        <div className="text-center space-y-4">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
+      <div className="text-center space-y-3">
+        <div 
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg"
+          style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
+        >
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
             <Lock className="w-8 h-8" style={{ color: primaryColor }} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-            <p className="text-gray-600 text-sm">
-              Enter your PIN for <span className="font-semibold">+91 {mobileNumber}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4 mt-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block text-center">
-              Your PIN
-            </label>
-            <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={pin}
-                onChange={setPin}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={4} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                  <InputOTPSlot index={5} className="w-12 h-14 text-lg font-bold border-2" style={{ borderColor: `${primaryColor}40` }} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
-              {error}
-            </div>
           )}
-
-          <Button 
-            onClick={handleLogin}
-            disabled={pin.length < 4 || loading}
-            className="w-full h-12 text-base font-semibold rounded-xl"
-            style={{ backgroundColor: primaryColor }}
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>Logging in...</span>
-              </div>
-            ) : (
-              'Login'
-            )}
-          </Button>
         </div>
+        <h2 className="text-xl font-bold text-gray-900">Welcome Back!</h2>
+        <p className="text-gray-600 text-sm">
+          Enter your 4-digit PIN for <span className="font-semibold">+91 {mobileNumber}</span>
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 block text-center">
+            Your PIN
+          </label>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={4}
+              value={pin}
+              onChange={setPin}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={1} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={2} className="w-12 h-14 text-lg font-bold" />
+                <InputOTPSlot index={3} className="w-12 h-14 text-lg font-bold" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
+        <Button 
+          onClick={handleLogin}
+          disabled={pin.length !== 4 || loading}
+          className="w-full h-12 text-base font-semibold rounded-xl"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {loading ? (
+            <div className="flex items-center space-x-2">
+              <Loader className="w-4 h-4 animate-spin" />
+              <span>Logging in...</span>
+            </div>
+          ) : (
+            'Login'
+          )}
+        </Button>
       </div>
 
       <Button
@@ -495,7 +512,15 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
             className="w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
             style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
           >
-            <CheckCircle2 className="w-12 h-12 text-green-600 animate-bounce" />
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={`${appName} Logo`}
+                className="w-12 h-12 object-contain"
+              />
+            ) : (
+              <CheckCircle2 className="w-12 h-12 text-green-600 animate-bounce" />
+            )}
           </div>
           <div className="absolute inset-0 w-24 h-24 rounded-full mx-auto animate-ping" 
                style={{ backgroundColor: `${primaryColor}20` }}></div>
