@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { farmer, isAuthenticated: customAuthAuthenticated } = useCustomAuth();
+  const { farmer, isAuthenticated: customAuthAuthenticated, checkExistingFarmer } = useCustomAuth();
 
   // Convert farmer to profile format when available
   useEffect(() => {
@@ -44,9 +44,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [farmer, customAuthAuthenticated]);
 
   const signInWithPhone = async (phone: string) => {
-    // Legacy method - redirect to custom auth system
-    console.log('Legacy signInWithPhone called, use CustomMobileAuthScreen instead');
-    return;
+    try {
+      console.log('Starting sign in process for phone:', phone);
+      setLoading(true);
+      
+      // Check if user exists first
+      const userExists = await checkExistingFarmer(phone);
+      
+      if (!userExists) {
+        // This is handled by the UI flow now
+        throw new Error('User not found. Please create an account first.');
+      }
+      
+      console.log('Sign in process completed successfully');
+    } catch (error) {
+      console.error('Sign in process failed:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
@@ -87,14 +103,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkUserExists = async (phone: string) => {
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('id')
-        .eq('mobile_number', cleanPhone)
-        .single();
-
-      return !error && !!data;
+      return await checkExistingFarmer(phone);
     } catch (error) {
       console.error('Error checking user exists:', error);
       return false;

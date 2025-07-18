@@ -1,3 +1,4 @@
+
 import { CheckCircle, UserPlus, Clock } from 'lucide-react';
 
 interface UserStatusIndicatorProps {
@@ -17,7 +18,7 @@ export const UserStatusIndicator = ({
 
   if (checkingUser) {
     return (
-      <div className="flex items-center justify-center space-x-2 text-muted-foreground bg-muted rounded-lg p-3">
+      <div className="flex items-center justify-center space-x-2 text-gray-600 bg-gray-50 rounded-lg p-3">
         <Clock className="w-4 h-4 animate-pulse" />
         <span className="text-sm">Checking user...</span>
       </div>
@@ -37,7 +38,7 @@ export const UserStatusIndicator = ({
           <CheckCircle className="w-4 h-4" />
         )}
         <span className="text-sm font-medium">
-          {isNewUser ? 'New number detected - will create account' : 'Welcome back! Account found'}
+          {isNewUser ? 'New number detected - Ready to create account' : 'Welcome back! Account found'}
         </span>
       </div>
     );
