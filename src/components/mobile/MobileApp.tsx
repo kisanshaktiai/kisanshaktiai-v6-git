@@ -1,13 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { RootState } from '@/store';
-import { LanguageService } from '@/services/LanguageService';
-import { SyncService } from '@/services/SyncService';
-import { OnboardingFlow } from '../onboarding/OnboardingFlow';
-
 import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
@@ -19,60 +12,6 @@ import { Community } from '@/pages/mobile/Community';
 import { Profile } from '@/pages/mobile/Profile';
 
 export const MobileApp: React.FC = () => {
-  const dispatch = useDispatch();
-  const { loading: authLoading, isAuthenticated } = useCustomAuth();
-  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
-  const [appInitialized, setAppInitialized] = useState(false);
-
-  useEffect(() => {
-    // Initialize mobile services
-    const initializeApp = async () => {
-      try {
-        // Initialize services in parallel for better performance
-        await Promise.allSettled([
-          LanguageService.getInstance().initialize(),
-          SyncService.getInstance().initialize()
-        ]);
-        
-        // Apply saved language if available
-        const savedLanguage = localStorage.getItem('selectedLanguage');
-        if (savedLanguage) {
-          try {
-            await LanguageService.getInstance().changeLanguage(savedLanguage);
-            console.log('Applied saved language on app init:', savedLanguage);
-          } catch (error) {
-            console.error('Error applying saved language on init:', error);
-          }
-        }
-        
-        setAppInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize services:', error);
-        setAppInitialized(true); // Continue anyway
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  // Show loading while auth is being determined or app is initializing
-  if (authLoading || !appInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show onboarding if user is not authenticated or hasn't completed onboarding
-  if (!isAuthenticated || !onboardingCompleted) {
-    return <OnboardingFlow />;
-  }
-
-  // User is authenticated and onboarded, show main app
   return (
     <MobileLayout>
       <Routes>
