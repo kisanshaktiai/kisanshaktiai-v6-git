@@ -7,7 +7,11 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { Loader2, Phone, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-export const CustomMobileAuthScreen: React.FC = () => {
+interface CustomMobileAuthScreenProps {
+  onComplete?: () => void;
+}
+
+export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ onComplete }) => {
   const [step, setStep] = useState<'mobile' | 'pin' | 'register'>('mobile');
   const [mobileNumber, setMobileNumber] = useState('');
   const [pin, setPin] = useState('');
@@ -89,6 +93,10 @@ export const CustomMobileAuthScreen: React.FC = () => {
           title: "Welcome back!",
           description: "You have been logged in successfully.",
         });
+        // Call onComplete if provided
+        if (onComplete) {
+          onComplete();
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -144,6 +152,10 @@ export const CustomMobileAuthScreen: React.FC = () => {
           title: "Account Created!",
           description: "Your account has been created successfully.",
         });
+        // Call onComplete if provided
+        if (onComplete) {
+          onComplete();
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
