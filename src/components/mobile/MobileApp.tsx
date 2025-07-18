@@ -6,7 +6,8 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
-import { OnboardingFlow } from '../onboarding/OnboardingFlow';
+import { CustomMobileAuthScreen } from '@/components/auth/CustomMobileAuthScreen';
+import { setOnboardingCompleted } from '@/store/slices/authSlice';
 
 import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
@@ -55,6 +56,10 @@ export const MobileApp: React.FC = () => {
     initializeApp();
   }, []);
 
+  const handleAuthComplete = () => {
+    dispatch(setOnboardingCompleted());
+  };
+
   // Show loading while auth is being determined or app is initializing
   if (authLoading || !appInitialized) {
     return (
@@ -67,9 +72,9 @@ export const MobileApp: React.FC = () => {
     );
   }
 
-  // Show onboarding if user is not authenticated or hasn't completed onboarding
+  // Show auth screen if user is not authenticated or hasn't completed onboarding
   if (!isAuthenticated || !onboardingCompleted) {
-    return <OnboardingFlow />;
+    return <CustomMobileAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // User is authenticated and onboarded, show main app
