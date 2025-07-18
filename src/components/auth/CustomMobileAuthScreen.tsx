@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,7 +160,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   return (
     <div className="min-h-screen w-full flex flex-col">
       {/* Header with logo */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <img 
             src="/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png"
@@ -178,10 +177,10 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
 
       {/* Main content - Centered */}
       <div className="flex-1 flex items-center justify-center w-full">
-        <div className="w-full max-w-md px-6">
+        <div className="w-full max-w-md">
           {/* Welcome section */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center space-x-2 text-green-600 mb-4">
+          <div className="text-center">
+            <div className="inline-flex items-center space-x-2 text-green-600">
               <User className="w-6 h-6" />
               <h1 className="text-2xl font-bold text-gray-900">
                 {isExistingUser ? 'Welcome Back' : 'Create Account'}
@@ -198,7 +197,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
           {/* Mobile number input */}
           <div className="space-y-6">
             <div>
-              <label className="text-base font-medium text-gray-700 block mb-3">
+              <label className="text-base font-medium text-gray-700 block">
                 Mobile Number
               </label>
               <div className="relative">
@@ -224,7 +223,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
 
             {/* Status message */}
             {statusInfo && (
-              <div className={`flex items-center space-x-3 p-4 rounded-xl border ${statusInfo.bg} ${statusInfo.color}`}>
+              <div className={`flex items-center space-x-3 rounded-xl border ${statusInfo.bg} ${statusInfo.color}`}>
                 <statusInfo.icon className={`w-5 h-5 ${checkingUser ? 'animate-spin' : ''}`} />
                 <span className="font-medium">{statusInfo.text}</span>
               </div>
@@ -250,48 +249,48 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
       </div>
 
       {/* Bottom features section */}
-      <div className="p-4">
-        <div className="text-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Smart Farming</h3>
+      <div className="w-full">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-800">Smart Farming</h3>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-4 border-gray-200">
-            <CardContent className="p-0 text-center">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <Card className="border-gray-200">
+            <CardContent className="text-center">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto">
                 <Phone className="w-5 h-5 text-green-600" />
               </div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-1">AI Chat</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">AI Chat</h4>
               <p className="text-xs text-gray-600">Get personalized farming advice</p>
             </CardContent>
           </Card>
 
-          <Card className="p-4 border-gray-200">
-            <CardContent className="p-0 text-center">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <Card className="border-gray-200">
+            <CardContent className="text-center">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto">
                 <User className="w-5 h-5 text-blue-600" />
               </div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-1">Community</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">Community</h4>
               <p className="text-xs text-gray-600">Join thousands of farmers using AI</p>
             </CardContent>
           </Card>
 
-          <Card className="p-4 border-gray-200">
-            <CardContent className="p-0 text-center">
-              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <Card className="border-gray-200">
+            <CardContent className="text-center">
+              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto">
                 <Sparkles className="w-5 h-5 text-yellow-600" />
               </div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-1">Smart Farming</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">Smart Farming</h4>
               <p className="text-xs text-gray-600">AI-powered insights</p>
             </CardContent>
           </Card>
 
-          <Card className="p-4 border-gray-200">
-            <CardContent className="p-0 text-center">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <Card className="border-gray-200">
+            <CardContent className="text-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto">
                 <CheckCircle className="w-5 h-5 text-purple-600" />
               </div>
-              <h4 className="font-semibold text-gray-800 text-sm mb-1">Secure</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">Secure</h4>
               <p className="text-xs text-gray-600">authentication with mobile</p>
             </CardContent>
           </Card>
