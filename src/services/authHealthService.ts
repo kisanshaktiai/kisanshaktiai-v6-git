@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { customAuthService } from './customAuthService';
+import { sessionService } from './sessionService';
 
 interface AuthHealthCheck {
   status: 'healthy' | 'warning' | 'error';
@@ -42,7 +41,7 @@ export class AuthHealthService {
 
     // Test Supabase connection
     try {
-      const { data, error } = await supabase.from('farmers').select('count').limit(1);
+      const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
       if (error) throw error;
       healthCheck.checks.supabaseConnection = true;
     } catch (error) {
@@ -50,38 +49,56 @@ export class AuthHealthService {
       healthCheck.status = 'error';
     }
 
-    // Test current session validity using custom auth
+    // Test current session validity
     try {
-      const isAuthenticated = customAuthService.isAuthenticated();
-      const farmer = customAuthService.getCurrentFarmer();
-      
-      healthCheck.checks.sessionValid = isAuthenticated;
-      healthCheck.checks.profileExists = !!farmer;
-      
-      if (!isAuthenticated) {
-        healthCheck.errors.push('No valid authentication session');
-        healthCheck.status = 'warning';
-      }
-      
-      if (!farmer && isAuthenticated) {
-        healthCheck.errors.push('Authenticated but no farmer profile found');
-        healthCheck.status = 'warning';
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const validation = sessionService.validateSessionData(session);
+        healthCheck.checks.sessionValid = validation.isValid;
+        if (!validation.isValid) {
+          healthCheck.errors.push(`Session validation failed: ${validation.error}`);
+          healthCheck.status = 'warning';
+        }
       }
     } catch (error) {
       healthCheck.errors.push(`Session check failed: ${error}`);
       healthCheck.status = 'error';
     }
 
+    // Test user profile existence (if session exists)
+    if (healthCheck.checks.sessionValid) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          healthCheck.checks.profileExists = !!profile && !error;
+          if (!profile && !error) {
+            healthCheck.errors.push('User profile not found');
+            healthCheck.status = 'warning';
+          } else if (error) {
+            healthCheck.errors.push(`Profile check failed: ${error.message}`);
+            healthCheck.status = 'error';
+          }
+        }
+      } catch (error) {
+        healthCheck.errors.push(`Profile existence check failed: ${error}`);
+        healthCheck.status = 'error';
+      }
+    }
+
     // Test edge function reachability
     try {
-      const { data, error } = await supabase.functions.invoke('custom-auth-login', {
-        body: { mobile_number: '0000000000', pin: '0000' }
+      const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+        body: { phone: '0000000000', checkOnly: true }
       });
       
-      // We expect this to fail, but if it reaches the function, that's good
-      healthCheck.checks.edgeFunctionReachable = true;
-      
-      if (error && !error.message.includes('Please enter a valid')) {
+      healthCheck.checks.edgeFunctionReachable = !error;
+      if (error) {
         healthCheck.errors.push(`Edge function test failed: ${error.message}`);
         healthCheck.status = 'warning';
       }
@@ -115,29 +132,38 @@ export class AuthHealthService {
     try {
       const cleanPhone = phone.replace(/\D/g, '');
 
-      // Check if farmer profile exists
-      const { data: farmer } = await supabase
-        .from('farmers')
-        .select('id, mobile_number')
-        .eq('mobile_number', cleanPhone)
-        .single();
+      // Check if user profile exists
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id, phone')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
 
-      diagnosis.profileExists = !!farmer;
-      diagnosis.userExists = !!farmer;
-      diagnosis.authRecordExists = !!farmer; // In our custom auth, profile = auth record
+      diagnosis.profileExists = !!profile;
+      diagnosis.userExists = !!profile;
 
-      if (!farmer) {
-        diagnosis.issues.push('Farmer profile not found');
+      if (profile) {
+        // Check if auth record exists
+        try {
+          const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+          diagnosis.authRecordExists = !!authUser.user;
+        } catch (error) {
+          diagnosis.authRecordExists = false;
+          diagnosis.issues.push('Auth record missing for existing profile');
+          diagnosis.recommendations.push('User may need to re-register');
+        }
+      } else {
+        diagnosis.issues.push('User profile not found');
         diagnosis.recommendations.push('User needs to complete registration');
       }
 
       // Test edge function with this phone number
       try {
-        const { data, error } = await supabase.functions.invoke('custom-auth-login', {
-          body: { mobile_number: cleanPhone, pin: '0000' }
+        const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+          body: { phone: cleanPhone, checkOnly: true }
         });
 
-        if (error && !error.message.includes('No account found')) {
+        if (error) {
           diagnosis.issues.push(`Edge function error: ${error.message}`);
           diagnosis.recommendations.push('Check network connectivity and try again');
         }
@@ -192,14 +218,11 @@ export class AuthHealthService {
   }
 
   /**
-   * Clear all debug logs
+   * Clear debug logs
    */
   clearDebugLogs(): void {
-    try {
-      localStorage.removeItem('auth_debug_logs');
-    } catch (error) {
-      console.error('Error clearing debug logs:', error);
-    }
+    localStorage.removeItem('auth_debug_logs');
+    console.log('Auth debug logs cleared');
   }
 }
 

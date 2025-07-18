@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { setAuthenticated } from '@/store/slices/authSlice';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { MobileNumberService } from '@/services/MobileNumberService';
 import { Phone, Loader, CheckCircle2, ArrowRight, Shield, Globe } from 'lucide-react';
 import { RootState } from '@/store';
 
@@ -20,7 +19,6 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
-  const { login, register, checkExistingFarmer } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('mobile');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -51,7 +49,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
       setIsExistingUser(null);
 
       if (cleaned.length === 10) {
-        const isRegistered = await checkExistingFarmer(cleaned);
+        const formatted = `+91${cleaned}`;
+        const isRegistered = await MobileNumberService.getInstance().isRegisteredUser(formatted);
         setIsExistingUser(isRegistered);
       }
     }
@@ -67,6 +66,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
     setError(null);
 
     try {
+      const formatted = `+91${mobileNumber}`;
+      
       // Simulate OTP sending - redirect to PIN auth instead
       await new Promise(resolve => setTimeout(resolve, 1500));
       
@@ -89,6 +90,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
     setError(null);
 
     try {
+      const formatted = `+91${mobileNumber}`;
+      
       // Simulate OTP verification
       await new Promise(resolve => setTimeout(resolve, 2000));
       
@@ -96,7 +99,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({ onComplete }
       
       dispatch(setAuthenticated({
         userId: 'demo_user',
-        phoneNumber: `+91${mobileNumber}`
+        phoneNumber: formatted
       }));
 
       // Success animation delay

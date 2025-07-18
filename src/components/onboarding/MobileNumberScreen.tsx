@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { setAuthenticated, setOnboardingCompleted } from '@/store/slices/authSlice';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { MobileNumberService } from '@/services/MobileNumberService';
 import { Phone, Smartphone, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface MobileNumberScreenProps {
@@ -29,8 +28,6 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
 
-  const { login, register, checkExistingFarmer } = useCustomAuth();
-
   useEffect(() => {
     autoDetectMobileNumber();
   }, []);
@@ -38,17 +35,11 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
   const autoDetectMobileNumber = async () => {
     setAutoDetecting(true);
     try {
-      // Simulate mobile number detection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In a real app, this would use Capacitor plugins to detect SIM numbers
-      const mockNumbers = ['9876543210', '8765432109'];
-      const detectedNumber = mockNumbers[0]; // Use first number as default
-      
+      const detectedNumber = await MobileNumberService.getInstance().getMobileNumber();
       if (detectedNumber) {
         setMobileNumber(detectedNumber);
         // Check if user is already registered
-        const isRegistered = await checkExistingFarmer(detectedNumber);
+        const isRegistered = await MobileNumberService.getInstance().isRegisteredUser(detectedNumber);
         setIsExistingUser(isRegistered);
       }
     } catch (error) {
@@ -59,15 +50,18 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
   };
 
   const handleMobileNumberChange = async (value: string) => {
-    const formatted = value.replace(/\D/g, '').slice(0, 10);
-    setMobileNumber(formatted);
+    setMobileNumber(value);
     setError(null);
     setIsExistingUser(null);
 
-    // Check if user exists when number is complete
-    if (formatted.length === 10) {
-      const isRegistered = await checkExistingFarmer(formatted);
-      setIsExistingUser(isRegistered);
+    // Format and validate as user types
+    if (value.length >= 10) {
+      const formatted = MobileNumberService.getInstance().formatMobileNumber(value);
+      if (MobileNumberService.getInstance().validateMobileNumber(formatted)) {
+        // Check if user exists
+        const isRegistered = await MobileNumberService.getInstance().isRegisteredUser(formatted);
+        setIsExistingUser(isRegistered);
+      }
     }
   };
 
@@ -77,8 +71,10 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
       return;
     }
 
-    if (mobileNumber.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number');
+    const formatted = MobileNumberService.getInstance().formatMobileNumber(mobileNumber);
+    
+    if (!MobileNumberService.getInstance().validateMobileNumber(formatted)) {
+      setError('Please enter a valid Indian mobile number');
       return;
     }
 
@@ -86,20 +82,27 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
     setError(null);
 
     try {
-      if (isExistingUser) {
-        // For existing users, we'll need PIN authentication
-        // This would typically redirect to PIN entry screen
+      // Use the basic authenticateUser method for compatibility
+      const authResult = await MobileNumberService.getInstance().authenticateUser(formatted);
+      
+      if (authResult.success) {
         dispatch(setAuthenticated({
-          userId: 'temp_user_id',
-          phoneNumber: `+91${mobileNumber}`
+          userId: authResult.userId || 'temp_user',
+          phoneNumber: formatted
         }));
-        dispatch(setOnboardingCompleted());
-        if (onComplete) {
-          onComplete();
+
+        // If existing user, complete onboarding
+        if (isExistingUser) {
+          dispatch(setOnboardingCompleted());
+          if (onComplete) {
+            onComplete();
+          }
+        } else {
+          // New user - continue to profile registration
+          onNext();
         }
       } else {
-        // New user - continue to profile registration
-        onNext();
+        setError('Authentication failed. Please try again.');
       }
     } catch (error) {
       console.error('Authentication error:', error);
@@ -154,7 +157,7 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
               value={mobileNumber}
               onChange={(e) => handleMobileNumberChange(e.target.value)}
               className="text-center text-lg py-3 pr-10"
-              maxLength={10}
+              maxLength={13}
             />
             {isExistingUser !== null && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
