@@ -1,4 +1,3 @@
-
 {
   "common": {
     "loading": "लोड हो रहा है...",
@@ -40,5 +39,34 @@
     "languageUpdateError": "अपडेट विफल",
     "languageUpdateErrorDesc": "भाषा प्राथमिकता अपडेट करने में विफल",
     "logout": "लॉगआउट"
+  },
+  "auth": {
+    "welcome_to": "में आपका स्वागत है",
+    "mobile_subtitle": "जारी रखने के लिए अपना मोबाइल नंबर दर्ज करें",
+    "mobile_number": "मोबाइल नंबर",
+    "continue": "जारी रखें",
+    "invalid_mobile": "कृपया एक वैध 10-अंकीय मोबाइल नंबर दर्ज करें",
+    "welcome_back": "वापस स्वागत है! कृपया अपना PIN दर्ज करें",
+    "new_farmer_signup": "नए किसान का पंजीकरण",
+    "enter_pin": "अपना PIN दर्ज करें",
+    "create_pin": "अपना PIN बनाएं",
+    "enter_pin_to_login": "लॉगिन करने के लिए अपना 4-6 अंकीय PIN दर्ज करें",
+    "create_secure_pin": "अपने खाते के लिए एक सुरक्षित 4-6 अंकीय PIN बनाएं",
+    "your_pin": "आपका PIN",
+    "new_pin": "नया PIN",
+    "pin_length_hint": "PIN 4-6 अंकों का होना चाहिए",
+    "login": "लॉगिन",
+    "create_account": "खाता बनाएं",
+    "logging_in": "लॉगिन हो रहा है...",
+    "creating_account": "खाता बनाया जा रहा है...",
+    "back_to_mobile": "मोबाइल नंबर पर वापस जाएं",
+    "login_success": "लॉगिन सफल!",
+    "account_created": "खाता बनाया गया!",
+    "welcome_back_message": "KisanShakti AI में वापस स्वागत है",
+    "account_setup_complete": "आपका खाता सफलतापूर्वक सेट अप हो गया है",
+    "invalid_pin": "कृपया एक वैध PIN दर्ज करें (4-6 अंक)",
+    "login_failed": "लॉगिन असफल। कृपया अपना PIN जांचें और पुनः प्रयास करें।",
+    "registration_failed": "पंजीकरण असफल। कृपया पुनः प्रयास करें।",
+    "unexpected_error": "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।"
   }
 }

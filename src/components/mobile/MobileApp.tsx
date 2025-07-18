@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
@@ -20,12 +20,9 @@ import { Profile } from '@/pages/mobile/Profile';
 
 export const MobileApp: React.FC = () => {
   const dispatch = useDispatch();
-  const { loading: authLoading, isAuthenticated: contextIsAuthenticated } = useAuth();
-  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { loading: authLoading, isAuthenticated } = useCustomAuth();
+  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   const [appInitialized, setAppInitialized] = useState(false);
-
-  // Use the most reliable source of authentication state
-  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   useEffect(() => {
     // Initialize mobile services
