@@ -44,8 +44,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [farmer, customAuthAuthenticated]);
 
   const signInWithPhone = async (phone: string) => {
-    // Redirect to custom auth - this shouldn't be called in our custom system
-    throw new Error('Use custom PIN-based authentication');
+    // Legacy method - redirect to custom auth system
+    console.log('Legacy signInWithPhone called, use CustomMobileAuthScreen instead');
+    return;
   };
 
   const signOut = async () => {

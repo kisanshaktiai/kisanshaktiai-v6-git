@@ -32,15 +32,29 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   const appName = tenantBranding?.app_name || 'KisanShakti AI';
 
   const handleMobileNumberChange = async (value: string) => {
+    // Remove all non-digits and ensure only 10 digits for Indian mobile numbers
     const cleaned = value.replace(/\D/g, '');
+    
+    // Validate Indian mobile number format (starts with 6-9)
     if (cleaned.length <= 10) {
       setMobileNumber(cleaned);
       setError(null);
       setIsExistingFarmer(null);
 
+      // Validate that it starts with valid digits for Indian mobile numbers
+      if (cleaned.length > 0 && !['6', '7', '8', '9'].includes(cleaned[0])) {
+        setError('Indian mobile numbers start with 6, 7, 8, or 9');
+        return;
+      }
+
       if (cleaned.length === 10) {
-        const exists = await checkExistingFarmer(cleaned);
-        setIsExistingFarmer(exists);
+        try {
+          const exists = await checkExistingFarmer(cleaned);
+          setIsExistingFarmer(exists);
+        } catch (error) {
+          console.error('Error checking farmer:', error);
+          setError('Unable to verify mobile number. Please try again.');
+        }
       }
     }
   };
@@ -64,29 +78,25 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
       return;
     }
 
-    setLoading(true);
+    // Store the pin temporarily and move to confirmation step
+    setConfirmPin(pin);
+    setStep('verify-new-pin');
+    setPin(''); // Clear for confirmation
     setError(null);
-
-    try {
-      const response = await register(mobileNumber, pin);
-      
-      if (response.success) {
-        // Move to verification step for new PIN
-        setStep('verify-new-pin');
-        setPin(''); // Clear the pin for re-entry
-      } else {
-        setError(response.error || 'Registration failed');
-      }
-    } catch (error) {
-      setError('Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleVerifyNewPin = async () => {
     if (pin.length < 4) {
-      setError('Please enter your PIN');
+      setError('Please enter your PIN again to confirm');
+      return;
+    }
+
+    // Check if PINs match
+    if (pin !== confirmPin) {
+      setError('PINs do not match. Please try again.');
+      setStep('create-pin');
+      setPin('');
+      setConfirmPin('');
       return;
     }
 
@@ -94,7 +104,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
     setError(null);
 
     try {
-      const response = await login(mobileNumber, pin);
+      // Register the user with the confirmed PIN
+      const response = await register(mobileNumber, confirmPin);
       
       if (response.success) {
         setStep('verification');
@@ -102,10 +113,16 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
           onComplete();
         }, 2000);
       } else {
-        setError('PIN verification failed. Please try again.');
+        setError(response.error || 'Registration failed. Please try again.');
+        setStep('create-pin');
+        setPin('');
+        setConfirmPin('');
       }
     } catch (error) {
-      setError('Verification failed. Please try again.');
+      setError('Registration failed. Please try again.');
+      setStep('create-pin');
+      setPin('');
+      setConfirmPin('');
     } finally {
       setLoading(false);
     }
@@ -186,6 +203,11 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
               </div>
             )}
           </div>
+          {mobileNumber.length > 0 && mobileNumber.length < 10 && (
+            <div className="text-xs text-gray-500 text-center">
+              Enter {10 - mobileNumber.length} more digits
+            </div>
+          )}
         </div>
 
         {isExistingFarmer !== null && (
@@ -321,9 +343,9 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Account Created!</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Confirm Your PIN</h2>
             <p className="text-gray-600 text-sm">
-              Now enter your PIN to log in and complete setup
+              Please enter your PIN again to confirm and create your account
             </p>
           </div>
         </div>
@@ -331,7 +353,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
         <div className="space-y-4 mt-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 block text-center">
-              Enter Your PIN
+              Confirm PIN
             </label>
             <div className="flex justify-center">
               <InputOTP
@@ -368,11 +390,24 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
                 <span>Verifying...</span>
               </div>
             ) : (
-              'Verify & Login'
+              'Confirm & Create Account'
             )}
           </Button>
         </div>
       </div>
+
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setStep('create-pin');
+          setPin('');
+          setConfirmPin('');
+          setError(null);
+        }}
+        className="w-full text-sm text-gray-600"
+      >
+        Back to Create PIN
+      </Button>
     </div>
   );
 
@@ -466,10 +501,10 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
                style={{ backgroundColor: `${primaryColor}20` }}></div>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          {isExistingFarmer ? t('auth.login_success') : t('auth.account_created')}
+          {isExistingFarmer ? 'Welcome Back!' : 'Account Created Successfully!'}
         </h1>
-        <p className="text-gray-600 text-base">
-          {isExistingFarmer ? t('auth.welcome_back_message') : t('auth.account_setup_complete')}
+        <p className="text-gray-600 text-base leading-relaxed">
+          {isExistingFarmer ? 'You have been successfully logged in.' : 'Your account has been created and you are now logged in.'}
         </p>
       </div>
     </div>
