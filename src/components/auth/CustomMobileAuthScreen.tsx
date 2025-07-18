@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -158,9 +159,9 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   const statusInfo = getStatusMessage();
 
   return (
-    <div className="min-h-screen flex flex-col px-6">
+    <div className="min-h-screen w-full flex flex-col">
       {/* Header with logo */}
-      <div className="flex items-center justify-between pt-8 pb-6">
+      <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-3">
           <img 
             src="/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png"
@@ -176,8 +177,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
       </div>
 
       {/* Main content - Centered */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center w-full">
+        <div className="w-full max-w-md px-6">
           {/* Welcome section */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-2 text-green-600 mb-4">
@@ -249,7 +250,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
       </div>
 
       {/* Bottom features section */}
-      <div className="pb-8 pt-6">
+      <div className="p-4">
         <div className="text-center mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Smart Farming</h3>
         </div>
