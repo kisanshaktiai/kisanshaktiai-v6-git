@@ -39,18 +39,31 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Find farmer by mobile_number (tenant_id is now optional)
+    // Find farmer by mobile_number using maybeSingle() to handle multiple matches gracefully
     const { data: farmer, error: fetchError } = await supabase
       .from('farmers')
       .select('id, pin_hash, login_attempts, tenant_id, farmer_code, mobile_number')
       .eq('mobile_number', cleanMobile)
-      .single()
+      .order('created_at', { ascending: false }) // Get the most recent if multiple exist
+      .limit(1)
+      .maybeSingle()
 
-    if (fetchError || !farmer) {
+    if (fetchError) {
+      console.error('Fetch farmer error:', fetchError)
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid mobile number or farmer not found' 
+          error: 'Error finding farmer account' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!farmer) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'No account found with this mobile number' 
         }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -75,7 +88,7 @@ Deno.serve(async (req) => {
       // Increment login attempts
       await supabase
         .from('farmers')
-        .update({ login_attempts: farmer.login_attempts + 1 })
+        .update({ login_attempts: (farmer.login_attempts || 0) + 1 })
         .eq('id', farmer.id)
 
       return new Response(
@@ -92,7 +105,9 @@ Deno.serve(async (req) => {
       .from('farmers')
       .update({ 
         login_attempts: 0,
-        last_login_at: new Date().toISOString()
+        last_login_at: new Date().toISOString(),
+        total_app_opens: (farmer.total_app_opens || 0) + 1,
+        last_app_open: new Date().toISOString()
       })
       .eq('id', farmer.id)
 
@@ -133,7 +148,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error' 
+        error: 'Internal server error. Please try again.' 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
