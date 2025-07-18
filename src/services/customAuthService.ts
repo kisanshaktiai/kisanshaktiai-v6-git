@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { TenantDetectionService } from '@/services/TenantDetectionService';
 
 interface LoginResponse {
   success: boolean;
@@ -9,7 +8,7 @@ interface LoginResponse {
     id: string;
     farmer_code: string;
     mobile_number: string;
-    tenant_id: string;
+    tenant_id: string | null;
   };
   error?: string;
 }
@@ -21,7 +20,7 @@ interface RegisterResponse {
     id: string;
     farmer_code: string;
     mobile_number: string;
-    tenant_id: string;
+    tenant_id: string | null;
   };
   error?: string;
 }
@@ -42,18 +41,10 @@ export class CustomAuthService {
 
   async login(mobileNumber: string, pin: string): Promise<LoginResponse> {
     try {
-      const tenantService = TenantDetectionService.getInstance();
-      const currentTenant = await tenantService.detectTenant();
-      
-      if (!currentTenant) {
-        throw new Error('Unable to detect tenant. Please refresh and try again.');
-      }
-
       const { data, error } = await supabase.functions.invoke('custom-auth-login', {
         body: {
           mobile_number: mobileNumber,
-          pin: pin,
-          tenant_id: currentTenant.id
+          pin: pin
         }
       });
 
@@ -89,18 +80,10 @@ export class CustomAuthService {
 
   async register(mobileNumber: string, pin: string, farmerData?: any): Promise<RegisterResponse> {
     try {
-      const tenantService = TenantDetectionService.getInstance();
-      const currentTenant = await tenantService.detectTenant();
-      
-      if (!currentTenant) {
-        throw new Error('Unable to detect tenant. Please refresh and try again.');
-      }
-
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: mobileNumber,
           pin: pin,
-          tenant_id: currentTenant.id,
           farmer_data: farmerData || {}
         }
       });
@@ -137,15 +120,9 @@ export class CustomAuthService {
 
   async checkExistingFarmer(mobileNumber: string): Promise<boolean> {
     try {
-      const tenantService = TenantDetectionService.getInstance();
-      const currentTenant = await tenantService.detectTenant();
-      
-      if (!currentTenant) return false;
-
       const { data, error } = await supabase
         .from('farmers')
         .select('id')
-        .eq('tenant_id', currentTenant.id)
         .eq('mobile_number', mobileNumber.replace(/\D/g, ''))
         .single();
 

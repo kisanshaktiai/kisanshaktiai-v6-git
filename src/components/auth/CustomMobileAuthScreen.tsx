@@ -74,7 +74,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleCreatePin = async () => {
-    if (pin.length !== 4) {
+    // Ensure PIN is exactly 4 digits
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       setError('PIN must be exactly 4 digits');
       return;
     }
@@ -87,7 +88,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleVerifyNewPin = async () => {
-    if (pin.length !== 4) {
+    // Ensure confirmation PIN is exactly 4 digits
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       setError('Please enter your 4-digit PIN again to confirm');
       return;
     }
@@ -130,7 +132,8 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   };
 
   const handleLogin = async () => {
-    if (pin.length !== 4) {
+    // Ensure PIN is exactly 4 digits
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       setError('Please enter your 4-digit PIN');
       return;
     }

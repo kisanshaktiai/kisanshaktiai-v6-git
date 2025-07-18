@@ -12,13 +12,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { mobile_number, pin, tenant_id } = await req.json()
+    const { mobile_number, pin } = await req.json()
 
-    if (!mobile_number || !pin || !tenant_id) {
+    if (!mobile_number || !pin) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Mobile number, PIN, and tenant ID are required' 
+          error: 'Mobile number and PIN are required' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -39,11 +39,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Find farmer by tenant_id and mobile_number
+    // Find farmer by mobile_number (tenant_id is now optional)
     const { data: farmer, error: fetchError } = await supabase
       .from('farmers')
       .select('id, pin_hash, login_attempts, tenant_id, farmer_code, mobile_number')
-      .eq('tenant_id', tenant_id)
       .eq('mobile_number', cleanMobile)
       .single()
 
@@ -102,7 +101,7 @@ Deno.serve(async (req) => {
     
     const payload = {
       farmer_id: farmer.id,
-      tenant_id: farmer.tenant_id,
+      tenant_id: farmer.tenant_id, // Can be null
       mobile_number: farmer.mobile_number,
       farmer_code: farmer.farmer_code,
       iat: Math.floor(Date.now() / 1000),

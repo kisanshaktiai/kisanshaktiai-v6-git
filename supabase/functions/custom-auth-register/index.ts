@@ -12,19 +12,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { mobile_number, pin, tenant_id, farmer_data } = await req.json()
+    const { mobile_number, pin, farmer_data = {} } = await req.json()
 
-    if (!mobile_number || !pin || !tenant_id) {
+    if (!mobile_number || !pin) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Mobile number, PIN, and tenant ID are required' 
+          error: 'Mobile number and PIN are required' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Clean mobile number
+    // Clean mobile number (remove any non-digits)
     const cleanMobile = mobile_number.replace(/\D/g, '')
     
     if (cleanMobile.length !== 10) {
@@ -37,12 +37,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate PIN (4-6 digits)
-    if (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
+    // Validate PIN is exactly 4 digits
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'PIN must be 4-6 digits' 
+          error: 'PIN must be exactly 4 digits' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -50,11 +50,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Check if farmer already exists with this mobile number in this tenant
+    // Check if farmer already exists with this mobile number
     const { data: existingFarmer } = await supabase
       .from('farmers')
-      .select('id, mobile_number')
-      .eq('tenant_id', tenant_id)
+      .select('id')
       .eq('mobile_number', cleanMobile)
       .single()
 
@@ -68,35 +67,29 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Hash PIN using bcrypt
+    // Hash the PIN
     const bcrypt = await import('https://deno.land/x/bcrypt@v0.4.1/mod.ts')
-    const pinHash = await bcrypt.hash(pin, 12)
+    const pinHash = await bcrypt.hash(pin, 10)
 
     // Generate farmer code
-    const farmerCode = `F${tenant_id.slice(0, 8)}${cleanMobile.slice(-4)}`
+    const farmerCode = `F${cleanMobile.substring(6)}_${Date.now().toString(36)}`
 
-    // Create farmer record
-    const farmerRecord = {
-      id: crypto.randomUUID(),
-      tenant_id,
-      mobile_number: cleanMobile,
-      pin_hash: pinHash,
-      farmer_code: farmerCode,
-      last_login_at: new Date().toISOString(),
-      login_attempts: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      ...farmer_data
-    }
-
-    const { data: newFarmer, error: insertError } = await supabase
+    // Create farmer record with only required fields
+    const { data: farmer, error: insertError } = await supabase
       .from('farmers')
-      .insert(farmerRecord)
-      .select('id, farmer_code, mobile_number, tenant_id')
+      .insert([{
+        mobile_number: cleanMobile,
+        pin_hash: pinHash,
+        farmer_code: farmerCode,
+        // tenant_id is optional and will be null initially
+        app_install_date: new Date().toISOString().split('T')[0],
+        ...farmer_data
+      }])
+      .select()
       .single()
 
     if (insertError) {
-      console.error('Registration error:', insertError)
+      console.error('Insert error:', insertError)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -110,10 +103,10 @@ Deno.serve(async (req) => {
     const jwt = await import('https://deno.land/x/djwt@v3.0.1/mod.ts')
     
     const payload = {
-      farmer_id: newFarmer.id,
-      tenant_id: newFarmer.tenant_id,
-      mobile_number: newFarmer.mobile_number,
-      farmer_code: newFarmer.farmer_code,
+      farmer_id: farmer.id,
+      tenant_id: farmer.tenant_id, // Will be null initially
+      mobile_number: farmer.mobile_number,
+      farmer_code: farmer.farmer_code,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
     }
@@ -129,13 +122,13 @@ Deno.serve(async (req) => {
         success: true, 
         token,
         farmer: {
-          id: newFarmer.id,
-          farmer_code: newFarmer.farmer_code,
-          mobile_number: newFarmer.mobile_number,
-          tenant_id: newFarmer.tenant_id
+          id: farmer.id,
+          farmer_code: farmer.farmer_code,
+          mobile_number: farmer.mobile_number,
+          tenant_id: farmer.tenant_id
         }
       }),
-      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
