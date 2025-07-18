@@ -1,170 +1,282 @@
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { PhoneInput } from './PhoneInput';
-import { UserStatusIndicator } from './UserStatusIndicator';
-import { AuthButton } from './AuthButton';
-import { AuthHeader } from './AuthHeader';
-import { FeaturesInfo } from './FeaturesInfo';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import { UserPlus, LogIn } from 'lucide-react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Smartphone, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { farmerService, FarmerRegistrationData } from '@/services/FarmerService';
+import { tenantService } from '@/services/TenantService';
+import { useTenantContext } from '@/hooks/useTenantContext';
+import bcrypt from 'bcryptjs';
 
 interface PhoneAuthScreenProps {
   onComplete: () => void;
 }
 
-export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
-  const [phone, setPhone] = useState('');
+type AuthStep = 'phone' | 'pin' | 'success';
+
+export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onComplete }) => {
+  const [step, setStep] = useState<AuthStep>('phone');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [pin, setPin] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [checkingUser, setCheckingUser] = useState(false);
-  const [userCheckComplete, setUserCheckComplete] = useState(false);
+  const { tenantData } = useTenantContext();
 
-  const { checkUserExists, signInWithPhone } = useAuth();
-
-  const handlePhoneChange = async (value: string) => {
-    setPhone(value);
-    setUserCheckComplete(false);
-    setIsNewUser(false);
-
-    if (value.length === 10) {
-      setCheckingUser(true);
-      try {
-        console.log('=== PHONE INPUT USER CHECK ===');
-        console.log('Checking if user exists for phone:', value);
-        
-        const userExists = await checkUserExists(value);
-        setIsNewUser(!userExists);
-        setUserCheckComplete(true);
-        
-        console.log('Phone input user check result:', {
-          phone: value,
-          exists: userExists,
-          isNewUser: !userExists
-        });
-
-        // Show feedback toast
-        if (userExists) {
-          toast.success('Welcome back! Ready to continue', {
-            duration: 2000,
-            icon: <LogIn className="w-4 h-4" />
-          });
-        } else {
-          toast.info('Ready to get started with KisanShakti AI!', {
-            duration: 2000,
-            icon: <UserPlus className="w-4 h-4" />
-          });
-        }
-      } catch (error) {
-        console.error('Error checking user existence:', error);
-        setIsNewUser(true);
-        setUserCheckComplete(true);
-        toast.error('New user detected', {
-          duration: 3000
-        });
-      } finally {
-        setCheckingUser(false);
-      }
-    } else {
-      setIsNewUser(false);
-      setUserCheckComplete(false);
-    }
+  const validateMobileNumber = (mobile: string): boolean => {
+    const mobileRegex = /^[6-9]\d{9}$/;
+    return mobileRegex.test(mobile);
   };
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone || phone.length < 10) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
-
-    if (!userCheckComplete) {
-      toast.error('Please wait for user verification to complete');
+  const handleMobileSubmit = async () => {
+    if (!validateMobileNumber(mobileNumber)) {
+      setError('कृपया वैध मोबाइल नंबर दर्ज करें (Please enter a valid mobile number)');
       return;
     }
 
     setLoading(true);
+    setError(null);
+
     try {
-      console.log('Starting KisanShakti AI authentication for phone:', phone);
-      await signInWithPhone(phone);
+      // Check if farmer exists
+      const existingFarmer = await farmerService.getFarmerByMobile(mobileNumber);
       
-      if (isNewUser) {
-        toast.success('🌱 Welcome to KisanShakti AI! Account created successfully!', {
-          duration: 4000
-        });
+      if (existingFarmer) {
+        setIsRegistering(false);
+        setStep('pin');
       } else {
-        toast.success('🌱 Welcome back to KisanShakti AI! Login successful.', {
-          duration: 4000
-        });
+        setIsRegistering(true);
+        setStep('pin');
       }
-      
-      onComplete();
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      if (isNewUser) {
-        if (error?.message?.includes('already exists') || error?.message?.includes('duplicate')) {
-          toast.error('Account already exists on KisanShakti AI', {
-            duration: 5000
-          });
-        } else {
-          toast.error(error?.message || 'Account creation failed', {
-            duration: 5000
-          });
-        }
-      } else {
-        if (error?.message?.includes('User not found') || error?.message?.includes('Invalid')) {
-          toast.error('Account not found on KisanShakti AI', {
-            duration: 5000
-          });
-        } else {
-          toast.error(error?.message || 'Login failed', {
-            duration: 5000
-          });
-        }
-      }
+    } catch (err) {
+      console.error('Error checking farmer:', err);
+      setError('कुछ गलत हुआ। कृपया फिर से कोशिश करें। (Something went wrong. Please try again.)');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-full max-w-sm mx-auto px-4">
-        <Card className="border-0 shadow-none bg-transparent">
-          <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
+  const handlePinSubmit = async () => {
+    if (pin.length !== 4) {
+      setError('कृपया 4 अंकों का पिन दर्ज करें (Please enter a 4-digit PIN)');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (isRegistering) {
+        // Register new farmer
+        const hashedPin = await bcrypt.hash(pin, 10);
+        
+        const registrationData: FarmerRegistrationData = {
+          mobile_number: mobileNumber,
+          pin_hash: hashedPin,
+          tenant_id: tenantService.getCurrentTenantId()
+        };
+
+        await farmerService.registerFarmer(registrationData);
+        setStep('success');
+        
+        // Auto complete after 2 seconds
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      } else {
+        // Login existing farmer
+        const farmer = await farmerService.getFarmerByMobile(mobileNumber);
+        
+        if (farmer && farmer.pin_hash) {
+          const isValidPin = await bcrypt.compare(pin, farmer.pin_hash);
           
-          <CardContent className="px-0">
-            <form onSubmit={handleAuth} className="space-y-4">
-              <PhoneInput
-                phone={phone}
-                onPhoneChange={handlePhoneChange}
-                loading={loading}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete}
-                isNewUser={isNewUser}
-              />
-              
-              <UserStatusIndicator
-                phone={phone}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete}
-                isNewUser={isNewUser}
-              />
-              
-              <AuthButton
-                loading={loading}
-                phone={phone}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete}
-                isNewUser={isNewUser}
-              />
-            </form>
+          if (isValidPin) {
+            setStep('success');
             
-            <FeaturesInfo />
-          </CardContent>
-        </Card>
-      </div>
+            // Store farmer data in localStorage for demo purposes
+            localStorage.setItem('current_farmer', JSON.stringify({
+              id: farmer.id,
+              mobile_number: farmer.mobile_number,
+              farmer_code: farmer.farmer_code,
+              tenant_id: farmer.tenant_id
+            }));
+            
+            // Auto complete after 2 seconds
+            setTimeout(() => {
+              onComplete();
+            }, 2000);
+          } else {
+            setError('गलत पिन। कृपया फिर से कोशिश करें। (Wrong PIN. Please try again.)');
+          }
+        } else {
+          setError('किसान का डेटा नहीं मिला। (Farmer data not found.)');
+        }
+      }
+    } catch (err) {
+      console.error('Error with authentication:', err);
+      setError('कुछ गलत हुआ। कृपया फिर से कोशिश करें। (Something went wrong. Please try again.)');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setStep('phone');
+    setPin('');
+    setError(null);
+  };
+
+  const appName = tenantData?.branding?.app_name || 'KisanShakti AI';
+  const primaryColor = tenantData?.branding?.primary_color || '#8BC34A';
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" 
+               style={{ backgroundColor: `${primaryColor}20` }}>
+            {step === 'success' ? (
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            ) : step === 'pin' ? (
+              <Lock className="w-8 h-8" style={{ color: primaryColor }} />
+            ) : (
+              <Smartphone className="w-8 h-8" style={{ color: primaryColor }} />
+            )}
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold" style={{ color: primaryColor }}>
+              {appName}
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              किसानों के लिए बुद्धिमान समाधान
+            </p>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {step === 'phone' && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  मोबाइल नंबर दर्ज करें
+                </h3>
+                <p className="text-sm text-gray-600">
+                  लॉगिन या रजिस्टर करने के लिए
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  मोबाइल नंबर (Mobile Number)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    +91
+                  </span>
+                  <Input
+                    type="tel"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+                    placeholder="9876543210"
+                    className="pl-12"
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="flex items-center space-x-2 text-red-600 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <Button
+                onClick={handleMobileSubmit}
+                disabled={loading || !mobileNumber}
+                className="w-full"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {loading ? 'जांच रहे हैं...' : 'आगे बढ़ें'}
+              </Button>
+            </div>
+          )}
+
+          {step === 'pin' && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {isRegistering ? '4 अंकों का पिन बनाएं' : '4 अंकों का पिन दर्ज करें'}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {isRegistering ? 'नया पिन सेट करें' : 'अपना पिन दर्ज करें'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  मोबाइल: +91 {mobileNumber}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  पिन (PIN)
+                </label>
+                <Input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  placeholder="••••"
+                  className="text-center text-2xl tracking-widest"
+                  maxLength={4}
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-center space-x-2 text-red-600 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Button
+                  onClick={handlePinSubmit}
+                  disabled={loading || pin.length !== 4}
+                  className="w-full"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {loading ? 'प्रोसेसिंग...' : isRegistering ? 'रजिस्टर करें' : 'लॉगिन करें'}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  वापस जाएं
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 'success' && (
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {isRegistering ? 'रजिस्ट्रेशन सफल!' : 'लॉगिन सफल!'}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {appName} में आपका स्वागत है
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
