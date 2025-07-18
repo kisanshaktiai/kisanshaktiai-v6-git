@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { AuthProvider } from './hooks/useAuth';
@@ -17,17 +17,15 @@ function App() {
       <Provider store={store}>
         <AuthProvider>
           <TenantProvider>
-            <Router>
-              <div className="min-h-screen bg-background">
-                <Routes>
-                  <Route 
-                    path="/*" 
-                    element={<MobileApp />} 
-                  />
-                </Routes>
-                <Toaster />
-              </div>
-            </Router>
+            <div className="min-h-screen bg-background">
+              <Routes>
+                <Route 
+                  path="/*" 
+                  element={<MobileApp />} 
+                />
+              </Routes>
+              <Toaster />
+            </div>
           </TenantProvider>
         </AuthProvider>
       </Provider>
