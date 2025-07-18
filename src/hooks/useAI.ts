@@ -7,6 +7,8 @@ interface AIContext {
   landInfo?: any;
   weatherInfo?: any;
   cropInfo?: any;
+  userProfile?: any;
+  tenant?: any;
 }
 
 export const useAI = () => {
@@ -22,6 +24,14 @@ export const useAI = () => {
 - Total Land: ${farmer.total_land_acres || 'Not specified'} acres
 - Experience: ${farmer.farming_experience_years || 'Not specified'} years
 - Location: ${farmer.village || 'Not specified'}, ${farmer.district || 'Not specified'}
+`;
+    }
+
+    if (context.userProfile) {
+      const profile = context.userProfile;
+      contextPrompt += `User Profile:
+- Language: ${profile.preferred_language || 'Not specified'}
+- Name: ${profile.full_name || 'Not specified'}
 `;
     }
 
