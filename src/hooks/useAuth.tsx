@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthContextType } from '@/types/auth';
 import { AuthContext } from '@/contexts/AuthContext';
 import { LanguageService } from '@/services/LanguageService';
-import { sessionService } from '@/services/sessionService';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 
 export const useAuth = () => {
