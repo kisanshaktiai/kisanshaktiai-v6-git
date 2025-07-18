@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,7 +158,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   const statusInfo = getStatusMessage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col px-6">
+    <div className="min-h-screen flex flex-col px-6">
       {/* Header with logo */}
       <div className="flex items-center justify-between pt-8 pb-6">
         <div className="flex items-center space-x-3">
