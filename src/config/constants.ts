@@ -3,7 +3,7 @@ export const APP_CONFIG = {
   name: 'KisanShakti AI V6',
   version: '6.0.0',
   defaultLanguage: 'hi',
-  supportedLanguages: ['hi', 'en', 'mr', 'gu', 'pa', 'ta', 'te', 'kn'],
+  supportedLanguages: ['hi', 'en', 'mr', 'gu', 'pa', 'ta', 'te', 'kn', 'bn', 'ml', 'or', 'ur'],
   defaultTenant: 'default',
   apiTimeout: 30000,
   cacheTimeout: 300000, // 5 minutes

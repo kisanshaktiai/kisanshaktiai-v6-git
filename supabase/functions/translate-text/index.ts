@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -36,7 +37,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Language mapping for better context
+    // Language mapping for better context - updated with new languages
     const languageNames: Record<string, string> = {
       'hi': 'Hindi',
       'en': 'English',
@@ -45,7 +46,11 @@ serve(async (req) => {
       'te': 'Telugu',
       'gu': 'Gujarati',
       'kn': 'Kannada',
-      'pa': 'Punjabi'
+      'pa': 'Punjabi',
+      'bn': 'Bengali',
+      'ml': 'Malayalam',
+      'or': 'Odia',
+      'ur': 'Urdu'
     };
 
     const fromLang = languageNames[from] || from;
@@ -68,6 +73,7 @@ serve(async (req) => {
             content: `You are a translator specializing in agricultural and farming terminology. Translate the given text from ${fromLang} to ${toLang}. 
             Preserve agricultural terms, crop names, farming practices, and technical vocabulary accurately. 
             If you encounter regional terms or colloquialisms, provide the most appropriate equivalent.
+            For Urdu text, ensure proper RTL formatting and diacritics when necessary.
             Return only the translated text without any explanations or additional formatting.`
           },
           {

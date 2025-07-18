@@ -12,6 +12,10 @@ import te from '@/locales/te.json';
 import ta from '@/locales/ta.json';
 import gu from '@/locales/gu.json';
 import kn from '@/locales/kn.json';
+import bn from '@/locales/bn.json';
+import ml from '@/locales/ml.json';
+import or from '@/locales/or.json';
+import ur from '@/locales/ur.json';
 
 export class LanguageService {
   private static instance: LanguageService;
@@ -37,6 +41,10 @@ export class LanguageService {
           ta: { translation: ta },
           gu: { translation: gu },
           kn: { translation: kn },
+          bn: { translation: bn },
+          ml: { translation: ml },
+          or: { translation: or },
+          ur: { translation: ur },
         },
         fallbackLng: 'hi',
         debug: false,
@@ -65,7 +73,7 @@ export class LanguageService {
 
   getSupportedLanguages() {
     return [
-      { code: 'hi', name: 'हिंदी', nativeName: 'हिंदी' },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
       { code: 'en', name: 'English', nativeName: 'English' },
       { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
       { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
@@ -73,6 +81,10 @@ export class LanguageService {
       { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
       { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
       { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+      { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+      { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+      { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
+      { code: 'ur', name: 'Urdu', nativeName: 'اُردُو' },
     ];
   }
 }

@@ -12,7 +12,7 @@ interface LocationBasedLanguageScreenProps {
   onNext: () => void;
 }
 
-// State to language mapping
+// State to language mapping - updated with new languages
 const stateLanguageMapping: Record<string, string[]> = {
   'maharashtra': ['mr', 'hi', 'en'],
   'gujarat': ['gu', 'hi', 'en'],
@@ -40,12 +40,11 @@ const stateLanguageMapping: Record<string, string[]> = {
   'tripura': ['bn', 'en', 'hi'],
   'assam': ['bn', 'hi', 'en'],
   'meghalaya': ['en', 'hi'],
-  'sikkim': ['ne', 'en', 'hi'], // 'ne' = Nepali
+  'sikkim': ['en', 'hi'], 
   'goa': ['en', 'mr', 'kn'],
-  'delhi': ['hi', 'en', 'pa'],
-  'default': ['hi', 'en', 'mr', 'pa', 'gu', 'te', 'ta', 'kn']
+  'delhi': ['hi', 'en', 'pa', 'ur'],
+  'default': ['hi', 'en', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'bn', 'ml', 'or', 'ur']
 };
-
 
 export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenProps> = ({ onNext }) => {
   const { t, i18n } = useTranslation();
@@ -64,6 +63,10 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
     { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
     { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
     { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+    { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+    { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+    { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
+    { code: 'ur', name: 'Urdu', nativeName: 'اُردُو' },
   ];
 
   // Get tenant colors with fallbacks
