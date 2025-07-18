@@ -43,46 +43,159 @@ export interface Profile {
   notification_preferences: Record<string, any>;
 }
 
-export const authService = {
-  async getProfile(userId: string): Promise<Profile | null> {
+// For custom auth system, we'll use farmers table instead of profiles
+export const fetchProfile = async (userId: string): Promise<Profile | null> => {
+  try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('farmers')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching farmer profile:', error);
       return null;
     }
 
-    return data as Profile;
+    // Map farmer data to Profile interface
+    return {
+      id: data.id,
+      user_id: data.id,
+      username: data.farmer_code,
+      full_name: data.farmer_code, // Use farmer_code as display name
+      email: null,
+      avatar_url: null,
+      phone: data.mobile_number,
+      date_of_birth: null,
+      gender: null,
+      address_line1: null,
+      address_line2: null,
+      city: null,
+      state: null,
+      postal_code: null,
+      country: null,
+      bio: null,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      is_active: true,
+      last_seen_at: data.last_login_at,
+      tenant_id: data.tenant_id,
+      role: 'farmer',
+      permissions: {},
+      preferences: {},
+      aadhaar_number: data.aadhaar_number,
+      village: null,
+      taluka: null,
+      district: null,
+      pin_code: null,
+      farming_experience_years: data.farming_experience_years,
+      primary_crops: data.primary_crops || [],
+      land_size_acres: data.total_land_acres,
+      has_irrigation: data.has_irrigation,
+      farming_type: data.farm_type,
+      annual_income_range: data.annual_income_range,
+      metadata: {},
+      expertise_areas: [],
+      device_tokens: {},
+      notification_preferences: {}
+    } as Profile;
+  } catch (error) {
+    console.error('Error in fetchProfile:', error);
+    return null;
+  }
+};
+
+export const checkUserExists = async (phone: string): Promise<boolean> => {
+  try {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const { data, error } = await supabase
+      .from('farmers')
+      .select('id')
+      .eq('mobile_number', cleanPhone)
+      .single();
+
+    return !error && !!data;
+  } catch (error) {
+    console.error('Error checking user exists:', error);
+    return false;
+  }
+};
+
+export const updateProfile = async (userId: string, updates: Partial<Profile>): Promise<void> => {
+  try {
+    // Map profile updates to farmer fields
+    const farmerUpdates: any = {};
+    
+    if (updates.phone) {
+      farmerUpdates.mobile_number = updates.phone.replace(/\D/g, '');
+    }
+    if (updates.farming_experience_years !== undefined) {
+      farmerUpdates.farming_experience_years = updates.farming_experience_years;
+    }
+    if (updates.primary_crops) {
+      farmerUpdates.primary_crops = updates.primary_crops;
+    }
+    if (updates.land_size_acres !== undefined) {
+      farmerUpdates.total_land_acres = updates.land_size_acres;
+    }
+    if (updates.has_irrigation !== undefined) {
+      farmerUpdates.has_irrigation = updates.has_irrigation;
+    }
+    if (updates.farming_type) {
+      farmerUpdates.farm_type = updates.farming_type;
+    }
+    if (updates.annual_income_range) {
+      farmerUpdates.annual_income_range = updates.annual_income_range;
+    }
+    if (updates.aadhaar_number) {
+      farmerUpdates.aadhaar_number = updates.aadhaar_number;
+    }
+
+    const { error } = await supabase
+      .from('farmers')
+      .update(farmerUpdates)
+      .eq('id', userId);
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+};
+
+export const signOut = async (): Promise<void> => {
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error('Error signing out:', error);
+    throw error;
+  }
+};
+
+export const signInWithPhone = async (phone: string): Promise<void> => {
+  // This is a placeholder for SMS-based auth
+  // In our custom system, we use PIN-based auth instead
+  throw new Error('Use custom PIN-based authentication instead');
+};
+
+export const authService = {
+  async getProfile(userId: string): Promise<Profile | null> {
+    return fetchProfile(userId);
   },
 
   async updateProfile(userId: string, updates: Partial<Profile>): Promise<boolean> {
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error updating profile:', error);
+    try {
+      await updateProfile(userId, updates);
+      return true;
+    } catch (error) {
       return false;
     }
-
-    return true;
   },
 
   async createProfile(profile: Omit<Profile, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
-    const { error } = await supabase
-      .from('profiles')
-      .insert([profile]);
-
-    if (error) {
-      console.error('Error creating profile:', error);
-      return false;
-    }
-
+    // For custom auth, farmer creation is handled by the register function
     return true;
   }
 };

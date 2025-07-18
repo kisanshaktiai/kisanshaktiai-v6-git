@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Mic, Camera, MapPin, Paperclip, MoreHorizontal } from 'lucide-react';
@@ -41,7 +40,7 @@ interface ChatContext {
 export const ChatInterface: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { askAgent, loading } = useAI();
+  const { queryAI, loading } = useAI();
   const { currentTenant, profile } = useTenant();
   
   const [messages, setMessages] = useState<Message[]>([]);
@@ -96,40 +95,39 @@ export const ChatInterface: React.FC = () => {
     setIsTyping(true);
 
     try {
-      // Determine agent type based on content and context
-      let agentType = undefined;
-      if (type === 'image') agentType = 'image_scan';
-      else if (content.toLowerCase().includes('weather') || content.toLowerCase().includes('मौसम')) agentType = 'weather';
-      else if (content.toLowerCase().includes('market') || content.toLowerCase().includes('बाजार')) agentType = 'market_advisor';
+      const response = await queryAI(content, {
+        userProfile: profile || undefined,
+        tenant: currentTenant || undefined
+      });
 
-      const response = await askAgent(
-        content, 
-        agentType, 
-        profile?.preferred_language as any || 'hi'
-      );
-
-      if (response) {
+      if (response.success) {
         const aiMessage: Message = {
           id: Date.now().toString() + '-ai',
-          content: response.message,
+          content: response.response,
           type: 'text',
           sender: 'ai',
           timestamp: new Date(),
           metadata: {
-            confidence: response.confidence,
             context: chatContext.activeContext,
           },
-          isOffline: response.isOffline,
         };
 
         setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Add to offline queue
+        const offlineMessage: Message = {
+          ...userMessage,
+          isOffline: true,
+          isSyncing: true,
+        };
         
-        if (response.isOffline) {
-          toast({
-            title: t('Working Offline'),
-            description: t('Response provided from cached data. Will sync when online.'),
-          });
-        }
+        setOfflineQueue(prev => [...prev, offlineMessage]);
+        
+        toast({
+          title: t('Message Queued'),
+          description: t('Will send when connection is restored.'),
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       // Add to offline queue
