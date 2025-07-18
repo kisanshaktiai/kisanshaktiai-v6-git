@@ -6,7 +6,7 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
-import { CustomMobileAuthScreen } from '@/components/auth/CustomMobileAuthScreen';
+import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 
 import { MobileLayout } from './MobileLayout';
@@ -74,7 +74,7 @@ export const MobileApp: React.FC = () => {
 
   // Show auth screen if user is not authenticated or hasn't completed onboarding
   if (!isAuthenticated || !onboardingCompleted) {
-    return <CustomMobileAuthScreen onComplete={handleAuthComplete} />;
+    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // User is authenticated and onboarded, show main app

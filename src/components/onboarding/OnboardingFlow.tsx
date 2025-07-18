@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +6,7 @@ import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
-import { CustomMobileAuthScreen } from '../auth/CustomMobileAuthScreen';
+import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
@@ -106,7 +105,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Authentication step - only show if not authenticated
   if (currentStep === 'auth') {
-    return <CustomMobileAuthScreen onComplete={handleAuthComplete} />;
+    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // Fallback - should not reach here
