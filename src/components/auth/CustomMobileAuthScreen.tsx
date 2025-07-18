@@ -159,9 +159,9 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
   const statusInfo = getStatusMessage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col px-6">
       {/* Header with logo */}
-      <div className="flex items-center justify-between p-6">
+      <div className="flex items-center justify-between pt-8 pb-6">
         <div className="flex items-center space-x-3">
           <img 
             src="/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png"
@@ -176,11 +176,11 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex items-center justify-center px-6 pb-20">
+      {/* Main content - Centered */}
+      <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md">
           {/* Welcome section */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-2 text-green-600 mb-4">
               <User className="w-6 h-6" />
               <h1 className="text-2xl font-bold text-gray-900">
@@ -196,7 +196,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
           </div>
 
           {/* Mobile number input */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label className="text-base font-medium text-gray-700 block mb-3">
                 Mobile Number
@@ -250,7 +250,7 @@ export const CustomMobileAuthScreen: React.FC<CustomMobileAuthScreenProps> = ({ 
       </div>
 
       {/* Bottom features section */}
-      <div className="px-6 pb-8">
+      <div className="pb-8 pt-6">
         <div className="text-center mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Smart Farming</h3>
         </div>
