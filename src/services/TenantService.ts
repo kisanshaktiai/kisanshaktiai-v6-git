@@ -73,14 +73,14 @@ export class TenantService {
     }
   }
 
-  async createUserTenantAssociation(userId: string, role: string = 'farmer') {
+  async createUserTenantAssociation(userId: string, role: 'farmer' | 'dealer' | 'super_admin' | 'tenant_owner' | 'tenant_admin' | 'tenant_manager' | 'agent' = 'farmer') {
     try {
       const { data, error } = await supabase
         .from('user_tenants')
         .insert({
           user_id: userId,
           tenant_id: this.currentTenantId,
-          role,
+          role: role,
           is_primary: true,
           is_active: true,
           joined_at: new Date().toISOString()
