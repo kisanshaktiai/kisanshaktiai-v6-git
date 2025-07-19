@@ -5,10 +5,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { LanguageService } from '@/services/LanguageService';
-import { SyncService } from '@/services/SyncService';
-import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { tenantService } from '@/services/TenantService';
+import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
+import { tenantManager } from '@/services/TenantManager';
+import { offlineManager } from '@/services/OfflineManager';
+import { voiceService } from '@/services/VoiceService';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 import { MobileLayout } from './MobileLayout';
@@ -27,46 +28,108 @@ export const MobileApp: React.FC = () => {
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   const [appInitialized, setAppInitialized] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [syncStatus, setSyncStatus] = useState({ pending: 0, errors: 0 });
 
   useEffect(() => {
-    // Initialize mobile services
     const initializeApp = async () => {
       try {
-        console.log('Starting app initialization...');
+        console.log('MobileApp: Starting comprehensive initialization...');
         
-        // Initialize tenant service first
-        console.log('Setting default tenant ID:', DEFAULT_TENANT_ID);
-        tenantService.setCurrentTenantId(DEFAULT_TENANT_ID);
-        
-        // Initialize services in parallel for better performance
-        await Promise.allSettled([
+        // Initialize all services in parallel for better performance
+        const initPromises = [
+          tenantManager.initializeTenant(DEFAULT_TENANT_ID),
+          offlineManager.initialize(),
           LanguageService.getInstance().initialize(),
-          SyncService.getInstance().initialize()
-        ]);
+          voiceService.initialize()
+        ];
+
+        const results = await Promise.allSettled(initPromises);
         
+        // Log any initialization failures (non-critical)
+        results.forEach((result, index) => {
+          const services = ['TenantManager', 'OfflineManager', 'LanguageService', 'VoiceService'];
+          if (result.status === 'rejected') {
+            console.warn(`MobileApp: ${services[index]} initialization failed:`, result.reason);
+          } else {
+            console.log(`MobileApp: ${services[index]} initialized successfully`);
+          }
+        });
+
         // Apply saved language if available
         const savedLanguage = localStorage.getItem('selectedLanguage');
         if (savedLanguage) {
           try {
             await LanguageService.getInstance().changeLanguage(savedLanguage);
-            console.log('Applied saved language on app init:', savedLanguage);
+            console.log('MobileApp: Applied saved language:', savedLanguage);
           } catch (error) {
-            console.error('Error applying saved language on init:', error);
+            console.error('MobileApp: Error applying saved language:', error);
           }
         }
-        
-        console.log('App initialization completed successfully');
+
+        // Load voice settings
+        voiceService.loadSettings();
+
+        // Set up network status monitoring
+        window.addEventListener('network-status-change', (event: any) => {
+          setIsOnline(event.detail.isOnline);
+        });
+
+        // Set up sync status monitoring
+        const updateSyncStatus = async () => {
+          const status = await offlineManager.getSyncStatus();
+          setSyncStatus(status);
+        };
+
+        // Update sync status every 10 seconds
+        const syncStatusInterval = setInterval(updateSyncStatus, 10000);
+        updateSyncStatus(); // Initial update
+
+        // Clean up interval on unmount
+        return () => {
+          clearInterval(syncStatusInterval);
+          tenantManager.cleanup();
+          offlineManager.cleanup();
+        };
+
+        console.log('MobileApp: All services initialized successfully');
         setAppInitialized(true);
         setInitError(null);
+
       } catch (error) {
-        console.error('Failed to initialize services:', error);
+        console.error('MobileApp: Critical initialization error:', error);
         setInitError(error instanceof Error ? error.message : 'Failed to initialize app');
-        // Continue anyway to prevent complete app failure
+        
+        // Still allow app to continue with basic functionality
         setAppInitialized(true);
       }
     };
 
     initializeApp();
+  }, []);
+
+  // Set up realtime listeners for UI updates
+  useEffect(() => {
+    const handleCropHealthUpdate = (event: any) => {
+      console.log('MobileApp: Crop health update received:', event.detail);
+      // You can dispatch to Redux or update local state here
+    };
+
+    const handleWeatherAlert = (event: any) => {
+      console.log('MobileApp: Weather alert received:', event.detail);
+      // Show notification or update UI
+      if (voiceService.isSupported()) {
+        voiceService.readWeatherAlert(event.detail.new?.title || 'New weather alert');
+      }
+    };
+
+    window.addEventListener('tenant-realtime-crop_health', handleCropHealthUpdate);
+    window.addEventListener('tenant-realtime-weather_alerts', handleWeatherAlert);
+
+    return () => {
+      window.removeEventListener('tenant-realtime-crop_health', handleCropHealthUpdate);
+      window.removeEventListener('tenant-realtime-weather_alerts', handleWeatherAlert);
+    };
   }, []);
 
   const handleAuthComplete = () => {
@@ -87,6 +150,18 @@ export const MobileApp: React.FC = () => {
               Warning: {initError}
             </p>
           )}
+          
+          {/* Show sync status */}
+          {(syncStatus.pending > 0 || syncStatus.errors > 0) && (
+            <div className="mt-4 text-sm">
+              <p className="text-blue-600">
+                {syncStatus.pending > 0 && `${syncStatus.pending} items syncing...`}
+              </p>
+              <p className="text-red-600">
+                {syncStatus.errors > 0 && `${syncStatus.errors} sync errors`}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -100,6 +175,21 @@ export const MobileApp: React.FC = () => {
   // User is authenticated and onboarded, show main app
   return (
     <MobileLayout>
+      {/* Offline indicator */}
+      {!isOnline && (
+        <div className="bg-orange-500 text-white text-center py-2 text-sm">
+          You're offline. Changes will sync when connection is restored.
+        </div>
+      )}
+      
+      {/* Sync status indicator */}
+      {(syncStatus.pending > 0 || syncStatus.errors > 0) && (
+        <div className="bg-blue-500 text-white text-center py-1 text-xs">
+          {syncStatus.pending > 0 && `Syncing ${syncStatus.pending} items... `}
+          {syncStatus.errors > 0 && `${syncStatus.errors} sync errors`}
+        </div>
+      )}
+
       <Routes>
         <Route path="/" element={<DashboardHome />} />
         <Route path="/my-lands" element={<MyLands />} />
