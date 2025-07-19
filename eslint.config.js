@@ -1,3 +1,4 @@
+
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -24,6 +25,19 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Custom rules to prevent anti-patterns
+      "no-restricted-imports": [
+        "error",
+        {
+          "patterns": [
+            {
+              "group": ["react-router-dom"],
+              "importNames": ["BrowserRouter", "HashRouter"],
+              "message": "Only use BrowserRouter in main.tsx. Use Routes and Route elsewhere."
+            }
+          ]
+        }
+      ],
     },
   }
 );
