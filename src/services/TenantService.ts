@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
 
@@ -26,6 +25,25 @@ export class TenantService {
     try {
       console.log('TenantService: Getting tenant data for:', this.currentTenantId);
 
+      // First, let's try a simple query to test if the database is accessible
+      try {
+        const { data: testQuery, error: testError } = await supabase
+          .from('tenants')
+          .select('id')
+          .limit(1);
+        
+        if (testError) {
+          console.error('TenantService: Database connectivity test failed:', testError);
+          // Return default data if database is not accessible
+          return this.getDefaultTenantData();
+        }
+        
+        console.log('TenantService: Database connectivity confirmed');
+      } catch (connectError) {
+        console.error('TenantService: Database connection error:', connectError);
+        return this.getDefaultTenantData();
+      }
+
       // Load tenant with error handling
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -35,27 +53,12 @@ export class TenantService {
 
       if (tenantError) {
         console.error('TenantService: Tenant query error:', tenantError);
-        throw tenantError;
+        return this.getDefaultTenantData();
       }
 
       if (!tenant) {
-        console.log('TenantService: No tenant found, creating default');
-        // Return default tenant data
-        const defaultTenant = {
-          id: this.currentTenantId,
-          name: 'KisanShakti AI',
-          slug: 'default',
-          type: 'default',
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        return {
-          tenant: defaultTenant,
-          branding: null,
-          features: null
-        };
+        console.log('TenantService: No tenant found, using default');
+        return this.getDefaultTenantData();
       }
 
       // Load branding and features in parallel with error handling
@@ -91,13 +94,53 @@ export class TenantService {
       console.log('TenantService: Tenant data loaded successfully');
       return {
         tenant,
-        branding,
-        features
+        branding: branding || this.getDefaultBranding(),
+        features: features || this.getDefaultFeatures()
       };
     } catch (error) {
       console.error('TenantService: Error loading tenant data:', error);
-      throw error;
+      return this.getDefaultTenantData();
     }
+  }
+
+  private getDefaultTenantData() {
+    return {
+      tenant: {
+        id: this.currentTenantId,
+        name: 'KisanShakti AI',
+        slug: 'default',
+        type: 'default',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      branding: this.getDefaultBranding(),
+      features: this.getDefaultFeatures()
+    };
+  }
+
+  private getDefaultBranding() {
+    return {
+      tenant_id: this.currentTenantId,
+      app_name: 'KisanShakti AI',
+      app_tagline: 'Your Smart Farming Assistant',
+      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+      primary_color: '#8BC34A',
+      secondary_color: '#4CAF50',
+      accent_color: '#689F38',
+      background_color: '#FFFFFF'
+    };
+  }
+
+  private getDefaultFeatures() {
+    return {
+      tenant_id: this.currentTenantId,
+      ai_chat: true,
+      weather_forecast: true,
+      marketplace: true,
+      basic_analytics: true,
+      community_forum: true
+    };
   }
 
   async getUserTenants(userId: string) {

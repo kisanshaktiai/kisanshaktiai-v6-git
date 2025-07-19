@@ -8,6 +8,8 @@ import { LanguageService } from '@/services/LanguageService';
 import { SyncService } from '@/services/SyncService';
 import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
+import { tenantService } from '@/services/TenantService';
+import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
@@ -24,11 +26,18 @@ export const MobileApp: React.FC = () => {
   const { loading: authLoading, isAuthenticated } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   const [appInitialized, setAppInitialized] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize mobile services
     const initializeApp = async () => {
       try {
+        console.log('Starting app initialization...');
+        
+        // Initialize tenant service first
+        console.log('Setting default tenant ID:', DEFAULT_TENANT_ID);
+        tenantService.setCurrentTenantId(DEFAULT_TENANT_ID);
+        
         // Initialize services in parallel for better performance
         await Promise.allSettled([
           LanguageService.getInstance().initialize(),
@@ -46,10 +55,14 @@ export const MobileApp: React.FC = () => {
           }
         }
         
+        console.log('App initialization completed successfully');
         setAppInitialized(true);
+        setInitError(null);
       } catch (error) {
         console.error('Failed to initialize services:', error);
-        setAppInitialized(true); // Continue anyway
+        setInitError(error instanceof Error ? error.message : 'Failed to initialize app');
+        // Continue anyway to prevent complete app failure
+        setAppInitialized(true);
       }
     };
 
@@ -66,7 +79,14 @@ export const MobileApp: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">
+            {authLoading ? 'Loading...' : 'Initializing KisanShakti AI...'}
+          </p>
+          {initError && (
+            <p className="text-red-600 text-sm mt-2">
+              Warning: {initError}
+            </p>
+          )}
         </div>
       </div>
     );
