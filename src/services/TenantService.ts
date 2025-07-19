@@ -1,5 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
+import { SubscriptionPlan, getSubscriptionPlanLimits } from '@/types/tenant';
 
 export class TenantService {
   private static instance: TenantService;
@@ -111,6 +113,7 @@ export class TenantService {
         slug: 'default',
         type: 'default',
         status: 'active',
+        subscription_plan: 'kisan' as SubscriptionPlan,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       },
@@ -181,6 +184,65 @@ export class TenantService {
       return data;
     } catch (error) {
       console.error('TenantService: Error creating user tenant association:', error);
+      throw error;
+    }
+  }
+
+  // New method to create tenant with validation using the database function
+  async createTenantWithValidation(tenantData: {
+    name: string;
+    slug: string;
+    type: string;
+    status?: string;
+    subscription_plan?: SubscriptionPlan;
+    owner_name?: string;
+    owner_email?: string;
+    owner_phone?: string;
+    business_registration?: string;
+    business_address?: any;
+    established_date?: string;
+    subscription_start_date?: string;
+    subscription_end_date?: string;
+    trial_ends_at?: string;
+    max_farmers?: number;
+    max_dealers?: number;
+    max_products?: number;
+    max_storage_gb?: number;
+    max_api_calls_per_day?: number;
+    subdomain?: string;
+    custom_domain?: string;
+    metadata?: any;
+  }) {
+    try {
+      const { data, error } = await supabase.rpc('create_tenant_with_validation', {
+        p_name: tenantData.name,
+        p_slug: tenantData.slug,
+        p_type: tenantData.type,
+        p_status: tenantData.status || 'trial',
+        p_subscription_plan: tenantData.subscription_plan || 'kisan',
+        p_owner_name: tenantData.owner_name,
+        p_owner_email: tenantData.owner_email,
+        p_owner_phone: tenantData.owner_phone,
+        p_business_registration: tenantData.business_registration,
+        p_business_address: tenantData.business_address,
+        p_established_date: tenantData.established_date,
+        p_subscription_start_date: tenantData.subscription_start_date,
+        p_subscription_end_date: tenantData.subscription_end_date,
+        p_trial_ends_at: tenantData.trial_ends_at,
+        p_max_farmers: tenantData.max_farmers,
+        p_max_dealers: tenantData.max_dealers,
+        p_max_products: tenantData.max_products,
+        p_max_storage_gb: tenantData.max_storage_gb,
+        p_max_api_calls_per_day: tenantData.max_api_calls_per_day,
+        p_subdomain: tenantData.subdomain,
+        p_custom_domain: tenantData.custom_domain,
+        p_metadata: tenantData.metadata || {}
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('TenantService: Error creating tenant:', error);
       throw error;
     }
   }

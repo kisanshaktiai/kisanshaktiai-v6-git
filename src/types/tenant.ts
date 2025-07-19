@@ -1,4 +1,3 @@
-
 export type TenantType = 
   | 'agri_company' 
   | 'dealer' 
@@ -10,7 +9,10 @@ export type TenantType =
   | 'insurance';
 
 export type TenantStatus = 'trial' | 'active' | 'suspended' | 'cancelled';
-export type SubscriptionPlan = 'starter' | 'growth' | 'enterprise' | 'custom';
+
+// Updated subscription plans to match database enum
+export type SubscriptionPlan = 'kisan' | 'shakti' | 'ai';
+
 export type UserRole = 
   | 'super_admin' 
   | 'tenant_owner' 
@@ -41,7 +43,7 @@ export interface Tenant {
   business_address?: any;
   established_date?: string;
   
-  // Subscription
+  // Subscription - Updated to use new plan types
   subscription_plan: SubscriptionPlan;
   subscription_start_date: string;
   subscription_end_date?: string;
@@ -207,3 +209,41 @@ export interface UserTenant {
   created_at: string;
   updated_at: string;
 }
+
+// Helper function to get plan display names
+export const getSubscriptionPlanDisplayName = (plan: SubscriptionPlan): string => {
+  const displayNames: Record<SubscriptionPlan, string> = {
+    'kisan': 'Kisan (Basic)',
+    'shakti': 'Shakti (Growth)', 
+    'ai': 'AI (Enterprise)'
+  };
+  return displayNames[plan];
+};
+
+// Helper function to get plan limits
+export const getSubscriptionPlanLimits = (plan: SubscriptionPlan) => {
+  const limits = {
+    'kisan': {
+      farmers: 1000,
+      dealers: 50,
+      products: 100,
+      storage: 10,
+      api_calls: 10000
+    },
+    'shakti': {
+      farmers: 5000,
+      dealers: 200,
+      products: 500,
+      storage: 50,
+      api_calls: 50000
+    },
+    'ai': {
+      farmers: 20000,
+      dealers: 1000,
+      products: 2000,
+      storage: 200,
+      api_calls: 200000
+    }
+  };
+  return limits[plan];
+};

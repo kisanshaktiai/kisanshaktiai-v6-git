@@ -1,5 +1,6 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { SubscriptionPlan } from '@/types/tenant';
 
 interface TenantBranding {
   logo_url?: string;
@@ -47,8 +48,19 @@ interface TenantFeatures {
   logistics_tracking?: boolean;
 }
 
+interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  subscription_plan: SubscriptionPlan;
+  created_at: string;
+  updated_at: string;
+}
+
 interface TenantState {
-  currentTenant: any | null;
+  currentTenant: TenantInfo | null;
   tenantBranding: TenantBranding | null;
   tenantFeatures: TenantFeatures | null;
   loading: boolean;
@@ -88,7 +100,7 @@ const tenantSlice = createSlice({
   name: 'tenant',
   initialState,
   reducers: {
-    setCurrentTenant: (state, action: PayloadAction<any>) => {
+    setCurrentTenant: (state, action: PayloadAction<TenantInfo>) => {
       state.currentTenant = action.payload;
     },
     setTenantBranding: (state, action: PayloadAction<TenantBranding>) => {

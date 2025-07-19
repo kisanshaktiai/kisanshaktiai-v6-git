@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { applyTenantTheme, resetTenantTheme } from '@/utils/tenantTheme';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
+import { SubscriptionPlan, getSubscriptionPlanDisplayName } from '@/types/tenant';
 
 interface TenantBranding {
   app_name?: string;
@@ -33,6 +33,7 @@ interface Tenant {
   slug: string;
   type: string;
   status: string;
+  subscription_plan: SubscriptionPlan;
   branding?: TenantBranding;
   features?: TenantFeatures;
 }
@@ -74,7 +75,10 @@ class TenantManager {
         return true;
       }
 
-      this.currentTenant = tenant;
+      this.currentTenant = {
+        ...tenant,
+        subscription_plan: tenant.subscription_plan as SubscriptionPlan
+      };
 
       // Load branding and features in parallel
       const [brandingResult, featuresResult] = await Promise.allSettled([
@@ -137,7 +141,8 @@ class TenantManager {
       name: 'KisanShakti AI',
       slug: 'default',
       type: 'default',
-      status: 'active'
+      status: 'active',
+      subscription_plan: 'kisan' as SubscriptionPlan
     };
     this.tenantBranding = this.getDefaultBranding();
     this.tenantFeatures = this.getDefaultFeatures();
@@ -239,6 +244,15 @@ class TenantManager {
 
   getCurrentTenantId(): string {
     return this.currentTenant?.id || DEFAULT_TENANT_ID;
+  }
+
+  getSubscriptionPlanInfo() {
+    if (!this.currentTenant) return null;
+    
+    return {
+      plan: this.currentTenant.subscription_plan,
+      displayName: getSubscriptionPlanDisplayName(this.currentTenant.subscription_plan)
+    };
   }
 
   async switchTenant(tenantId: string): Promise<boolean> {
