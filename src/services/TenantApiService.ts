@@ -9,6 +9,11 @@ interface ApiOptions {
   requireOnline?: boolean;
 }
 
+interface QueryConfig {
+  select?: string;
+  filters?: Record<string, any>;
+}
+
 class TenantApiService {
   private static instance: TenantApiService;
 
@@ -20,9 +25,9 @@ class TenantApiService {
   }
 
   // Generic query method with tenant isolation
-  async queryWithTenant<T>(
+  async queryWithTenant<T = any>(
     table: string,
-    query: any,
+    query: QueryConfig = {},
     options: ApiOptions = {}
   ): Promise<{ data: T[] | null; error: any; fromCache?: boolean }> {
     const tenantId = tenantManager.getCurrentTenantId();
@@ -46,20 +51,20 @@ class TenantApiService {
     }
 
     try {
-      // Add tenant filter to query
-      const { data, error } = await supabase
-        .from(table)
-        .select(query.select || '*')
-        .eq('tenant_id', tenantId)
-        .then(q => {
-          // Apply additional filters
-          if (query.filters) {
-            Object.entries(query.filters).forEach(([key, value]) => {
-              q = q.eq(key, value);
-            });
-          }
-          return q;
+      // Use type assertion for dynamic table access
+      let queryBuilder = (supabase as any).from(table).select(query.select || '*');
+      
+      // Add tenant filter
+      queryBuilder = queryBuilder.eq('tenant_id', tenantId);
+      
+      // Apply additional filters
+      if (query.filters) {
+        Object.entries(query.filters).forEach(([key, value]) => {
+          queryBuilder = queryBuilder.eq(key, value);
         });
+      }
+
+      const { data, error } = await queryBuilder;
 
       if (error) {
         console.error('TenantApiService: Query error:', error);
@@ -112,20 +117,23 @@ class TenantApiService {
     }
 
     try {
+      // Use type assertion for dynamic table access
+      const supabaseTable = (supabase as any).from(table);
       let result;
+
       switch (operation) {
         case 'create':
-          result = await supabase.from(table).insert(data).select();
+          result = await supabaseTable.insert(data).select();
           break;
         case 'update':
-          result = await supabase.from(table)
+          result = await supabaseTable
             .update(data)
             .eq('id', data.id)
             .eq('tenant_id', tenantId)
             .select();
           break;
         case 'delete':
-          result = await supabase.from(table)
+          result = await supabaseTable
             .delete()
             .eq('id', data.id)
             .eq('tenant_id', tenantId);
@@ -153,7 +161,7 @@ class TenantApiService {
     }
   }
 
-  // Specific API methods
+  // Specific API methods using known table names
   async getLands(farmerId: string) {
     return this.queryWithTenant('lands', {
       select: '*',

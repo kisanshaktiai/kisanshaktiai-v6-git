@@ -7,7 +7,7 @@ interface VoiceSettings {
   rate: number;
   pitch: number;
   volume: number;
-  voice?: string;
+  voice?: SpeechSynthesisVoice;
 }
 
 class VoiceService {
@@ -21,6 +21,10 @@ class VoiceService {
     pitch: 1.0,
     volume: 0.8
   };
+  private commandRegistry: Map<string, () => void> = new Map();
+  private recognition: any = null;
+  private isListening: boolean = false;
+  private wakeWordActive: boolean = false;
 
   static getInstance(): VoiceService {
     if (!VoiceService.instance) {
@@ -32,11 +36,8 @@ class VoiceService {
   initialize(): void {
     if ('speechSynthesis' in window) {
       this.synthesis = window.speechSynthesis;
-      
-      // Load voices when they become available
       this.loadVoices();
       
-      // Some browsers require user interaction first
       this.synthesis.onvoiceschanged = () => {
         this.loadVoices();
       };
@@ -45,6 +46,15 @@ class VoiceService {
     } else {
       console.warn('VoiceService: Web Speech API not supported');
     }
+
+    // Initialize speech recognition if available
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.lang = this.settings.language;
+    }
   }
 
   private loadVoices(): void {
@@ -52,32 +62,27 @@ class VoiceService {
 
     this.voices = this.synthesis.getVoices();
     console.log('VoiceService: Loaded voices:', this.voices.length);
-
-    // Try to find the best voice for current language
     this.selectBestVoice();
   }
 
   private selectBestVoice(): void {
     if (this.voices.length === 0) return;
 
-    // Find voices for current language
     const currentLangVoices = this.voices.filter(voice => 
       voice.lang.startsWith(this.settings.language.split('-')[0])
     );
 
     if (currentLangVoices.length > 0) {
-      // Prefer local voices
       const localVoice = currentLangVoices.find(voice => voice.localService);
-      this.settings.voice = (localVoice || currentLangVoices[0]).name;
+      this.settings.voice = localVoice || currentLangVoices[0];
     } else {
-      // Fallback to English
       const englishVoice = this.voices.find(voice => voice.lang.startsWith('en'));
       if (englishVoice) {
-        this.settings.voice = englishVoice.name;
+        this.settings.voice = englishVoice;
       }
     }
 
-    console.log('VoiceService: Selected voice:', this.settings.voice);
+    console.log('VoiceService: Selected voice:', this.settings.voice?.name);
   }
 
   speak(text: string, options: Partial<VoiceSettings> = {}): Promise<void> {
@@ -87,23 +92,17 @@ class VoiceService {
         return;
       }
 
-      // Stop any current speech
       this.synthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Apply settings
       utterance.lang = options.language || this.settings.language;
       utterance.rate = options.rate || this.settings.rate;
       utterance.pitch = options.pitch || this.settings.pitch;
       utterance.volume = options.volume || this.settings.volume;
 
-      // Set voice if available
       if (this.settings.voice) {
-        const voice = this.voices.find(v => v.name === this.settings.voice);
-        if (voice) {
-          utterance.voice = voice;
-        }
+        utterance.voice = this.settings.voice;
       }
 
       utterance.onend = () => resolve();
@@ -120,6 +119,10 @@ class VoiceService {
     if (this.synthesis) {
       this.synthesis.cancel();
     }
+    if (this.recognition && this.isListening) {
+      this.recognition.stop();
+      this.isListening = false;
+    }
   }
 
   pause(): void {
@@ -132,6 +135,59 @@ class VoiceService {
     if (this.synthesis) {
       this.synthesis.resume();
     }
+  }
+
+  // Speech Recognition methods
+  registerCommand(command: string, callback: () => void): void {
+    this.commandRegistry.set(command.toLowerCase(), callback);
+  }
+
+  startListening(): void {
+    if (!this.recognition || this.isListening) return;
+
+    this.isListening = true;
+    this.recognition.start();
+
+    this.recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.toLowerCase();
+      console.log('VoiceService: Recognized:', transcript);
+      
+      // Check for registered commands
+      for (const [command, callback] of this.commandRegistry) {
+        if (transcript.includes(command)) {
+          callback();
+          break;
+        }
+      }
+    };
+
+    this.recognition.onerror = (event: any) => {
+      console.error('VoiceService: Recognition error:', event.error);
+      this.isListening = false;
+    };
+
+    this.recognition.onend = () => {
+      this.isListening = false;
+    };
+  }
+
+  stopListening(): void {
+    if (this.recognition && this.isListening) {
+      this.recognition.stop();
+      this.isListening = false;
+    }
+  }
+
+  startWakeWordDetection(): void {
+    this.wakeWordActive = true;
+    this.registerCommand('hey kisanshakti', () => {
+      console.log('Wake word detected');
+      this.startListening();
+    });
+  }
+
+  stopWakeWordDetection(): void {
+    this.wakeWordActive = false;
   }
 
   // Language-specific speak methods
@@ -160,6 +216,10 @@ class VoiceService {
     return this.voices;
   }
 
+  getSettings(): VoiceSettings {
+    return { ...this.settings };
+  }
+
   updateSettings(newSettings: Partial<VoiceSettings>): void {
     this.settings = { ...this.settings, ...newSettings };
     
@@ -171,7 +231,15 @@ class VoiceService {
     const saved = localStorage.getItem('voice_settings');
     if (saved) {
       try {
-        this.settings = { ...this.settings, ...JSON.parse(saved) };
+        const savedSettings = JSON.parse(saved);
+        this.settings = { ...this.settings, ...savedSettings };
+        // Re-find voice object since it's not serializable
+        if (savedSettings.voice?.name) {
+          const voice = this.voices.find(v => v.name === savedSettings.voice.name);
+          if (voice) {
+            this.settings.voice = voice;
+          }
+        }
       } catch (error) {
         console.error('VoiceService: Error loading settings:', error);
       }
@@ -200,4 +268,6 @@ class VoiceService {
   }
 }
 
+// Export both the class and instance
+export { VoiceService };
 export const voiceService = VoiceService.getInstance();

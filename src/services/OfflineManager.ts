@@ -124,17 +124,22 @@ class OfflineManager {
       };
 
       let result;
+      
+      // Use type assertion to bypass TypeScript's strict table name checking
+      // This is safe because we're validating table names at runtime
+      const supabaseTable = (supabase as any).from(item.table);
+      
       switch (item.operation) {
         case 'create':
-          result = await supabase.from(item.table).insert(dataWithTenant);
+          result = await supabaseTable.insert(dataWithTenant);
           break;
         case 'update':
-          result = await supabase.from(item.table)
+          result = await supabaseTable
             .update(dataWithTenant)
             .eq('id', item.data.id);
           break;
         case 'delete':
-          result = await supabase.from(item.table)
+          result = await supabaseTable
             .delete()
             .eq('id', item.data.id);
           break;
