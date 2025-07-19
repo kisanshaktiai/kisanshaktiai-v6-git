@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '../store/slices/tenantSlice';
-import { supabase } from '../config/supabase';
+import { supabase } from '../integrations/supabase/client';
 import { secureStorage } from '../services/storage/secureStorage';
 import { STORAGE_KEYS } from '../config/constants';
+import { DEFAULT_TENANT_ID } from '../config/constants';
 
 export const useTenant = () => {
   const dispatch = useDispatch();
@@ -20,67 +21,103 @@ export const useTenant = () => {
 
   const loadTenantData = async () => {
     try {
+      setError(null);
+      
       // Try to get tenant ID from storage
       let tenantId = await secureStorage.get(STORAGE_KEYS.TENANT_ID);
       
       if (!tenantId) {
-        // Default to 'default' tenant if none found
-        tenantId = 'default';
+        // Default to the default tenant if none found
+        tenantId = DEFAULT_TENANT_ID;
         await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
       }
 
-      // Load tenant data
+      console.log('Loading tenant data for ID:', tenantId);
+
+      // Load tenant data with improved error handling
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', tenantId)
-        .single();
+        .maybeSingle();
 
       if (tenantError) {
-        console.warn('Tenant not found, using default');
+        console.warn('Tenant query error, using fallback:', tenantError);
+      }
+
+      if (!tenant) {
+        console.log('Tenant not found, using default configuration');
         // Create default tenant data
-        dispatch(setCurrentTenant({
-          id: 'default',
+        const defaultTenant = {
+          id: DEFAULT_TENANT_ID,
           name: 'KisanShakti AI',
           slug: 'default',
           type: 'default',
-        }));
-        return;
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        dispatch(setCurrentTenant(defaultTenant));
+      } else {
+        dispatch(setCurrentTenant(tenant));
       }
 
-      dispatch(setCurrentTenant(tenant));
+      // Load branding with fallback
+      try {
+        const { data: branding } = await supabase
+          .from('tenant_branding')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
 
-      // Load branding
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
-
-      if (branding) {
-        dispatch(setTenantBranding(branding));
+        if (branding) {
+          dispatch(setTenantBranding(branding));
+        }
+      } catch (brandingError) {
+        console.warn('Non-critical branding load error:', brandingError);
       }
 
-      // Load features
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
+      // Load features with fallback
+      try {
+        const { data: features } = await supabase
+          .from('tenant_features')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
 
-      if (features) {
-        dispatch(setTenantFeatures(features));
+        if (features) {
+          dispatch(setTenantFeatures(features));
+        }
+      } catch (featuresError) {
+        console.warn('Non-critical features load error:', featuresError);
       }
 
     } catch (error) {
       console.error('Error loading tenant data:', error);
       setError('Failed to load tenant configuration');
+      
+      // Set fallback data to prevent complete failure
+      const fallbackTenant = {
+        id: DEFAULT_TENANT_ID,
+        name: 'KisanShakti AI',
+        slug: 'default',
+        type: 'default',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      dispatch(setCurrentTenant(fallbackTenant));
     }
   };
 
   const switchTenant = async (tenantId: string) => {
-    await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
-    await loadTenantData();
+    try {
+      await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
+      await loadTenantData();
+    } catch (error) {
+      console.error('Error switching tenant:', error);
+      setError('Failed to switch tenant');
+    }
   };
 
   return {

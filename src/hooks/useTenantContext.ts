@@ -26,11 +26,26 @@ export const useTenantContext = () => {
       // Ensure we're using the default tenant
       tenantService.setCurrentTenantId(DEFAULT_TENANT_ID);
       
+      console.log('Loading tenant context data');
+      
       const data = await tenantService.getTenantData();
       setTenantData(data);
+      console.log('Tenant context data loaded successfully:', data);
     } catch (err) {
-      console.error('Error loading tenant data:', err);
+      console.error('Error loading tenant context data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load tenant data');
+      
+      // Set fallback data
+      setTenantData({
+        tenant: {
+          id: DEFAULT_TENANT_ID,
+          name: 'KisanShakti AI',
+          slug: 'default',
+          type: 'default'
+        },
+        branding: null,
+        features: null
+      });
     } finally {
       setLoading(false);
     }

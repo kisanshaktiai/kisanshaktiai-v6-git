@@ -19,37 +19,83 @@ export class TenantService {
 
   setCurrentTenantId(tenantId: string): void {
     this.currentTenantId = tenantId;
+    console.log('Tenant ID set to:', tenantId);
   }
 
   async getTenantData() {
     try {
+      console.log('TenantService: Getting tenant data for:', this.currentTenantId);
+
+      // Load tenant with error handling
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', this.currentTenantId)
-        .single();
+        .maybeSingle();
 
-      if (tenantError) throw tenantError;
+      if (tenantError) {
+        console.error('TenantService: Tenant query error:', tenantError);
+        throw tenantError;
+      }
 
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', this.currentTenantId)
-        .single();
+      if (!tenant) {
+        console.log('TenantService: No tenant found, creating default');
+        // Return default tenant data
+        const defaultTenant = {
+          id: this.currentTenantId,
+          name: 'KisanShakti AI',
+          slug: 'default',
+          type: 'default',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        return {
+          tenant: defaultTenant,
+          branding: null,
+          features: null
+        };
+      }
 
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', this.currentTenantId)
-        .single();
+      // Load branding and features in parallel with error handling
+      const [brandingResult, featuresResult] = await Promise.allSettled([
+        supabase
+          .from('tenant_branding')
+          .select('*')
+          .eq('tenant_id', this.currentTenantId)
+          .maybeSingle(),
+        supabase
+          .from('tenant_features')
+          .select('*')
+          .eq('tenant_id', this.currentTenantId)
+          .maybeSingle()
+      ]);
 
+      const branding = brandingResult.status === 'fulfilled' && !brandingResult.value.error 
+        ? brandingResult.value.data 
+        : null;
+
+      const features = featuresResult.status === 'fulfilled' && !featuresResult.value.error 
+        ? featuresResult.value.data 
+        : null;
+
+      if (brandingResult.status === 'rejected') {
+        console.warn('TenantService: Branding load failed (non-critical):', brandingResult.reason);
+      }
+
+      if (featuresResult.status === 'rejected') {
+        console.warn('TenantService: Features load failed (non-critical):', featuresResult.reason);
+      }
+
+      console.log('TenantService: Tenant data loaded successfully');
       return {
         tenant,
         branding,
         features
       };
     } catch (error) {
-      console.error('Error loading tenant data:', error);
+      console.error('TenantService: Error loading tenant data:', error);
       throw error;
     }
   }
@@ -68,7 +114,7 @@ export class TenantService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error loading user tenants:', error);
+      console.error('TenantService: Error loading user tenants:', error);
       return [];
     }
   }
@@ -91,7 +137,7 @@ export class TenantService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error creating user tenant association:', error);
+      console.error('TenantService: Error creating user tenant association:', error);
       throw error;
     }
   }
