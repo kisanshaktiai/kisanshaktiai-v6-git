@@ -172,9 +172,9 @@ export const MobileApp: React.FC = () => {
     return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
-  // User is authenticated and onboarded, show main app
+  // User is authenticated and onboarded, show main app with routing
   return (
-    <MobileLayout>
+    <>
       {/* Offline indicator */}
       {!isOnline && (
         <div className="bg-orange-500 text-white text-center py-2 text-sm">
@@ -190,17 +190,18 @@ export const MobileApp: React.FC = () => {
         </div>
       )}
 
-      <Routes>
-        <Route path="/" element={<DashboardHome />} />
-        <Route path="/my-lands" element={<MyLands />} />
-        <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/crop-schedule" element={<CropSchedule />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<DashboardHome />} />
-      </Routes>
-    </MobileLayout>
+      <MobileLayout>
+        <Routes>
+          <Route path="/" element={<DashboardHome />} />
+          <Route path="/my-lands" element={<MyLands />} />
+          <Route path="/ai-chat" element={<AiChat />} />
+          <Route path="/crop-schedule" element={<CropSchedule />} />
+          <Route path="/market" element={<Market />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </MobileLayout>
+    </>
   );
 };
