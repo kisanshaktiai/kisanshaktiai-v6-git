@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Loader, ArrowLeft, LogIn, UserPlus, Smartphone } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader, WifiOff, Wifi } from 'lucide-react';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { AuthHeader } from './AuthHeader';
@@ -21,7 +22,7 @@ type UserStatus = 'checking' | 'existing' | 'new' | null;
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const { branding } = useBranding();
-  const { login, register, checkExistingFarmer } = useCustomAuth();
+  const { login, register, checkExistingFarmer, isOnline } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('phone');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -30,6 +31,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const [userStatus, setUserStatus] = useState<UserStatus>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const validateMobileNumber = (mobile: string): boolean => {
     const mobileRegex = /^[6-9]\d{9}$/;
@@ -47,16 +49,17 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       return exists;
     } catch (err) {
       console.error('Error checking user:', err);
-      setError(t('auth.error_checking_user'));
+      setError(isOnline ? t('auth.error_checking_user') : t('auth.offline_check_user'));
       setUserStatus(null);
       return false;
     }
   };
 
-  // Auto-check function for when user types 10 digits
   const handleAutoCheck = async (mobile: string) => {
     if (validateMobileNumber(mobile)) {
       await checkUserExists(mobile);
+    } else {
+      setUserStatus(null);
     }
   };
 
@@ -67,6 +70,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
 
     setLoading(true);
+    setError(null);
 
     try {
       const userExists = await checkUserExists(mobileNumber);
@@ -74,6 +78,11 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       if (userExists) {
         setStep('pin-login');
       } else {
+        if (!isOnline) {
+          setError(t('auth.registration_requires_internet'));
+          setLoading(false);
+          return;
+        }
         setStep('pin-create');
       }
     } catch (err) {
@@ -103,9 +112,15 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         }, 2000);
       } else {
         setError(result.error || t('auth.login_failed'));
+        setRetryCount(prev => prev + 1);
+        
+        // Clear PIN on error for security
+        setPin('');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(t('auth.login_failed'));
+      setPin('');
     } finally {
       setLoading(false);
     }
@@ -122,6 +137,11 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       return;
     }
 
+    if (!isOnline) {
+      setError(t('auth.registration_requires_internet'));
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -135,9 +155,15 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         }, 2000);
       } else {
         setError(result.error || t('auth.registration_failed'));
+        // Clear PINs on error
+        setPin('');
+        setConfirmPin('');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError(t('auth.registration_failed'));
+      setPin('');
+      setConfirmPin('');
     } finally {
       setLoading(false);
     }
@@ -149,6 +175,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     setConfirmPin('');
     setError(null);
     setUserStatus(null);
+    setRetryCount(0);
   };
 
   const getCurrentStep = () => {
@@ -159,6 +186,16 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
 
   const renderPhoneStep = () => (
     <div className="space-y-4">
+      {/* Connection Status Indicator */}
+      <div className={`flex items-center justify-center space-x-2 text-xs p-2 rounded-lg ${
+        isOnline 
+          ? 'bg-green-50 text-green-800 border border-green-200' 
+          : 'bg-red-50 text-red-800 border border-red-200'
+      }`}>
+        {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+        <span>{isOnline ? t('common.online') : t('common.offline')}</span>
+      </div>
+
       <PhoneInput
         phone={mobileNumber}
         onPhoneChange={setMobileNumber}
@@ -183,8 +220,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
               </>
             ) : (
               <>
-                <UserPlus className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4" />
                 {t('auth.new_number_detected')}
+                {!isOnline && (
+                  <div className="text-xs text-orange-600 mt-1">
+                    {t('auth.registration_requires_internet')}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -215,6 +257,16 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         <p className="text-gray-600">
           {t('auth.enter_pin_for')} <span className="font-semibold">+91 {mobileNumber}</span>
         </p>
+        {!isOnline && (
+          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
+            {t('auth.offline_login_mode')}
+          </div>
+        )}
+        {retryCount > 0 && (
+          <div className="text-xs text-red-600">
+            {t('auth.retry_attempt', { count: retryCount })}
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -229,6 +281,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
+            autoFocus
           />
         </div>
 
@@ -275,6 +328,11 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         <p className="text-gray-600">
           {t('auth.create_secure_pin')}
         </p>
+        {!isOnline && (
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border">
+            {t('auth.registration_requires_internet')}
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -289,6 +347,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
             className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
+            autoFocus
           />
         </div>
 
@@ -306,6 +365,12 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           />
         </div>
 
+        {pin && confirmPin && pin !== confirmPin && (
+          <div className="text-xs text-orange-600 text-center">
+            {t('auth.pins_dont_match')}
+          </div>
+        )}
+
         {error && (
           <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
             <AlertCircle className="w-4 h-4" />
@@ -316,7 +381,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         <div className="space-y-3">
           <Button 
             onClick={handleRegister}
-            disabled={pin.length !== 4 || confirmPin.length !== 4 || loading}
+            disabled={pin.length !== 4 || confirmPin.length !== 4 || loading || !isOnline}
             className="w-full h-12 text-base font-semibold rounded-xl"
             style={{ backgroundColor: branding.primaryColor, color: 'white' }}
           >
@@ -357,6 +422,9 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
                style={{ backgroundColor: `${branding.primaryColor}20` }}></div>
         </div>
         <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {userStatus === 'new' ? t('auth.account_created') : t('auth.welcome_back')}
+          </h2>
           <p className="text-gray-600">
             {t('auth.redirecting_to_app')}
           </p>
@@ -364,7 +432,6 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       </div>
     </div>
   );
-
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-1">

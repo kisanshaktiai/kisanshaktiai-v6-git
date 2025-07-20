@@ -1,8 +1,8 @@
 
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { Loader2, WifiOff } from 'lucide-react';
+import { useBranding } from '@/contexts/BrandingContext';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 
 interface AuthButtonProps {
   loading: boolean;
@@ -21,26 +21,36 @@ export const AuthButton = ({
   isNewUser,
   onContinue
 }: AuthButtonProps) => {
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useBranding();
+  const { isOnline } = useCustomAuth();
   
-  const isDisabled = loading || phone.length < 10 || checkingUser || !userCheckComplete;
-  const primaryColor = tenantBranding?.primary_color || '#8BC34A';
+  const isDisabled = loading || phone.length < 10 || checkingUser || !userCheckComplete || (isNewUser && !isOnline);
+  const primaryColor = branding?.primaryColor || '#8BC34A';
   
   const getButtonText = () => {
     if (loading) {
       return userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...';
     }
+    if (checkingUser) {
+      return 'Checking...';
+    }
     if (userCheckComplete) {
+      if (isNewUser && !isOnline) {
+        return 'Registration Requires Internet';
+      }
       return isNewUser ? 'Create Account & Continue' : 'Sign In & Continue';
     }
     return 'Continue';
   };
 
   const getButtonColor = () => {
+    if (isDisabled) {
+      return 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed';
+    }
     if (userCheckComplete) {
       return isNewUser ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
     }
-    return 'bg-gray-600 hover:bg-gray-700';
+    return '';
   };
   
   return (
@@ -59,7 +69,10 @@ export const AuthButton = ({
           <span>{getButtonText()}</span>
         </div>
       ) : (
-        <span>{getButtonText()}</span>
+        <div className="flex items-center space-x-2">
+          {isNewUser && !isOnline && <WifiOff className="w-4 h-4" />}
+          <span>{getButtonText()}</span>
+        </div>
       )}
     </Button>
   );

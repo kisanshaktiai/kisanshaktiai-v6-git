@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { customAuthService } from '@/services/customAuthService';
+import { secureStorage } from '@/services/storage/secureStorage';
 
 interface Farmer {
   id: string;
@@ -13,10 +14,12 @@ interface CustomAuthContextType {
   farmer: Farmer | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isOnline: boolean;
   login: (mobileNumber: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   register: (mobileNumber: string, pin: string, farmerData?: any) => Promise<{ success: boolean; error?: string }>;
   checkExistingFarmer: (mobileNumber: string) => Promise<boolean>;
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const CustomAuthContext = createContext<CustomAuthContextType | undefined>(undefined);
@@ -32,6 +35,27 @@ export const useCustomAuth = () => {
 export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    // Monitor online/offline status
+    const handleOnline = () => {
+      setIsOnline(true);
+      refreshSession(); // Refresh session when coming back online
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     initializeAuth();
@@ -41,17 +65,40 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     try {
       setLoading(true);
       
-      // Try to restore session from localStorage
+      // Try to restore session
       const restored = await customAuthService.restoreSession();
       
       if (restored) {
         const currentFarmer = customAuthService.getCurrentFarmer();
-        setFarmer(currentFarmer);
+        if (currentFarmer) {
+          setFarmer(currentFarmer);
+        }
       }
     } catch (error) {
       console.error('Auth initialization error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      const currentFarmer = customAuthService.getCurrentFarmer();
+      const token = customAuthService.getCurrentToken();
+      
+      if (currentFarmer && token) {
+        // If we have stored credentials but no current farmer state, restore it
+        if (!farmer) {
+          setFarmer(currentFarmer);
+        }
+        
+        // If online, try to refresh with server
+        if (isOnline && !token.startsWith('offline_')) {
+          await customAuthService.restoreSession();
+        }
+      }
+    } catch (error) {
+      console.error('Session refresh error:', error);
     }
   };
 
@@ -67,6 +114,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      console.error('Login error:', error);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -85,6 +133,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      console.error('Registration error:', error);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -92,15 +141,23 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
   };
 
   const checkExistingFarmer = async (mobileNumber: string) => {
-    return await customAuthService.checkExistingFarmer(mobileNumber);
+    try {
+      return await customAuthService.checkExistingFarmer(mobileNumber);
+    } catch (error) {
+      console.error('Check existing farmer error:', error);
+      return false;
+    }
   };
 
   const signOut = async () => {
     try {
+      setLoading(true);
       await customAuthService.signOut();
       setFarmer(null);
     } catch (error) {
       console.error('Sign out error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,10 +165,12 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     farmer,
     loading,
     isAuthenticated: !!farmer,
+    isOnline,
     login,
     register,
     checkExistingFarmer,
     signOut,
+    refreshSession,
   };
 
   return (
