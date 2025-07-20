@@ -26,10 +26,23 @@ interface RegisterResponse {
   error?: string;
 }
 
+interface StoredFarmer {
+  id: string;
+  farmer_code: string;
+  mobile_number: string;
+  tenant_id: string | null;
+}
+
+interface OfflineQueueItem {
+  action: string;
+  data: any;
+  timestamp: number;
+}
+
 export class CustomAuthService {
   private static instance: CustomAuthService;
   private isOnline: boolean = navigator.onLine;
-  private offlineQueue: any[] = [];
+  private offlineQueue: OfflineQueueItem[] = [];
   
   static getInstance(): CustomAuthService {
     if (!CustomAuthService.instance) {
@@ -110,7 +123,7 @@ export class CustomAuthService {
         };
       }
 
-      if (data.success && data.token && data.farmer) {
+      if (data && data.success && data.token && data.farmer) {
         // Store credentials securely for offline use
         await this.storeCredentials(data.farmer, data.token, pin);
         
@@ -141,7 +154,7 @@ export class CustomAuthService {
 
       return {
         success: false,
-        error: data.error || 'Login failed'
+        error: (data && data.error) || 'Login failed'
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -161,7 +174,7 @@ export class CustomAuthService {
   private async handleOfflineLogin(mobileNumber: string, pin: string): Promise<LoginResponse> {
     try {
       // Get stored credentials
-      const storedCredentials = await secureStorage.getObject('farmer_credentials');
+      const storedCredentials = await secureStorage.getObject('farmer_credentials') as StoredFarmer | null;
       const storedPin = await secureStorage.get('farmer_pin_hash');
       
       if (!storedCredentials || !storedPin) {
@@ -207,7 +220,7 @@ export class CustomAuthService {
     }
   }
 
-  private async storeCredentials(farmer: any, token: string, pin: string): Promise<void> {
+  private async storeCredentials(farmer: StoredFarmer, token: string, pin: string): Promise<void> {
     try {
       const pinHash = await this.hashPin(pin, farmer.mobile_number);
       
@@ -270,7 +283,7 @@ export class CustomAuthService {
         };
       }
 
-      if (data.success && data.token && data.farmer) {
+      if (data && data.success && data.token && data.farmer) {
         // Store credentials for offline use
         await this.storeCredentials(data.farmer, data.token, pin);
         
@@ -297,7 +310,7 @@ export class CustomAuthService {
 
       return {
         success: false,
-        error: data.error || 'Registration failed'
+        error: (data && data.error) || 'Registration failed'
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -309,7 +322,7 @@ export class CustomAuthService {
   }
 
   private async queueOfflineAction(action: string, data: any): Promise<void> {
-    const queueItem = {
+    const queueItem: OfflineQueueItem = {
       action,
       data,
       timestamp: Date.now()
@@ -321,7 +334,7 @@ export class CustomAuthService {
 
   private async processOfflineQueue(): Promise<void> {
     try {
-      const queue = await secureStorage.getObject('offline_queue') || [];
+      const queue = await secureStorage.getObject('offline_queue') as OfflineQueueItem[] || [];
       this.offlineQueue = queue;
 
       for (const item of this.offlineQueue) {
@@ -348,7 +361,7 @@ export class CustomAuthService {
       
       // If offline, check local storage
       if (!this.isOnline) {
-        const storedCredentials = await secureStorage.getObject('farmer_credentials');
+        const storedCredentials = await secureStorage.getObject('farmer_credentials') as StoredFarmer | null;
         return storedCredentials?.mobile_number === cleanMobile;
       }
 
@@ -365,12 +378,12 @@ export class CustomAuthService {
     }
   }
 
-  getCurrentFarmer(): any | null {
+  getCurrentFarmer(): StoredFarmer | null {
     // Try to get from memory first, then storage
     return this.getCurrentFarmerSync();
   }
 
-  private getCurrentFarmerSync(): any | null {
+  private getCurrentFarmerSync(): StoredFarmer | null {
     try {
       const farmerData = localStorage.getItem(this.getStorageKey('farmer_data'));
       return farmerData ? JSON.parse(farmerData) : null;
