@@ -7,17 +7,17 @@ import { EnhancedSplashScreen } from '@/components/splash/EnhancedSplashScreen';
 import { MobileLayout } from './MobileLayout';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-// Import all page components
+// Import all page components - fix default imports
 import { MobileHome } from '@/pages/mobile/MobileHome';
 import { AiChat } from '@/pages/mobile/AiChat';
-import { Weather } from '@/pages/mobile/Weather';
+import Weather from '@/pages/mobile/Weather';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { Market } from '@/pages/mobile/Market';
 import { Profile } from '@/pages/mobile/Profile';
 import { Analytics } from '@/pages/mobile/Analytics';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
 import { Community } from '@/pages/mobile/Community';
-import { SatelliteMonitoring } from '@/pages/mobile/SatelliteMonitoring';
+import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useCustomAuth();

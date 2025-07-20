@@ -106,23 +106,31 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
         .eq('tenant_id', tenant.id)
         .single();
 
-      // Fetch tenant features
+      // Fetch tenant features - using correct column names from schema
       const { data: featuresData } = await supabase
         .from('tenant_features')
-        .select('feature_name')
+        .select('*')
         .eq('tenant_id', tenant.id)
-        .eq('is_enabled', true);
+        .single();
 
-      const features = featuresData?.map(f => f.feature_name) || defaultBranding.features;
+      // Extract enabled features from the tenant_features table
+      const features: string[] = [];
+      if (featuresData) {
+        if (featuresData.ai_chat) features.push('ai_chat');
+        if (featuresData.weather_forecast) features.push('weather');
+        if (featuresData.marketplace) features.push('market_prices');
+        if (featuresData.satellite_imagery) features.push('satellite');
+        if (featuresData.community_forum) features.push('community');
+      }
 
-      // Build branding object
+      // Build branding object with correct property names
       const tenantBranding: TenantBranding = {
         id: tenant.id,
         name: tenant.name,
         appName: brandingData?.app_name || tenant.name,
         tagline: brandingData?.app_tagline || defaultBranding.tagline,
         logo: brandingData?.logo_url || defaultBranding.logo,
-        splashLogo: brandingData?.splash_logo_url || brandingData?.logo_url || defaultBranding.logo,
+        splashLogo: brandingData?.logo_url || defaultBranding.logo,
         primaryColor: brandingData?.primary_color || defaultBranding.primaryColor,
         secondaryColor: brandingData?.secondary_color || defaultBranding.secondaryColor,
         accentColor: brandingData?.accent_color || defaultBranding.accentColor,
@@ -130,7 +138,7 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
         textColor: brandingData?.text_color || defaultBranding.textColor,
         subdomain: tenant.subdomain,
         customDomain: tenant.custom_domain,
-        features
+        features: features.length > 0 ? features : defaultBranding.features
       };
 
       setBranding(tenantBranding);
