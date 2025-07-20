@@ -21,7 +21,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const { login, register, checkExistingFarmer } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('phone');
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('9898989495'); // Default mobile number
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [userStatus, setUserStatus] = useState<UserStatus>(null);
@@ -49,6 +49,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       return false;
     }
   };
+
+  // Auto-check user status when component mounts with default number
+  useEffect(() => {
+    if (mobileNumber === '9898989495') {
+      checkUserExists(mobileNumber);
+    }
+  }, []);
 
   const handleMobileSubmit = async () => {
     if (!validateMobileNumber(mobileNumber)) {
@@ -175,13 +182,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     const IconComponent = headerContent.icon;
 
     return (
-      <div className="text-center pb-6">
-        <div className="flex justify-center items-center mb-6">
-          <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center border border-gray-100">
+      <div className="text-center pb-4">
+        <div className="flex justify-center items-center mb-4">
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center border border-gray-100">
             <img 
               src={branding.logo}
               alt={branding.appName}
-              className="w-16 h-16 object-contain" 
+              className="w-12 h-12 object-contain" 
               onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
               }}
@@ -189,13 +196,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           </div>
         </div>
         
-        <h1 className="text-3xl font-bold mb-3 flex items-center justify-center gap-3"
+        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2"
             style={{ color: branding.primaryColor }}>
-          <IconComponent className="w-8 h-8" />
+          <IconComponent className="w-6 h-6" />
           {headerContent.title}
         </h1>
         
-        <p className="text-gray-600 text-lg leading-relaxed px-4">
+        <p className="text-gray-600 text-base leading-relaxed px-2">
           {headerContent.subtitle}
         </p>
       </div>
@@ -203,35 +210,35 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   };
 
   const renderPhoneStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 block">
           {t('auth.mobile_number')}
         </label>
         <div className="relative">
-          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-            <span className="text-gray-500 text-lg">🇮🇳</span>
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+            <span className="text-gray-500 text-base">🇮🇳</span>
             <span className="text-gray-600 font-medium">+91</span>
-            <div className="w-px h-6 bg-gray-300"></div>
+            <div className="w-px h-5 bg-gray-300"></div>
           </div>
           <Input
             type="tel"
             placeholder="9876543210"
             value={mobileNumber}
             onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            className="pl-20 h-16 text-lg font-medium text-center tracking-wider border-2 rounded-xl"
+            className="pl-16 h-12 text-base font-medium text-center tracking-wider border-2 rounded-xl"
             maxLength={10}
           />
           {userStatus === 'checking' && (
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-              <Loader className="w-5 h-5 animate-spin text-gray-400" />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Loader className="w-4 h-4 animate-spin text-gray-400" />
             </div>
           )}
         </div>
       </div>
 
       {userStatus && userStatus !== 'checking' && (
-        <div className={`text-sm text-center p-4 rounded-lg border-2 ${
+        <div className={`text-sm text-center p-3 rounded-lg border-2 ${
           userStatus === 'existing' 
             ? 'bg-blue-50 text-blue-800 border-blue-200' 
             : 'bg-green-50 text-green-800 border-green-200'
@@ -253,7 +260,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       )}
 
       {error && (
-        <div className="text-sm text-red-600 text-center p-4 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
+        <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
@@ -262,7 +269,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       <Button 
         onClick={handleMobileSubmit}
         disabled={mobileNumber.length !== 10 || loading || userStatus === 'checking'}
-        className="w-full h-16 text-lg font-semibold rounded-xl transition-all duration-200"
+        className="w-full h-12 text-base font-semibold rounded-xl transition-all duration-200"
         style={{ 
           backgroundColor: mobileNumber.length === 10 && !loading ? branding.primaryColor : '#9CA3AF',
           color: 'white'
@@ -270,7 +277,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       >
         {loading ? (
           <div className="flex items-center space-x-2">
-            <Loader className="w-5 h-5 animate-spin" />
+            <Loader className="w-4 h-4 animate-spin" />
             <span>{t('common.loading')}</span>
           </div>
         ) : userStatus === 'existing' ? (
@@ -285,7 +292,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   const renderPinLoginStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="text-center space-y-2">
         <p className="text-gray-600">
           {t('auth.enter_pin_for')} <span className="font-semibold">+91 {mobileNumber}</span>
@@ -302,7 +309,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             placeholder="••••"
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-16 text-3xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
+            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
           />
         </div>
@@ -318,12 +325,12 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           <Button 
             onClick={handleLogin}
             disabled={pin.length !== 4 || loading}
-            className="w-full h-16 text-lg font-semibold rounded-xl"
+            className="w-full h-12 text-base font-semibold rounded-xl"
             style={{ backgroundColor: branding.primaryColor, color: 'white' }}
           >
             {loading ? (
               <div className="flex items-center space-x-2">
-                <Loader className="w-5 h-5 animate-spin" />
+                <Loader className="w-4 h-4 animate-spin" />
                 <span>{t('auth.signing_in')}</span>
               </div>
             ) : (
@@ -335,7 +342,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             variant="outline"
             onClick={handleBack}
             disabled={loading}
-            className="w-full h-12 border-2 rounded-xl"
+            className="w-full h-10 border-2 rounded-xl"
           >
             {t('common.back')}
           </Button>
@@ -345,7 +352,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   const renderPinCreateStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="text-center space-y-2">
         <p className="text-gray-600">
           {t('auth.create_secure_pin')}
@@ -362,7 +369,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             placeholder="••••"
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-16 text-3xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
+            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
           />
         </div>
@@ -376,7 +383,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             placeholder="••••"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-16 text-3xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
+            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
           />
         </div>
@@ -392,12 +399,12 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           <Button 
             onClick={handleRegister}
             disabled={pin.length !== 4 || confirmPin.length !== 4 || loading}
-            className="w-full h-16 text-lg font-semibold rounded-xl"
+            className="w-full h-12 text-base font-semibold rounded-xl"
             style={{ backgroundColor: branding.primaryColor, color: 'white' }}
           >
             {loading ? (
               <div className="flex items-center space-x-2">
-                <Loader className="w-5 h-5 animate-spin" />
+                <Loader className="w-4 h-4 animate-spin" />
                 <span>{t('auth.creating_account')}</span>
               </div>
             ) : (
@@ -409,7 +416,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             variant="outline"
             onClick={handleBack}
             disabled={loading}
-            className="w-full h-12 border-2 rounded-xl"
+            className="w-full h-10 border-2 rounded-xl"
           >
             {t('common.back')}
           </Button>
@@ -419,20 +426,20 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   const renderSuccessStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="text-center space-y-4">
         <div className="relative">
           <div 
-            className="w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
             style={{ backgroundColor: `${branding.primaryColor}15`, border: `2px solid ${branding.primaryColor}` }}
           >
-            <CheckCircle className="w-12 h-12 text-green-600 animate-bounce" />
+            <CheckCircle className="w-10 h-10 text-green-600 animate-bounce" />
           </div>
-          <div className="absolute inset-0 w-24 h-24 rounded-full mx-auto animate-ping" 
+          <div className="absolute inset-0 w-20 h-20 rounded-full mx-auto animate-ping" 
                style={{ backgroundColor: `${branding.primaryColor}20` }}></div>
         </div>
         <div>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600">
             {t('auth.redirecting_to_app')}
           </p>
         </div>
@@ -441,67 +448,67 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   const renderFeatures = () => (
-    <div className="mt-8">
-      <h3 className="text-center text-lg font-semibold text-gray-800 mb-6">
+    <div className="mt-6">
+      <h3 className="text-center text-base font-semibold text-gray-800 mb-4">
         {t('auth.smart_farming')}
       </h3>
       
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-4">
         <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center"
+          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-6 h-6" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 mb-1">{t('features.ai_chat')}</h4>
-          <p className="text-sm text-gray-600">{t('features.ai_chat_desc')}</p>
+          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.ai_chat')}</h4>
+          <p className="text-xs text-gray-600">{t('features.ai_chat_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center"
+          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-6 h-6" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 mb-1">{t('features.community')}</h4>
-          <p className="text-sm text-gray-600">{t('features.community_desc')}</p>
+          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.community')}</h4>
+          <p className="text-xs text-gray-600">{t('features.community_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center"
+          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-6 h-6" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 mb-1">{t('features.smart_farming')}</h4>
-          <p className="text-sm text-gray-600">{t('features.smart_farming_desc')}</p>
+          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.smart_farming')}</h4>
+          <p className="text-xs text-gray-600">{t('features.smart_farming_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center"
+          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-6 h-6" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 mb-1">{t('features.secure')}</h4>
-          <p className="text-sm text-gray-600">{t('features.secure_desc')}</p>
+          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.secure')}</h4>
+          <p className="text-xs text-gray-600">{t('features.secure_desc')}</p>
         </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
-      <Card className="w-full max-w-md bg-white shadow-2xl border-0 rounded-3xl overflow-hidden">
-        <CardHeader className="pb-0">
+    <div className="min-h-screen bg-white flex items-center justify-center p-2">
+      <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-3xl overflow-hidden">
+        <CardHeader className="pb-0 px-4 pt-4">
           {renderHeader()}
         </CardHeader>
         
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-4 pb-4">
           {step === 'phone' && renderPhoneStep()}
           {step === 'pin-login' && renderPinLoginStep()}
           {step === 'pin-create' && renderPinCreateStep()}
