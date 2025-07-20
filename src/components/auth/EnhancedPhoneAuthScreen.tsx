@@ -53,12 +53,12 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  // Auto-check user status when component mounts with default number
-  useEffect(() => {
-    if (mobileNumber === '9898989495') {
-      checkUserExists(mobileNumber);
+  // Auto-check function for when user types 10 digits
+  const handleAutoCheck = async (mobile: string) => {
+    if (validateMobileNumber(mobile)) {
+      await checkUserExists(mobile);
     }
-  }, []);
+  };
 
   const handleMobileSubmit = async () => {
     if (!validateMobileNumber(mobileNumber)) {
@@ -166,6 +166,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         checkingUser={userStatus === 'checking'}
         userCheckComplete={userStatus !== null && userStatus !== 'checking'}
         isNewUser={userStatus === 'new'}
+        onAutoCheck={handleAutoCheck}
       />
 
       {userStatus && userStatus !== 'checking' && (

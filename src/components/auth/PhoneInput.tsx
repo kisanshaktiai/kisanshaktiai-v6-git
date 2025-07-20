@@ -9,6 +9,7 @@ interface PhoneInputProps {
   checkingUser: boolean;
   userCheckComplete: boolean;
   isNewUser: boolean;
+  onAutoCheck?: (mobile: string) => void;
 }
 
 export const PhoneInput = ({
@@ -17,7 +18,8 @@ export const PhoneInput = ({
   loading,
   checkingUser,
   userCheckComplete,
-  isNewUser
+  isNewUser,
+  onAutoCheck
 }: PhoneInputProps) => {
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '');
@@ -27,6 +29,11 @@ export const PhoneInput = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     onPhoneChange(formatted);
+    
+    // Auto-check when user enters 10 digits
+    if (formatted.length === 10 && onAutoCheck) {
+      onAutoCheck(formatted);
+    }
   };
 
   return (
@@ -35,7 +42,10 @@ export const PhoneInput = ({
         Mobile Number
       </label>
       <div className="relative">
-        <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2 z-10">
+          <Phone className="w-5 h-5 text-gray-400" />
+          <span className="text-lg text-gray-600 font-medium">+91</span>
+        </div>
         <Input
           type="tel"
           inputMode="numeric"
@@ -45,7 +55,7 @@ export const PhoneInput = ({
           onChange={handleChange}
           maxLength={10}
           disabled={loading || checkingUser}
-          className={`text-lg pl-12 border-2 transition-all duration-300 bg-white text-black rounded-xl ${
+          className={`text-lg pl-20 border-2 transition-all duration-300 bg-white text-black rounded-xl ${
             userCheckComplete && isNewUser 
               ? 'focus:border-green-400 border-green-200' 
               : userCheckComplete && !isNewUser 
