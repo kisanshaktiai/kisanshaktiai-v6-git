@@ -16,6 +16,7 @@ export const useOffline = () => {
 
   useEffect(() => {
     let networkListener: PluginListenerHandle | null = null;
+    let cleanupFunctions: (() => void)[] = [];
 
     const checkNetworkStatus = async () => {
       try {
@@ -68,21 +69,22 @@ export const useOffline = () => {
           window.addEventListener('online', handleOnline);
           window.addEventListener('offline', handleOffline);
 
-          // Cleanup function for web listeners
-          return () => {
+          // Add cleanup functions
+          cleanupFunctions.push(() => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
-          };
+          });
         }
       } catch (error) {
         console.error('useOffline: Error setting up network listener:', error);
         // Fallback to periodic checking
         const fallbackInterval = setInterval(checkNetworkStatus, 5000);
-        return () => clearInterval(fallbackInterval);
+        cleanupFunctions.push(() => clearInterval(fallbackInterval));
       }
     };
 
-    const cleanup = initializeNetworkListener();
+    // Initialize the network listener
+    initializeNetworkListener();
 
     // Periodic sync status updates (every 10 seconds)
     const syncInterval = setInterval(updateSyncStatus, 10000);
@@ -93,12 +95,8 @@ export const useOffline = () => {
       }
       clearInterval(syncInterval);
       
-      // Handle cleanup function from initializeNetworkListener
-      if (cleanup && typeof cleanup.then === 'function') {
-        cleanup.then(cleanupFn => cleanupFn && cleanupFn());
-      } else if (typeof cleanup === 'function') {
-        cleanup();
-      }
+      // Clean up all registered cleanup functions
+      cleanupFunctions.forEach(cleanup => cleanup());
     };
   }, []);
 

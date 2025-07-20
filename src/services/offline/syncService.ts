@@ -1,4 +1,3 @@
-
 import { db, SyncQueueItem } from './db';
 import { supabase } from '../../config/supabase';
 import { Network } from '@capacitor/network';
@@ -200,8 +199,9 @@ class SyncService {
       
       // Update retry count and status
       if (item.id) {
+        const newStatus = newRetryCount >= this.maxRetries ? 'failed' : 'error';
         await db.syncQueue.update(item.id, { 
-          status: newRetryCount >= this.maxRetries ? 'failed' : 'error', 
+          status: newStatus, 
           retryCount: newRetryCount 
         });
       }
