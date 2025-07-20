@@ -24,7 +24,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const { login, register, checkExistingFarmer } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('phone');
-  const [mobileNumber, setMobileNumber] = useState('9898989495'); // Updated default number
+  const [mobileNumber, setMobileNumber] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [userStatus, setUserStatus] = useState<UserStatus>(null);
