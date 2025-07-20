@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const { login, register, checkExistingFarmer } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('phone');
-  const [mobileNumber, setMobileNumber] = useState('9898989495'); // Default mobile number
+  const [mobileNumber, setMobileNumber] = useState('9898989495'); // Updated default number
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [userStatus, setUserStatus] = useState<UserStatus>(null);
@@ -182,13 +181,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     const IconComponent = headerContent.icon;
 
     return (
-      <div className="text-center pb-4">
-        <div className="flex justify-center items-center mb-4">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center border border-gray-100">
+      <div className="text-center pb-3">
+        <div className="flex justify-center items-center mb-3">
+          <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center border border-gray-100">
             <img 
               src={branding.logo}
               alt={branding.appName}
-              className="w-12 h-12 object-contain" 
+              className="w-8 h-8 object-contain" 
               onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
               }}
@@ -196,13 +195,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2"
+        <h1 className="text-xl font-bold mb-2 flex items-center justify-center gap-2"
             style={{ color: branding.primaryColor }}>
-          <IconComponent className="w-6 h-6" />
+          <IconComponent className="w-5 h-5" />
           {headerContent.title}
         </h1>
         
-        <p className="text-gray-600 text-base leading-relaxed px-2">
+        <p className="text-gray-600 text-sm leading-relaxed px-1">
           {headerContent.subtitle}
         </p>
       </div>
@@ -223,7 +222,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           </div>
           <Input
             type="tel"
-            placeholder="9876543210"
+            placeholder="9898989495"
             value={mobileNumber}
             onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
             className="pl-16 h-12 text-base font-medium text-center tracking-wider border-2 rounded-xl"
@@ -448,53 +447,53 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   const renderFeatures = () => (
-    <div className="mt-6">
-      <h3 className="text-center text-base font-semibold text-gray-800 mb-4">
+    <div className="mt-4">
+      <h3 className="text-center text-sm font-semibold text-gray-800 mb-3">
         {t('auth.smart_farming')}
       </h3>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
+          <div className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.ai_chat')}</h4>
+          <h4 className="font-semibold text-gray-800 text-xs mb-1">{t('features.ai_chat')}</h4>
           <p className="text-xs text-gray-600">{t('features.ai_chat_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
+          <div className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.community')}</h4>
+          <h4 className="font-semibold text-gray-800 text-xs mb-1">{t('features.community')}</h4>
           <p className="text-xs text-gray-600">{t('features.community_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
+          <div className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.smart_farming')}</h4>
+          <h4 className="font-semibold text-gray-800 text-xs mb-1">{t('features.smart_farming')}</h4>
           <p className="text-xs text-gray-600">{t('features.smart_farming_desc')}</p>
         </div>
 
         <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center"
+          <div className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center"
                style={{ backgroundColor: `${branding.primaryColor}15` }}>
-            <svg className="w-5 h-5" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: branding.primaryColor }} fill="currentColor" viewBox="0 0 24 24">
               <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
             </svg>
           </div>
-          <h4 className="font-semibold text-gray-800 text-sm mb-1">{t('features.secure')}</h4>
+          <h4 className="font-semibold text-gray-800 text-xs mb-1">{t('features.secure')}</h4>
           <p className="text-xs text-gray-600">{t('features.secure_desc')}</p>
         </div>
       </div>
@@ -502,13 +501,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   );
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-2">
-      <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-3xl overflow-hidden">
-        <CardHeader className="pb-0 px-4 pt-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-1">
+      <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
+        <CardHeader className="pb-0 px-3 pt-3">
           {renderHeader()}
         </CardHeader>
         
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-3 pb-3">
           {step === 'phone' && renderPhoneStep()}
           {step === 'pin-login' && renderPinLoginStep()}
           {step === 'pin-create' && renderPinCreateStep()}

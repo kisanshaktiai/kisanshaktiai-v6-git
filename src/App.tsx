@@ -34,6 +34,7 @@ const AppRoutes: React.FC = () => {
     dispatch(setOnboardingCompleted());
   };
 
+  // Always show loading while auth is being determined
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
