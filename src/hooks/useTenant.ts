@@ -7,6 +7,27 @@ import { supabase } from '../integrations/supabase/client';
 import { secureStorage } from '../services/storage/secureStorage';
 import { STORAGE_KEYS } from '../config/constants';
 import { DEFAULT_TENANT_ID } from '../config/constants';
+import { SubscriptionPlan } from '../types/tenant';
+
+// Helper function to convert database subscription plan to our type
+const convertSubscriptionPlan = (plan: string | null | undefined): SubscriptionPlan => {
+  if (!plan) return 'kisan';
+  
+  switch (plan) {
+    case 'starter':
+      return 'kisan';
+    case 'growth':
+      return 'shakti';
+    case 'enterprise':
+      return 'ai';
+    case 'kisan':
+    case 'shakti':
+    case 'ai':
+      return plan as SubscriptionPlan;
+    default:
+      return 'kisan';
+  }
+};
 
 export const useTenant = () => {
   const dispatch = useDispatch();
@@ -47,19 +68,31 @@ export const useTenant = () => {
 
       if (!tenant) {
         console.log('Tenant not found, using default configuration');
-        // Create default tenant data
+        // Create default tenant data with proper typing
         const defaultTenant = {
           id: DEFAULT_TENANT_ID,
           name: 'KisanShakti AI',
           slug: 'default',
           type: 'default',
           status: 'active',
+          subscription_plan: 'kisan' as SubscriptionPlan,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
         dispatch(setCurrentTenant(defaultTenant));
       } else {
-        dispatch(setCurrentTenant(tenant));
+        // Convert the database tenant to our type format
+        const convertedTenant = {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          type: tenant.type,
+          status: tenant.status,
+          subscription_plan: convertSubscriptionPlan(tenant.subscription_plan),
+          created_at: tenant.created_at,
+          updated_at: tenant.updated_at
+        };
+        dispatch(setCurrentTenant(convertedTenant));
       }
 
       // Load branding with fallback
@@ -103,6 +136,7 @@ export const useTenant = () => {
         slug: 'default',
         type: 'default',
         status: 'active',
+        subscription_plan: 'kisan' as SubscriptionPlan,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
