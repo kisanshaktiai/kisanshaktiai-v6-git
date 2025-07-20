@@ -130,7 +130,7 @@ export const PhoneAuthScreen: React.FC<PhoneAuthScreenProps> = ({ onComplete }) 
   const primaryColor = tenantData?.branding?.primary_color || '#8BC34A';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center" 
