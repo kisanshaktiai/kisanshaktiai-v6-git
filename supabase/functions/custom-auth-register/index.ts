@@ -67,9 +67,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Hash the PIN
-    const bcrypt = await import('https://deno.land/x/bcrypt@v0.4.1/mod.ts')
-    const pinHash = await bcrypt.hash(pin, 10)
+    // Hash the PIN using Web Crypto API (compatible with Deno edge runtime)
+    const encoder = new TextEncoder()
+    const salt = 'kisan_shakti_pin_salt_2024' // Use a consistent salt
+    const data = encoder.encode(pin + salt + cleanMobile) // Include mobile number for uniqueness
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const pinHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
     // Generate unique farmer code with timestamp and random suffix to avoid conflicts
     const timestamp = Date.now().toString(36)

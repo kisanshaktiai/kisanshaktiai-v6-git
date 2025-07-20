@@ -80,9 +80,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verify PIN using bcrypt
-    const bcrypt = await import('https://deno.land/x/bcrypt@v0.4.1/mod.ts')
-    const isValidPin = await bcrypt.compare(pin, farmer.pin_hash)
+    // Verify PIN using the same hashing method as registration
+    const encoder = new TextEncoder()
+    const salt = 'kisan_shakti_pin_salt_2024' // Same salt as registration
+    const data = encoder.encode(pin + salt + cleanMobile)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    const isValidPin = computedHash === farmer.pin_hash
 
     if (!isValidPin) {
       // Increment login attempts
