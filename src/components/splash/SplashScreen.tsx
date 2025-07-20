@@ -117,7 +117,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-500"
-      style={{ backgroundColor: tenantBranding.backgroundColor }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
       {/* Logo and Branding */}
       <div className="text-center mb-8">

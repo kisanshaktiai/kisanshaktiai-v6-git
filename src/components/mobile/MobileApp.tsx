@@ -139,7 +139,7 @@ export const MobileApp: React.FC = () => {
   // Show loading while auth is being determined or app is initializing
   if (authLoading || !appInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">
