@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MobileApp } from '@/components/mobile/MobileApp';
-import { PhoneAuthScreen } from '@/components/auth/PhoneAuthScreen';
+import { EnhancedPhoneAuthScreen } from '@/components/auth/EnhancedPhoneAuthScreen';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useSelector } from 'react-redux';
@@ -35,7 +36,7 @@ const AppRoutes: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -48,7 +49,7 @@ const AppRoutes: React.FC = () => {
         element={
           isAuthenticated && onboardingCompleted ? 
             <Navigate to="/" replace /> : 
-            <PhoneAuthScreen onComplete={handleAuthComplete} />
+            <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />
         } 
       />
       <Route 
@@ -66,18 +67,20 @@ const AppRoutes: React.FC = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <Suspense fallback={
-          <div className="min-h-screen flex items-center justify-center">
-            <LoadingSpinner size="lg" />
-          </div>
-        }>
-          <div className="App">
-            <AppRoutes />
-            <Toaster />
-          </div>
-        </Suspense>
-      </QueryClientProvider>
+      <BrandingProvider>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-white">
+              <LoadingSpinner size="lg" />
+            </div>
+          }>
+            <div className="App">
+              <AppRoutes />
+              <Toaster />
+            </div>
+          </Suspense>
+        </QueryClientProvider>
+      </BrandingProvider>
     </ErrorBoundary>
   );
 }
