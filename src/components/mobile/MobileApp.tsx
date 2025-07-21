@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { useBranding } from '@/contexts/BrandingContext';
-import { EnhancedSplashScreen } from '@/components/splash/EnhancedSplashScreen';
+import { UpgradedSplashScreen } from '@/components/splash/UpgradedSplashScreen';
 import { MobileLayout } from './MobileLayout';
 
 // Import all page components - fix default imports
@@ -20,7 +19,6 @@ import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
   const { isAuthenticated } = useCustomAuth();
-  const { branding, loading: brandingLoading } = useBranding();
   const [showSplash, setShowSplash] = useState(true);
 
   const handleSplashComplete = () => {
@@ -32,19 +30,10 @@ export const MobileApp: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Always show splash screen first when app loads
-  if (showSplash || brandingLoading) {
-    return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
+  // Show splash screen first when app loads
+  if (showSplash) {
+    return <UpgradedSplashScreen onComplete={handleSplashComplete} />;
   }
-
-  // Apply tenant theming to body
-  useEffect(() => {
-    if (branding) {
-      document.body.style.setProperty('--tenant-primary', branding.primaryColor);
-      document.body.style.setProperty('--tenant-secondary', branding.secondaryColor);
-      document.body.style.setProperty('--tenant-accent', branding.accentColor);
-    }
-  }, [branding]);
 
   return (
     <MobileLayout>

@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Loader } from 'lucide-react';
-import { useBranding } from '@/contexts/BrandingContext';
+import { tenantCacheService } from '@/services/TenantCacheService';
+import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '@/store/slices/tenantSlice';
 
 interface EnhancedSplashScreenProps {
   onComplete: () => void;
@@ -12,23 +13,27 @@ interface EnhancedSplashScreenProps {
 export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onComplete }) => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const { branding, loading: brandingLoading } = useBranding();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [branding, setBranding] = useState({
+    primaryColor: '#8BC34A',
+    logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+    appName: 'KisanShakti AI',
+    tagline: 'INTELLIGENT AI GURU FOR FARMERS'
+  });
 
   const initSteps = [
-    { key: 'initializing', duration: 1000 },
-    { key: 'loading_branding', duration: 800 },
-    { key: 'preparing_services', duration: 600 },
-    { key: 'finalizing', duration: 400 }
+    { key: 'initializing', duration: 800 },
+    { key: 'loading_tenant_data', duration: 1000 },
+    { key: 'loading_branding', duration: 600 },
+    { key: 'preparing_services', duration: 400 },
+    { key: 'finalizing', duration: 200 }
   ];
 
   useEffect(() => {
-    if (!brandingLoading) {
-      initializeApp();
-    }
-  }, [brandingLoading]);
+    initializeApp();
+  }, []);
 
   const initializeApp = async () => {
     try {
@@ -37,6 +42,11 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         setCurrentStep(i);
         setStatus(t(`splash.${step.key}`));
         
+        // Load tenant data during the tenant data step
+        if (step.key === 'loading_tenant_data') {
+          await loadTenantData();
+        }
+        
         // Animate progress
         const startProgress = (i / initSteps.length) * 100;
         const endProgress = ((i + 1) / initSteps.length) * 100;
@@ -44,19 +54,56 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         await animateProgress(startProgress, endProgress, step.duration);
         
         // Small delay between steps
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
       setStatus(t('common.ready'));
       
       // Final delay before completing
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       onComplete();
 
     } catch (error) {
       console.error('Splash initialization error:', error);
       // Continue anyway after a short delay
       setTimeout(onComplete, 1000);
+    }
+  };
+
+  const loadTenantData = async () => {
+    try {
+      console.log('Loading tenant data...');
+      const tenantData = await tenantCacheService.loadTenantData();
+      
+      if (tenantData) {
+        // Update Redux store with tenant data
+        dispatch(setCurrentTenant({
+          id: tenantData.id,
+          name: tenantData.name,
+          slug: tenantData.slug,
+          type: tenantData.type,
+          status: tenantData.status,
+          subscription_plan: tenantData.subscription_plan as any,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+        
+        dispatch(setTenantBranding(tenantData.branding));
+        dispatch(setTenantFeatures(tenantData.features));
+        
+        // Update local branding state for the splash screen
+        setBranding({
+          primaryColor: tenantData.branding.primary_color,
+          logo: tenantData.branding.splash_screen_url || tenantData.branding.logo_url,
+          appName: tenantData.branding.app_name,
+          tagline: tenantData.branding.app_tagline
+        });
+        
+        console.log('Tenant data loaded and cached successfully');
+      }
+    } catch (error) {
+      console.error('Error loading tenant data:', error);
+      // Continue with default branding
     }
   };
 
@@ -83,14 +130,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
     });
   };
 
-  if (brandingLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-4 border-gray-300 border-t-green-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white relative overflow-hidden">
       {/* Background Pattern */}
@@ -98,9 +137,9 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         <div className="absolute top-10 left-10 w-20 h-20 rounded-full"
              style={{ backgroundColor: branding.primaryColor }}></div>
         <div className="absolute top-40 right-16 w-12 h-12 rounded-full"
-             style={{ backgroundColor: branding.accentColor }}></div>
+             style={{ backgroundColor: branding.primaryColor }}></div>
         <div className="absolute bottom-32 left-20 w-16 h-16 rounded-full"
-             style={{ backgroundColor: branding.secondaryColor }}></div>
+             style={{ backgroundColor: branding.primaryColor }}></div>
         <div className="absolute bottom-10 right-10 w-8 h-8 rounded-full"
              style={{ backgroundColor: branding.primaryColor }}></div>
       </div>
@@ -112,13 +151,13 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
           <div className="absolute inset-0 w-40 h-40 rounded-full border-4 opacity-20 animate-ping"
                style={{ borderColor: branding.primaryColor }}></div>
           <div className="absolute inset-2 w-36 h-36 rounded-full border-2 opacity-40 animate-pulse"
-               style={{ borderColor: branding.accentColor }}></div>
+               style={{ borderColor: branding.primaryColor }}></div>
           
           {/* Logo container */}
           <div className="w-40 h-40 mx-auto rounded-full bg-white shadow-2xl flex items-center justify-center relative z-10 border-4"
                style={{ borderColor: `${branding.primaryColor}20` }}>
             <img 
-              src={branding.splashLogo || branding.logo} 
+              src={branding.logo} 
               alt={branding.appName} 
               className="w-28 h-28 object-contain transition-all duration-500"
               onError={(e) => {
