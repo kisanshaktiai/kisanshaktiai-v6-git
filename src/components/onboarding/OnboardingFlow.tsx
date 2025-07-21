@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
@@ -13,7 +14,7 @@ type OnboardingStep = 'splash' | 'language' | 'auth';
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated: contextIsAuthenticated } = useAuth();
+  const { isAuthenticated: contextIsAuthenticated } = useCustomAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
