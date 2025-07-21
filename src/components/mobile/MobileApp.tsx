@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { UpgradedSplashScreen } from '@/components/splash/UpgradedSplashScreen';
+
 import { MobileLayout } from './MobileLayout';
 
 // Import all page components - fix default imports
@@ -19,20 +19,10 @@ import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
   const { isAuthenticated } = useCustomAuth();
-  const [showSplash, setShowSplash] = useState(true);
-
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-  };
 
   // Redirect to auth if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
-  }
-
-  // Show splash screen first when app loads
-  if (showSplash) {
-    return <UpgradedSplashScreen onComplete={handleSplashComplete} />;
   }
 
   return (

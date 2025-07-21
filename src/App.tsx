@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MobileApp } from '@/components/mobile/MobileApp';
-import { EnhancedPhoneAuthScreen } from '@/components/auth/EnhancedPhoneAuthScreen';
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useSelector } from 'react-redux';
@@ -50,7 +50,7 @@ const AppRoutes: React.FC = () => {
         element={
           isAuthenticated && onboardingCompleted ? 
             <Navigate to="/" replace /> : 
-            <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />
+            <OnboardingFlow />
         } 
       />
       <Route 
