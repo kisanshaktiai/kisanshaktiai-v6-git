@@ -1,26 +1,26 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
-import { PinAuthScreen } from '../auth/PinAuthScreen';
+import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated } = useCustomAuth();
-  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated: contextIsAuthenticated } = useAuth();
+  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
 
-  console.log('OnboardingFlow state:', { currentStep, isAuthenticated, onboardingCompleted });
+  // Use the most reliable source of authentication state
+  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
 
   // If user is already authenticated and onboarded, this component should not be rendered
   useEffect(() => {
@@ -51,7 +51,6 @@ export const OnboardingFlow: React.FC = () => {
   }, [i18n]);
 
   const handleSplashComplete = () => {
-    console.log('Splash completed, checking language preferences');
     setIsInitialized(true);
     
     // Check if language was already selected on this device
@@ -63,22 +62,18 @@ export const OnboardingFlow: React.FC = () => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
     if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
-      console.log('Showing language selection');
       setCurrentStep('language');
     } else {
       // Language recently selected, proceed to auth
-      console.log('Language already selected, proceeding to auth');
       setCurrentStep('auth');
     }
   };
 
   const handleLanguageComplete = () => {
-    console.log('Language selection completed, proceeding to auth');
     setCurrentStep('auth');
   };
 
   const handleAuthComplete = () => {
-    console.log('Auth completed, setting onboarding as completed');
     dispatch(setOnboardingCompleted());
   };
 
@@ -93,7 +88,7 @@ export const OnboardingFlow: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.initializing', 'Initializing...')}</p>
+          <p className="text-gray-600">{t('common.initializing')}</p>
         </div>
       </div>
     );
@@ -108,9 +103,9 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Authentication step - use PinAuthScreen which has better UX
+  // Authentication step - only show if not authenticated
   if (currentStep === 'auth') {
-    return <PinAuthScreen onComplete={handleAuthComplete} />;
+    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // Fallback - should not reach here

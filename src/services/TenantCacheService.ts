@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 
@@ -89,18 +90,40 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<TenantData | null> {
     try {
-      console.log('No tenant found, using default branding');
-      return {
-        id: '84911d40-aeb0-4c61-9332-49a624485318',
-        name: 'KisanShakti AI',
-        slug: 'kisanshakti',
-        type: 'agri_company',
-        status: 'active',
-        subscription_plan: 'Kisan_Basic',
-        branding: this.getDefaultBranding(),
-        features: this.getDefaultFeatures()
-      };
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('is_default', true)
+        .eq('status', 'active')
+        .single();
 
+      if (tenantError || !tenant) {
+        console.error('Default tenant not found:', tenantError);
+        return null;
+      }
+
+      const { data: branding } = await supabase
+        .from('tenant_branding')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+
+      const { data: features } = await supabase
+        .from('tenant_features')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        type: tenant.type,
+        status: tenant.status,
+        subscription_plan: tenant.subscription_plan,
+        branding: branding || this.getDefaultBranding(),
+        features: features || this.getDefaultFeatures()
+      };
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -108,17 +131,45 @@ export class TenantCacheService {
   }
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<TenantData | null> {
-    console.log('Fetching tenant from database:', tenantId);
-    return {
-      id: tenantId,
-      name: 'KisanShakti AI',
-      slug: 'kisanshakti',
-      type: 'agri_company',
-      status: 'active',
-      subscription_plan: 'Kisan_Basic',
-      branding: this.getDefaultBranding(),
-      features: this.getDefaultFeatures()
-    };
+    try {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .eq('status', 'active')
+        .single();
+
+      if (tenantError || !tenant) {
+        console.error('Tenant not found:', tenantError);
+        return null;
+      }
+
+      const { data: branding } = await supabase
+        .from('tenant_branding')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+
+      const { data: features } = await supabase
+        .from('tenant_features')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .single();
+
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        type: tenant.type,
+        status: tenant.status,
+        subscription_plan: tenant.subscription_plan,
+        branding: branding || this.getDefaultBranding(),
+        features: features || this.getDefaultFeatures()
+      };
+    } catch (error) {
+      console.error('Error fetching tenant from database:', error);
+      return null;
+    }
   }
 
   private async getCachedTenantData(tenantId: string): Promise<TenantData | null> {

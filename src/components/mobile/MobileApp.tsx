@@ -1,32 +1,54 @@
 
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { UpgradedSplashScreen } from '@/components/splash/UpgradedSplashScreen';
 import { MobileLayout } from './MobileLayout';
+
+// Import all page components - fix default imports
 import { MobileHome } from '@/pages/mobile/MobileHome';
 import { AiChat } from '@/pages/mobile/AiChat';
 import Weather from '@/pages/mobile/Weather';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { Market } from '@/pages/mobile/Market';
-import { Analytics } from '@/pages/mobile/Analytics';
 import { Profile } from '@/pages/mobile/Profile';
-import { Community } from '@/pages/mobile/Community';
+import { Analytics } from '@/pages/mobile/Analytics';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
+import { Community } from '@/pages/mobile/Community';
 import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
+  const { isAuthenticated } = useCustomAuth();
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  // Redirect to auth if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Show splash screen first when app loads
+  if (showSplash) {
+    return <UpgradedSplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return (
     <MobileLayout>
       <Routes>
-        <Route path="/" element={<MobileHome />} />
-        <Route path="/chat" element={<AiChat />} />
+        <Route index element={<MobileHome />} />
+        <Route path="/ai-chat" element={<AiChat />} />
         <Route path="/weather" element={<Weather />} />
-        <Route path="/lands" element={<MyLands />} />
+        <Route path="/my-lands" element={<MyLands />} />
         <Route path="/market" element={<Market />} />
-        <Route path="/analytics" element={<Analytics />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/crop-schedule" element={<CropSchedule />} />
         <Route path="/community" element={<Community />} />
-        <Route path="/schedule" element={<CropSchedule />} />
         <Route path="/satellite" element={<SatelliteMonitoring />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </MobileLayout>
   );
