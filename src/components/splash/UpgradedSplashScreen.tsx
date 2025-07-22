@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tenantCacheService } from '@/services/TenantCacheService';
 import type { TenantBrandingData } from '@/types/tenantCache';
+import { Button } from '@/components/ui/button';
 
 interface UpgradedSplashScreenProps {
   onComplete: () => void;
@@ -25,45 +26,13 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
   const [branding, setBranding] = useState<TenantBrandingData>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
   const [logoLoaded, setLogoLoaded] = useState(false);
-  const [initComplete, setInitComplete] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [showNextButton, setShowNextButton] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
     initializeTenantBranding();
-    animateProgress();
   }, []);
-
-  useEffect(() => {
-    if (initComplete && logoLoaded && progress >= 100) {
-      const exitDelay = 1000;
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(onComplete, 300);
-      }, exitDelay);
-
-      return () => clearTimeout(timer);
-    }
-  }, [initComplete, logoLoaded, progress, onComplete]);
-
-  const animateProgress = () => {
-    const duration = 2000;
-    const startTime = Date.now();
-
-    const updateProgress = () => {
-      const elapsed = Date.now() - startTime;
-      const progressValue = Math.min((elapsed / duration) * 100, 100);
-      
-      setProgress(progressValue);
-      
-      if (progressValue < 100) {
-        requestAnimationFrame(updateProgress);
-      }
-    };
-
-    requestAnimationFrame(updateProgress);
-  };
 
   const initializeTenantBranding = async () => {
     try {
@@ -82,7 +51,10 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
       console.error('[SplashScreen] Error loading branding:', error);
     } finally {
       setLoading(false);
-      setInitComplete(true);
+      // Show next button after a short delay for animation
+      setTimeout(() => {
+        setShowNextButton(true);
+      }, 1500);
     }
   };
 
@@ -94,6 +66,11 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
   const handleImageError = () => {
     console.warn('[SplashScreen] Logo load failed, using fallback');
     setLogoLoaded(true);
+  };
+
+  const handleNext = () => {
+    setIsVisible(false);
+    setTimeout(onComplete, 300);
   };
 
   useEffect(() => {
@@ -130,24 +107,24 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
       {/* Main Content */}
       <div className="z-10 text-center space-y-6 px-6 max-w-md w-full">
-        {/* Logo */}
+        {/* Logo with pulse animation */}
         <div 
           className={`w-36 h-36 mx-auto mb-8 relative transform transition-all duration-700 ${
-            isVisible ? 'scale-100 opacity-100' : 'scale-80 opacity-0'
+            isVisible ? 'scale-100 opacity-100 animate-pulse' : 'scale-80 opacity-0'
           }`}
-          style={{ transitionDelay: '200ms' }}
+          style={{ transitionDelay: '200ms', animationDuration: '2s' }}
         >
           {logoUrl ? (
             <>
               <img
                 src={logoUrl}
                 alt={branding.app_name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain rounded-2xl shadow-2xl"
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
               {!logoLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-2xl">
                   <div className="w-20 h-20 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"
                        style={{ borderTopColor: branding.primary_color }} />
                 </div>
@@ -155,7 +132,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
             </>
           ) : (
             <div 
-              className="w-full h-full rounded-3xl flex items-center justify-center shadow-xl"
+              className="w-full h-full rounded-3xl flex items-center justify-center shadow-xl animate-pulse"
               style={{ 
                 background: `linear-gradient(135deg, ${branding.primary_color}, ${branding.secondary_color})` 
               }}
@@ -167,7 +144,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
           )}
         </div>
 
-        {/* App Name */}
+        {/* App Name with slide-up animation */}
         <h1 
           className={`text-4xl font-bold tracking-tight transform transition-all duration-700 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
@@ -180,7 +157,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
           {branding.app_name}
         </h1>
         
-        {/* Tagline */}
+        {/* Tagline with slide-up animation */}
         <p 
           className={`text-lg font-medium px-4 leading-relaxed transform transition-all duration-700 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
@@ -193,33 +170,53 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
           {branding.app_tagline}
         </p>
 
-        {/* Progress Bar */}
-        <div 
-          className={`w-full max-w-xs mx-auto mt-12 transform transition-all duration-700 ${
-            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-          }`}
-          style={{ transitionDelay: '800ms' }}
-        >
-          <div className="relative">
-            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        {/* Loading indicator */}
+        {loading && (
+          <div 
+            className={`w-full max-w-xs mx-auto mt-12 transform transition-all duration-700 ${
+              isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+            }`}
+            style={{ transitionDelay: '800ms' }}
+          >
+            <div className="flex items-center justify-center space-x-2">
               <div 
-                className="h-full rounded-full relative overflow-hidden transition-all duration-300 ease-out"
-                style={{ 
-                  width: `${progress}%`,
-                  background: `linear-gradient(90deg, ${branding.primary_color}, ${branding.secondary_color})`
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 shimmer-animation" />
-              </div>
+                className="w-2 h-2 rounded-full animate-bounce"
+                style={{ backgroundColor: branding.primary_color, animationDelay: '0ms' }}
+              />
+              <div 
+                className="w-2 h-2 rounded-full animate-bounce"
+                style={{ backgroundColor: branding.primary_color, animationDelay: '150ms' }}
+              />
+              <div 
+                className="w-2 h-2 rounded-full animate-bounce"
+                style={{ backgroundColor: branding.primary_color, animationDelay: '300ms' }}
+              />
             </div>
-            
-            <div className="mt-3 text-center">
-              <span className="text-sm font-medium" style={{ color: branding.primary_color }}>
-                {Math.round(progress)}%
-              </span>
-            </div>
+            <p className="text-sm mt-2" style={{ color: branding.primary_color }}>
+              {t('splash.loading', { defaultValue: 'Loading...' })}
+            </p>
           </div>
-        </div>
+        )}
+
+        {/* Next Button */}
+        {showNextButton && !loading && (
+          <div 
+            className={`w-full max-w-xs mx-auto mt-12 transform transition-all duration-500 ${
+              showNextButton ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+            }`}
+          >
+            <Button
+              onClick={handleNext}
+              className="w-full py-3 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              style={{
+                backgroundColor: branding.primary_color,
+                color: 'white'
+              }}
+            >
+              {t('splash.next', { defaultValue: 'Get Started' })}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -233,19 +230,6 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
           {t('splash.version', { defaultValue: 'v1.0.0' })} • {t('splash.powered_by', { defaultValue: 'Powered by AI' })}
         </p>
       </div>
-
-      <style>
-        {`
-          @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-          
-          .shimmer-animation {
-            animation: shimmer 1.5s infinite;
-          }
-        `}
-      </style>
     </div>
   );
 };

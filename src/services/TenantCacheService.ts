@@ -64,9 +64,7 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      // Use explicit typing to avoid type inference issues
       const { data, error } = await supabase
-        //.from<BasicTenant>('tenants')
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('is_default', true)
@@ -77,7 +75,6 @@ export class TenantCacheService {
       if (error || !data) {
         console.log('Default tenant not found, trying first active tenant');
         
-        // Fallback: get first active tenant
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('tenants')
           .select('id, name, slug, type, status, subscription_plan')
@@ -90,10 +87,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return this.createTenantData(fallbackData as BasicTenant);
+        return this.createTenantData(fallbackData);
       }
 
-      return this.createTenantData(data as BasicTenant);
+      return this.createTenantData(data);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -102,7 +99,6 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
-      // Use explicit typing to avoid recursion
       const { data, error } = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
@@ -115,34 +111,48 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.createTenantData(data as BasicTenant);
+      return this.createTenantData(data);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private createTenantData(tenantRow: BasicTenant): SimpleTenantData {
+  private async createTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+    // Fetch tenant branding
+    const { data: brandingData } = await supabase
+      .from('tenant_branding')
+      .select('*')
+      .eq('tenant_id', tenantRow.id)
+      .single();
+
+    // Fetch tenant features
+    const { data: featuresData } = await supabase
+      .from('tenant_features')
+      .select('*')
+      .eq('tenant_id', tenantRow.id)
+      .single();
+
     const branding: TenantBrandingData = {
-      primary_color: '#8BC34A',
-      secondary_color: '#4CAF50',
-      accent_color: '#689F38',
-      background_color: '#FFFFFF',
-      text_color: '#1F2937',
-      app_name: tenantRow.name || 'KisanShakti AI',
-      app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
-      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
-      splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
+      primary_color: brandingData?.primary_color || '#8BC34A',
+      secondary_color: brandingData?.secondary_color || '#4CAF50',
+      accent_color: brandingData?.accent_color || '#689F38',
+      background_color: brandingData?.background_color || '#FFFFFF',
+      text_color: brandingData?.text_color || '#1F2937',
+      app_name: brandingData?.app_name || tenantRow.name || 'KisanShakti AI',
+      app_tagline: brandingData?.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
+      logo_url: brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+      splash_screen_url: brandingData?.splash_screen_url || brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
     const features: TenantFeaturesData = {
-      ai_chat: true,
-      weather_forecast: true,
-      marketplace: true,
-      community_forum: true,
-      satellite_imagery: true,
-      soil_testing: true,
-      basic_analytics: true
+      ai_chat: featuresData?.ai_chat ?? true,
+      weather_forecast: featuresData?.weather_forecast ?? true,
+      marketplace: featuresData?.marketplace ?? true,
+      community_forum: featuresData?.community_forum ?? true,
+      satellite_imagery: featuresData?.satellite_imagery ?? true,
+      soil_testing: featuresData?.soil_testing ?? true,
+      basic_analytics: featuresData?.basic_analytics ?? true
     };
 
     return {
