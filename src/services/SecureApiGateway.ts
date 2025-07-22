@@ -82,7 +82,7 @@ class SecureApiGateway {
     }
   }
 
-  async login(request: LoginRequest): Promise<{ success: boolean; error?: string }> => {
+  async login(request: LoginRequest): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await authApiService.login(request);
       
@@ -116,7 +116,7 @@ class SecureApiGateway {
     }
   }
 
-  async register(request: RegisterRequest): Promise<{ success: boolean; error?: string }> => {
+  async register(request: RegisterRequest): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await authApiService.register(request);
       
