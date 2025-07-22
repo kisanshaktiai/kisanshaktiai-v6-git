@@ -1,37 +1,53 @@
-
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { MobileLayout } from './MobileLayout';
-
-// Import all page components - fix default imports
-import { MobileHome } from '@/pages/mobile/MobileHome';
-import { AiChat } from '@/pages/mobile/AiChat';
-import Weather from '@/pages/mobile/Weather';
-import { MyLands } from '@/pages/mobile/MyLands';
-import { Market } from '@/pages/mobile/Market';
-import { Profile } from '@/pages/mobile/Profile';
-import { Analytics } from '@/pages/mobile/Analytics';
-import { CropSchedule } from '@/pages/mobile/CropSchedule';
-import { Community } from '@/pages/mobile/Community';
-import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { StatusBar } from './StatusBar';
+import { BottomNavigation } from './BottomNavigation';
+import { MobileHome } from '../home/MobileHome';
+import { Weather } from '../weather/Weather';
+import { MyLands } from '../lands/MyLands';
+import { Market } from '../market/Market';
+import { CropSchedule } from '../schedule/CropSchedule';
+import { Analytics } from '../analytics/Analytics';
+import { SatelliteMonitoring } from '../satellite/SatelliteMonitoring';
+import { AiChat } from '../ai-chat/AiChat';
+import { Community } from '../community/Community';
+import { Profile } from '../profile/Profile';
+import { useSplashScreen } from '@/hooks/useSplashScreen';
 
 export const MobileApp: React.FC = () => {
-  // No splash screen here - authenticated users go straight to the app
+  const { isSplashScreenVisible, hideSplashScreen } = useSplashScreen();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Simulate loading tenant data and hide splash screen
+    const loadData = async () => {
+      // Simulate data loading
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      hideSplashScreen();
+    };
+
+    loadData();
+  }, [hideSplashScreen]);
+
+  // Returning users skip the splash screen
   return (
-    <MobileLayout>
-      <Routes>
-        <Route index element={<MobileHome />} />
-        <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/weather" element={<Weather />} />
-        <Route path="/my-lands" element={<MyLands />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/crop-schedule" element={<CropSchedule />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/satellite" element={<SatelliteMonitoring />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </MobileLayout>
+    <div className="mobile-app h-full w-full">
+      <StatusBar />
+      <div className="mobile-content h-full overflow-auto">
+        <Routes>
+          <Route path="/" element={<MobileHome />} />
+          <Route path="/weather" element={<Weather />} />
+          <Route path="/lands" element={<MyLands />} />
+          <Route path="/market" element={<Market />} />
+          <Route path="/schedule" element={<CropSchedule />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/satellite" element={<SatelliteMonitoring />} />
+          <Route path="/ai-chat" element={<AiChat />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </div>
+      <BottomNavigation />
+    </div>
   );
 };

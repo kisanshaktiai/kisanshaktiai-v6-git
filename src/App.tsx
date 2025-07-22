@@ -1,85 +1,84 @@
+import React, { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
-import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { BrandingProvider } from '@/contexts/BrandingContext';
-import { MobileApp } from '@/components/mobile/MobileApp';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
-import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
-import './App.css';
+import { MobileApp } from '@/components/mobile/MobileApp';
+import { NotFound } from '@/components/ui/NotFound';
+import { useAuth } from '@/hooks/useAuth';
+import { setTenantId } from '@/store/slices/authSlice';
+import { TenantService } from '@/services/TenantService';
+import { useTenantContext } from '@/hooks/useTenantContext';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    },
-  },
-});
+function App() {
+  const { i18n } = useTranslation();
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, loading: loadingAuth } = useAuth();
+  const { onboardingCompleted } = useSelector((state: any) => state.auth);
+  const { tenantData, loading: loadingTenant } = useTenantContext();
 
-const AppRoutes: React.FC = () => {
-  const { isAuthenticated, loading } = useCustomAuth();
-  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  useEffect(() => {
+    const storedLanguage = localStorage.getItem('selectedLanguage');
+    if (storedLanguage) {
+      i18n.changeLanguage(storedLanguage);
+    }
 
-  // Always show loading while auth is being determined
-  if (loading) {
+    const initializeTenant = async () => {
+      try {
+        const tenantId = await TenantService.getInstance().getTenantId();
+        dispatch(setTenantId(tenantId));
+      } catch (error) {
+        console.error("Error initializing tenant:", error);
+      }
+    };
+
+    initializeTenant();
+  }, [i18n, dispatch]);
+
+  if (loadingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <span className="loading loading-dots loading-lg"></span>
       </div>
     );
   }
-
+  
   return (
-    <Routes>
-      <Route 
-        path="/onboarding" 
-        element={
-          isAuthenticated && onboardingCompleted ? 
-            <Navigate to="/" replace /> : 
-            <OnboardingFlow />
-        } 
-      />
-      <Route 
-        path="/*" 
-        element={
+    <div className="App">
+      <Routes>
+        <Route path="/" element={
           isAuthenticated && onboardingCompleted ? (
-            <ProtectedRoute>
-              <MobileApp />
-            </ProtectedRoute>
+            <Navigate to="/mobile" replace />
           ) : (
             <Navigate to="/onboarding" replace />
           )
-        } 
-      />
-    </Routes>
-  );
-};
+        } />
+        
+        <Route path="/onboarding" element={
+          isAuthenticated && onboardingCompleted ? (
+            <Navigate to="/mobile" replace />
+          ) : (
+            <OnboardingFlow />
+          )
+        } />
 
-function App() {
-  return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrandingProvider>
-          <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-white">
-              <LoadingSpinner size="lg" />
-            </div>
-          }>
-            <div className="App">
-              <AppRoutes />
-              <Toaster />
-            </div>
-          </Suspense>
-        </BrandingProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        {/* Protected routes */}
+        <Route path="/mobile/*" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} onboardingCompleted={onboardingCompleted}>
+            <MobileApp />
+          </ProtectedRoute>
+        } />
+
+        {/* Fallback routes */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </div>
   );
 }
 

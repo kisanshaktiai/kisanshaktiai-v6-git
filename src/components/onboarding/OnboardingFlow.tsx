@@ -7,7 +7,9 @@ import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { EnhancedSplashScreen } from '../splash/EnhancedSplashScreen';
 import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
-import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
+import { EnhancedPhoneAuthScreen } from '../auth/EnhancedPhoneAuthScreen';
+import { useBranding } from '@/contexts/BrandingContext';
+import { Loader } from 'lucide-react';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
@@ -16,6 +18,7 @@ export const OnboardingFlow: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, loading } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { branding, loadingBranding } = useBranding();
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -75,8 +78,8 @@ export const OnboardingFlow: React.FC = () => {
     dispatch(setOnboardingCompleted());
   };
 
-  // Show loading if auth is still being determined
-  if (loading) {
+  // Show loading if auth is still being determined or branding is loading
+  if (loading || loadingBranding) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <div className="text-center">
@@ -115,9 +118,16 @@ export const OnboardingFlow: React.FC = () => {
 
   // Authentication step - only show if not authenticated
   if (currentStep === 'auth' && !isAuthenticated) {
-    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
+    return <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // Fallback - should not reach here
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+      <div className="text-center">
+        <Loader className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">{t('common.redirecting')}</p>
+      </div>
+    </div>
+  );
 };
