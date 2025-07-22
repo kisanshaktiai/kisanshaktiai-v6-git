@@ -33,8 +33,9 @@ function App() {
       try {
         // Changed getTenantId to getTenantData since getTenantId doesn't exist
         const tenantData = await TenantService.getInstance().getTenantData();
-        if (tenantData && tenantData.id) {
-          dispatch(setTenantId(tenantData.id));
+        // Fix: access id via tenant property if it exists
+        if (tenantData && tenantData.tenant && tenantData.tenant.id) {
+          dispatch(setTenantId(tenantData.tenant.id));
         }
       } catch (error) {
         console.error("Error initializing tenant:", error);

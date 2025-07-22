@@ -5,17 +5,17 @@ import { StatusBar } from './StatusBar';
 import { BottomNavigation } from './BottomNavigation';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
 
-// Import pages from the pages directory
-import MobileHome from '@/pages/mobile/MobileHome';
+// Import pages with named exports instead of default exports
+import { MobileHome } from '@/pages/mobile/MobileHome';
 import Weather from '@/pages/mobile/Weather';
-import MyLands from '@/pages/mobile/MyLands';
-import Market from '@/pages/mobile/Market';
-import CropSchedule from '@/pages/mobile/CropSchedule';
-import Analytics from '@/pages/mobile/Analytics';
+import { MyLands } from '@/pages/mobile/MyLands';
+import { Market } from '@/pages/mobile/Market';
+import { CropSchedule } from '@/pages/mobile/CropSchedule';
+import { Analytics } from '@/pages/mobile/Analytics';
 import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
-import AiChat from '@/pages/mobile/AiChat';
-import Community from '@/pages/mobile/Community';
-import Profile from '@/pages/mobile/Profile';
+import { AiChat } from '@/pages/mobile/AiChat';
+import { Community } from '@/pages/mobile/Community';
+import { Profile } from '@/pages/mobile/Profile';
 
 export const MobileApp: React.FC = () => {
   const { isSplashScreenVisible, hideSplashScreen } = useSplashScreen();

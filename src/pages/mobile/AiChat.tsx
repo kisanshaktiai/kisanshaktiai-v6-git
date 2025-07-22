@@ -9,3 +9,5 @@ export const AiChat: React.FC = () => {
     </div>
   );
 };
+
+export default AiChat;
