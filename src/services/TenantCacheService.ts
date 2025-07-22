@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
@@ -64,12 +65,15 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      const { data, error } = await supabase
+      // Cast to any first to bypass complex Supabase type inference
+      const result = await supabase
         .from('tenants')
         .select('*')
         .eq('is_default', true)
         .eq('status', 'active')
-        .single();
+        .single() as any;
+
+      const { data, error } = result;
 
       if (error || !data) {
         console.error('Default tenant not found:', error);
@@ -95,12 +99,15 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
-      const { data, error } = await supabase
+      // Cast to any first to bypass complex Supabase type inference
+      const result = await supabase
         .from('tenants')
         .select('*')
         .eq('id', tenantId)
         .eq('status', 'active')
-        .single();
+        .single() as any;
+
+      const { data, error } = result;
 
       if (error || !data) {
         console.error('Tenant not found:', error);
