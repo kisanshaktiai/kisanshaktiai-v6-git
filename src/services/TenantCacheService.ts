@@ -16,13 +16,11 @@ export class TenantCacheService {
 
   async loadTenantData(): Promise<SimpleTenantData | null> {
     try {
-      // First check if we have a cached tenant ID
       const cachedTenantId = await secureStorage.get('current_tenant_id');
       
       if (cachedTenantId) {
         console.log('Found cached tenant ID:', cachedTenantId);
         
-        // Try to load cached tenant data
         const cachedTenant = await this.getCachedTenantData(cachedTenantId);
         if (cachedTenant) {
           console.log('Using cached tenant data');
@@ -30,7 +28,6 @@ export class TenantCacheService {
           return cachedTenant;
         }
         
-        // If cached data is missing, fetch from database
         const tenantData = await this.fetchTenantFromDatabase(cachedTenantId);
         if (tenantData) {
           await this.cacheTenantData(tenantData);
@@ -39,7 +36,6 @@ export class TenantCacheService {
         }
       }
 
-      // No cached tenant or cached tenant not found, fetch default tenant
       console.log('Loading default tenant');
       const defaultTenant = await this.fetchDefaultTenant();
       if (defaultTenant) {
@@ -70,7 +66,7 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.buildTenantData(tenant);
+      return this.createTenantData(tenant);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -91,16 +87,15 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.buildTenantData(tenant);
+      return this.createTenantData(tenant);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
   }
 
-  private buildTenantData(tenantRow: any): SimpleTenantData {
-    // Create default branding
-    const defaultBranding: TenantBrandingData = {
+  private createTenantData(tenantRow: any): SimpleTenantData {
+    const branding: TenantBrandingData = {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
       accent_color: '#689F38',
@@ -112,8 +107,7 @@ export class TenantCacheService {
       splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
-    // Create default features
-    const defaultFeatures: TenantFeaturesData = {
+    const features: TenantFeaturesData = {
       ai_chat: true,
       weather_forecast: true,
       marketplace: true,
@@ -123,19 +117,18 @@ export class TenantCacheService {
       basic_analytics: true
     };
 
-    // Build tenant data with explicit typing
-    const tenantData: SimpleTenantData = {
+    const result: SimpleTenantData = {
       id: tenantRow.id || '',
       name: tenantRow.name || 'KisanShakti AI',
       slug: tenantRow.slug || 'default',
       type: tenantRow.type || 'default',
       status: tenantRow.status || 'active',
       subscription_plan: tenantRow.subscription_plan || 'kisan',
-      branding: defaultBranding,
-      features: defaultFeatures
+      branding: branding,
+      features: features
     };
 
-    return tenantData;
+    return result;
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
