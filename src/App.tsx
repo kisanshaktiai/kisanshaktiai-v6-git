@@ -7,13 +7,11 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MobileApp } from '@/components/mobile/MobileApp';
-import { EnhancedPhoneAuthScreen } from '@/components/auth/EnhancedPhoneAuthScreen';
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { useDispatch } from 'react-redux';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -26,13 +24,8 @@ const queryClient = new QueryClient({
 });
 
 const AppRoutes: React.FC = () => {
-  const dispatch = useDispatch();
   const { isAuthenticated, loading } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
-
-  const handleAuthComplete = () => {
-    dispatch(setOnboardingCompleted());
-  };
 
   // Always show loading while auth is being determined
   if (loading) {
@@ -46,19 +39,23 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route 
-        path="/auth" 
+        path="/onboarding" 
         element={
           isAuthenticated && onboardingCompleted ? 
             <Navigate to="/" replace /> : 
-            <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />
+            <OnboardingFlow />
         } 
       />
       <Route 
         path="/*" 
         element={
-          <ProtectedRoute>
-            <MobileApp />
-          </ProtectedRoute>
+          isAuthenticated && onboardingCompleted ? (
+            <ProtectedRoute>
+              <MobileApp />
+            </ProtectedRoute>
+          ) : (
+            <Navigate to="/onboarding" replace />
+          )
         } 
       />
     </Routes>

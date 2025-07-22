@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { EnhancedSplashScreen } from '@/components/splash/EnhancedSplashScreen';
 import { MobileLayout } from './MobileLayout';
 
 // Import all page components - fix default imports
@@ -17,23 +16,7 @@ import { Community } from '@/pages/mobile/Community';
 import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
-  const { isAuthenticated } = useCustomAuth();
-  const [showSplash, setShowSplash] = useState(true);
-
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-  };
-
-  // Redirect to auth if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Show splash screen first when app loads
-  if (showSplash) {
-    return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
-  }
-
+  // No splash screen here - authenticated users go straight to the app
   return (
     <MobileLayout>
       <Routes>

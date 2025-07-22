@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/hooks/useAuth';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { EnhancedSplashScreen } from '../splash/EnhancedSplashScreen';
@@ -14,21 +14,11 @@ type OnboardingStep = 'splash' | 'language' | 'auth';
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated: contextIsAuthenticated } = useAuth();
-  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, loading } = useCustomAuth();
+  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Use the most reliable source of authentication state
-  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
-
-  // If user is already authenticated and onboarded, this component should not be rendered
-  useEffect(() => {
-    if (isAuthenticated && onboardingCompleted) {
-      console.log('User is already authenticated and onboarded, OnboardingFlow should not be shown');
-    }
-  }, [isAuthenticated, onboardingCompleted]);
 
   // Initialize app and check for existing language preference
   useEffect(() => {
@@ -54,7 +44,14 @@ export const OnboardingFlow: React.FC = () => {
   const handleSplashComplete = () => {
     setIsInitialized(true);
     
-    // Check if language was already selected on this device
+    // For returning users (authenticated), skip language and go to auth completion
+    if (isAuthenticated) {
+      console.log('Returning user detected, completing onboarding');
+      dispatch(setOnboardingCompleted());
+      return;
+    }
+    
+    // For first-time users, check language selection
     const savedLanguage = localStorage.getItem('selectedLanguage');
     const languageSelectedAt = localStorage.getItem('languageSelectedAt');
     
@@ -78,7 +75,19 @@ export const OnboardingFlow: React.FC = () => {
     dispatch(setOnboardingCompleted());
   };
 
-  // Show splash screen first
+  // Show loading if auth is still being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('common.initializing')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show splash screen first (always, for branding and tenant loading)
   if (currentStep === 'splash') {
     return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
   }
@@ -95,7 +104,7 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Language selection step
+  // Language selection step (only for first-time users or expired language selection)
   if (currentStep === 'language') {
     return (
       <EnhancedLanguageScreen 
@@ -105,7 +114,7 @@ export const OnboardingFlow: React.FC = () => {
   }
 
   // Authentication step - only show if not authenticated
-  if (currentStep === 'auth') {
+  if (currentStep === 'auth' && !isAuthenticated) {
     return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
