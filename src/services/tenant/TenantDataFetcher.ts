@@ -1,6 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+interface BasicTenantRow {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  subscription_plan: string;
+}
+
 export class TenantDataFetcher {
   static async fetchBrandingData(tenantId: string) {
     const { data } = await supabase
@@ -20,7 +29,7 @@ export class TenantDataFetcher {
     return data;
   }
 
-  static async fetchTenantByIdFromDb(tenantId: string) {
+  static async fetchTenantByIdFromDb(tenantId: string): Promise<BasicTenantRow | null> {
     const { data, error } = await supabase
       .from('tenants')
       .select('id, name, slug, type, status, subscription_plan')
@@ -33,11 +42,19 @@ export class TenantDataFetcher {
       return null;
     }
 
-    return data;
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      type: data.type,
+      status: data.status,
+      subscription_plan: data.subscription_plan
+    };
   }
 
-  static async fetchDefaultTenantFromDb() {
-    const { data, error } = await supabase
+  static async fetchDefaultTenantFromDb(): Promise<BasicTenantRow | null> {
+    // First try to get default tenant
+    const { data: defaultData, error: defaultError } = await supabase
       .from('tenants')
       .select('id, name, slug, type, status, subscription_plan')
       .eq('is_default', true)
@@ -45,24 +62,39 @@ export class TenantDataFetcher {
       .limit(1)
       .single();
       
-    if (error || !data) {
-      console.log('Default tenant not found, trying first active tenant');
-      
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type, status, subscription_plan')
-        .eq('status', 'active')
-        .limit(1)
-        .single();
-        
-      if (fallbackError || !fallbackData) {
-        console.error('No active tenants found');
-        return null;
-      }
-      
-      return fallbackData;
+    if (!defaultError && defaultData) {
+      return {
+        id: defaultData.id,
+        name: defaultData.name,
+        slug: defaultData.slug,
+        type: defaultData.type,
+        status: defaultData.status,
+        subscription_plan: defaultData.subscription_plan
+      };
     }
 
-    return data;
+    console.log('Default tenant not found, trying first active tenant');
+    
+    // Fallback to first active tenant
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('tenants')
+      .select('id, name, slug, type, status, subscription_plan')
+      .eq('status', 'active')
+      .limit(1)
+      .single();
+      
+    if (fallbackError || !fallbackData) {
+      console.error('No active tenants found');
+      return null;
+    }
+    
+    return {
+      id: fallbackData.id,
+      name: fallbackData.name,
+      slug: fallbackData.slug,
+      type: fallbackData.type,
+      status: fallbackData.status,
+      subscription_plan: fallbackData.subscription_plan
+    };
   }
 }
