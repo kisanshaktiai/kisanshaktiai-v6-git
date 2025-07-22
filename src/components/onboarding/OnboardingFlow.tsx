@@ -5,11 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
 import { EnhancedPhoneAuthScreen } from '../auth/EnhancedPhoneAuthScreen';
 
-type OnboardingStep = 'splash' | 'language' | 'auth';
+type OnboardingStep = 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
@@ -17,7 +16,7 @@ export const OnboardingFlow: React.FC = () => {
   const { isAuthenticated: contextIsAuthenticated } = useCustomAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('language');
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Use the most reliable source of authentication state
@@ -46,29 +45,23 @@ export const OnboardingFlow: React.FC = () => {
           console.error('Error applying saved language:', error);
         }
       }
+      
+      setIsInitialized(true);
+      
+      // Check if language was already selected on this device
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
+        setCurrentStep('language');
+      } else {
+        // Language recently selected, proceed to auth
+        setCurrentStep('auth');
+      }
     };
 
     initializeApp();
   }, [i18n]);
-
-  const handleSplashComplete = () => {
-    setIsInitialized(true);
-    
-    // Check if language was already selected on this device
-    const savedLanguage = localStorage.getItem('selectedLanguage');
-    const languageSelectedAt = localStorage.getItem('languageSelectedAt');
-    
-    // Show language selection if not previously selected or if it was selected more than 30 days ago
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
-      setCurrentStep('language');
-    } else {
-      // Language recently selected, proceed to auth
-      setCurrentStep('auth');
-    }
-  };
 
   const handleLanguageComplete = () => {
     setCurrentStep('auth');
@@ -77,11 +70,6 @@ export const OnboardingFlow: React.FC = () => {
   const handleAuthComplete = () => {
     dispatch(setOnboardingCompleted());
   };
-
-  // Show splash screen first
-  if (currentStep === 'splash') {
-    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
-  }
 
   // Show loading if not initialized
   if (!isInitialized) {

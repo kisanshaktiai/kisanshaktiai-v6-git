@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { tenantApiService } from '@/services/TenantApiService';
-import { offlineManager } from '@/services/OfflineManager';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseTenantDataOptions {
   enabled?: boolean;
@@ -27,7 +26,7 @@ export function useTenantData<T>(
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
-  const [fromCache, setFromCache] = useState(false);
+  const [fromCache] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!options.enabled && options.enabled !== undefined) {
@@ -39,18 +38,23 @@ export function useTenantData<T>(
     setError(null);
 
     try {
-      const result = await tenantApiService.queryWithTenant<T>(table, query, {
-        useCache: true,
-        cacheKey: options.cacheKey,
-        requireOnline: options.requireOnline
-      });
+      // Simple supabase query without tenant isolation for now
+      let queryBuilder = supabase.from(table).select(query.select || '*');
+      
+      // Apply filters
+      if (query.filters) {
+        Object.entries(query.filters).forEach(([key, value]) => {
+          queryBuilder = queryBuilder.eq(key, value);
+        });
+      }
 
-      if (result.error) {
-        setError(result.error);
+      const { data: result, error: queryError } = await queryBuilder;
+
+      if (queryError) {
+        setError(queryError);
         setData(null);
       } else {
-        setData(result.data);
-        setFromCache(result.fromCache || false);
+        setData(result);
       }
     } catch (err) {
       setError(err);
@@ -58,26 +62,13 @@ export function useTenantData<T>(
     } finally {
       setLoading(false);
     }
-  }, [table, JSON.stringify(query), options.cacheKey, options.requireOnline, options.enabled]);
+  }, [table, JSON.stringify(query), options.enabled]);
 
   useEffect(() => {
     if (options.refetchOnMount !== false) {
       fetchData();
     }
   }, [fetchData, options.refetchOnMount]);
-
-  // Listen for network status changes
-  useEffect(() => {
-    const handleNetworkChange = (event: any) => {
-      // Refetch when coming back online if we have cached data
-      if (event.detail.isOnline && fromCache) {
-        fetchData();
-      }
-    };
-
-    window.addEventListener('network-status-change', handleNetworkChange);
-    return () => window.removeEventListener('network-status-change', handleNetworkChange);
-  }, [fetchData, fromCache]);
 
   const mutate = useCallback((newData: T[]) => {
     setData(newData);
@@ -148,8 +139,27 @@ export function useTenantMutation() {
     setError(null);
 
     try {
-      const result = await tenantApiService.mutateWithTenant(operation, table, data);
+      let result;
       
+      switch (operation) {
+        case 'create':
+          result = await supabase.from(table).insert(data).select();
+          break;
+        case 'update':
+          result = await supabase.from(table)
+            .update(data)
+            .eq('id', data.id)
+            .select();
+          break;
+        case 'delete':
+          result = await supabase.from(table)
+            .delete()
+            .eq('id', data.id);
+          break;
+        default:
+          throw new Error(`Unknown operation: ${operation}`);
+      }
+
       if (result.error) {
         setError(result.error);
         return { success: false, data: null, error: result.error };
