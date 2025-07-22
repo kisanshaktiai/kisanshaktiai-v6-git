@@ -1,4 +1,3 @@
-
 import { secureStorage } from '@/services/storage/secureStorage';
 
 interface TenantBranding {
@@ -43,7 +42,7 @@ export class TenantCacheService {
   async loadTenantData(): Promise<TenantData | null> {
     try {
       // First check if we have a cached tenant ID
-      const cachedTenantId = await secureStorage.get('current_tenant_id');
+      const cachedTenantId = await secureStorage.getItem('current_tenant_id');
       
       if (cachedTenantId) {
         console.log('Found cached tenant ID:', cachedTenantId);
@@ -62,7 +61,7 @@ export class TenantCacheService {
       const defaultTenant = await this.fetchDefaultTenantFromAPI();
       if (defaultTenant) {
         await this.cacheTenantData(defaultTenant);
-        await secureStorage.set('current_tenant_id', defaultTenant.id);
+        await secureStorage.setItem('current_tenant_id', defaultTenant.id);
         this.currentTenant = defaultTenant;
         return defaultTenant;
       }
@@ -160,7 +159,7 @@ export class TenantCacheService {
         const tenantData = await this.fetchDefaultTenantFromAPI();
         if (tenantData) {
           await this.cacheTenantData(tenantData);
-          await secureStorage.set('current_tenant_id', tenantId);
+          await secureStorage.setItem('current_tenant_id', tenantId);
           this.currentTenant = tenantData;
           return true;
         }

@@ -1,3 +1,4 @@
+
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 
@@ -58,6 +59,19 @@ class SecureStorageService {
       }
     }
     return null;
+  }
+
+  // Add aliases for backward compatibility
+  async set(key: string, value: string): Promise<void> {
+    return this.setItem(key, value);
+  }
+
+  async get(key: string): Promise<string | null> {
+    return this.getItem(key);
+  }
+
+  async remove(key: string): Promise<void> {
+    return this.removeItem(key);
   }
 }
 

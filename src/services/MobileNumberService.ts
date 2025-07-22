@@ -1,9 +1,32 @@
-
 import { Capacitor } from '@capacitor/core';
-import { SimPlugin, SimCard } from '@jonz94/capacitor-sim';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
 import { customAuthService } from './customAuthService';
 import { supabase } from '@/integrations/supabase/client';
+
+// Import types only
+type SimCard = {
+  carrierName?: string;
+  displayName?: string;
+  isoCountryCode?: string;
+  mcc?: string;
+  mnc?: string;
+  isEmbedded?: boolean;
+  simSlotIndex?: number;
+  phoneNumber?: string;
+};
+
+interface SimPluginInterface {
+  getSimInfo(): Promise<{
+    cards: SimCard[];
+  }>;
+}
+
+// Declare a global variable for the plugin
+declare global {
+  interface Window {
+    CapacitorSim?: SimPluginInterface;
+  }
+}
 
 export interface SIMInfo {
   phoneNumber: string;
@@ -12,7 +35,7 @@ export interface SIMInfo {
   displayName: string;
   simSlotIndex: number;
   isEsim: boolean;
-  // Add missing properties
+  // Additional properties
   slot: number;
   isDefault: boolean;
   isActive: boolean;
@@ -78,12 +101,14 @@ export class MobileNumberService {
     }
 
     try {
-      if (!SimPlugin) {
+      // Check if the plugin is available in the window object
+      const simPlugin = window.CapacitorSim;
+      if (!simPlugin) {
         console.warn('SIM Plugin not available');
         return [];
       }
 
-      const result = await SimPlugin.getSimInfo();
+      const result = await simPlugin.getSimInfo();
       if (!result.cards || result.cards.length === 0) {
         return [];
       }
@@ -91,11 +116,11 @@ export class MobileNumberService {
       return result.cards.map((card: SimCard, index: number) => ({
         phoneNumber: card.phoneNumber || '',
         carrierName: card.carrierName || '',
-        countryCode: card.countryCode || 'IN',
+        countryCode: card.isoCountryCode || 'IN', // Using isoCountryCode instead of countryCode
         displayName: card.displayName || `SIM ${index + 1}`,
         simSlotIndex: card.simSlotIndex || index,
-        isEsim: card.isEsim || false,
-        // Add additional properties required by other components
+        isEsim: card.isEmbedded || false, // Using isEmbedded instead of isEsim
+        // Additional properties
         slot: index + 1,
         isDefault: index === 0, // Assuming first SIM is default
         isActive: true // Assuming all detected SIMs are active

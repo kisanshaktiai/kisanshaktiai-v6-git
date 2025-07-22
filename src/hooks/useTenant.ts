@@ -45,12 +45,12 @@ export const useTenant = () => {
       setError(null);
       
       // Try to get tenant ID from storage
-      let tenantId = await secureStorage.get(STORAGE_KEYS.TENANT_ID);
+      let tenantId = await secureStorage.getItem(STORAGE_KEYS.TENANT_ID);
       
       if (!tenantId) {
         // Default to the default tenant if none found
         tenantId = DEFAULT_TENANT_ID;
-        await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
+        await secureStorage.setItem(STORAGE_KEYS.TENANT_ID, tenantId);
       }
 
       console.log('Loading tenant data for ID:', tenantId);
@@ -146,7 +146,7 @@ export const useTenant = () => {
 
   const switchTenant = async (tenantId: string) => {
     try {
-      await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
+      await secureStorage.setItem(STORAGE_KEYS.TENANT_ID, tenantId);
       await loadTenantData();
     } catch (error) {
       console.error('Error switching tenant:', error);
