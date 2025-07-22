@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tenantCacheService } from '@/services/TenantCacheService';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface UpgradedSplashScreenProps {
   onComplete: () => void;
@@ -35,8 +34,11 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [initComplete, setInitComplete] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Trigger fade-in animation
+    setTimeout(() => setIsVisible(true), 50);
     initializeTenantBranding();
     animateProgress();
   }, []);
@@ -45,7 +47,8 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
     if (initComplete && logoLoaded && progress >= 100) {
       const exitDelay = Math.min(500, branding.splash_duration || 3000);
       const timer = setTimeout(() => {
-        onComplete();
+        setIsVisible(false);
+        setTimeout(onComplete, 300); // Wait for fade-out
       }, exitDelay);
 
       return () => clearTimeout(timer);
@@ -134,203 +137,170 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
   const logoUrl = branding.splash_screen_url || branding.logo_url;
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { duration: 0.5 }
-    },
-    exit: { 
-      opacity: 0,
-      scale: 0.95,
-      transition: { duration: 0.3 }
-    }
-  };
-
-  const logoVariants = {
-    hidden: { scale: 0.8, opacity: 0 },
-    visible: { 
-      scale: 1, 
-      opacity: 1,
-      transition: { 
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-        delay: 0.2
-      }
-    }
-  };
-
-  const textVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: (custom: number) => ({
-      y: 0,
-      opacity: 1,
-      transition: { delay: custom * 0.1 + 0.4 }
-    })
-  };
-
   return (
-    <AnimatePresence>
-      <motion.div 
-        className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
-        style={{ backgroundColor: '#FFFFFF' }}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-      >
-        {/* Premium gradient background */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(circle at 20% 30%, ${branding.primary_color}08 0%, transparent 40%),
-              radial-gradient(circle at 80% 70%, ${branding.secondary_color}08 0%, transparent 40%),
-              radial-gradient(circle at 50% 50%, ${branding.primary_color}03 0%, transparent 70%)
-            `
-          }}
-        />
+    <div 
+      className={`fixed inset-0 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-300 ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+      style={{ backgroundColor: '#FFFFFF' }}
+    >
+      {/* Premium gradient background */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(circle at 20% 30%, ${branding.primary_color}08 0%, transparent 40%),
+            radial-gradient(circle at 80% 70%, ${branding.secondary_color}08 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, ${branding.primary_color}03 0%, transparent 70%)
+          `
+        }}
+      />
 
-        {/* Animated particles for premium feel */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full opacity-20"
-              style={{
-                backgroundColor: i % 2 === 0 ? branding.primary_color : branding.secondary_color,
-                width: `${20 + i * 15}px`,
-                height: `${20 + i * 15}px`,
-                left: `${10 + i * 20}%`,
-                top: `${20 + i * 15}%`
+      {/* Animated particles for premium feel */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full opacity-20 animate-float"
+            style={{
+              backgroundColor: i % 2 === 0 ? branding.primary_color : branding.secondary_color,
+              width: `${20 + i * 15}px`,
+              height: `${20 + i * 15}px`,
+              left: `${10 + i * 20}%`,
+              top: `${20 + i * 15}%`,
+              animationDelay: `${i * 0.2}s`,
+              animationDuration: `${5 + i}s`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="z-10 text-center space-y-6 px-6 max-w-md w-full">
+        {/* Logo */}
+        <div 
+          className={`w-36 h-36 mx-auto mb-8 relative transform transition-all duration-700 ${
+            isVisible ? 'scale-100 opacity-100' : 'scale-80 opacity-0'
+          }`}
+          style={{ transitionDelay: '200ms' }}
+        >
+          {logoUrl ? (
+            <>
+              <img
+                src={logoUrl}
+                alt={branding.app_name}
+                className="w-full h-full object-contain"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+              {!logoLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"
+                       style={{ borderTopColor: branding.primary_color }} />
+                </div>
+              )}
+            </>
+          ) : (
+            <div 
+              className="w-full h-full rounded-3xl flex items-center justify-center shadow-xl"
+              style={{ 
+                background: `linear-gradient(135deg, ${branding.primary_color}, ${branding.secondary_color})` 
               }}
-              animate={{
-                y: [-20, 20, -20],
-                x: [-10, 10, -10],
-              }}
-              transition={{
-                duration: 5 + i,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.2
-              }}
-            />
-          ))}
+            >
+              <span className="text-white text-5xl font-bold">
+                {branding.app_name.charAt(0)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Main Content */}
-        <div className="z-10 text-center space-y-6 px-6 max-w-md w-full">
-          {/* Logo */}
-          <motion.div 
-            className="w-36 h-36 mx-auto mb-8 relative"
-            variants={logoVariants}
-          >
-            {logoUrl ? (
-              <>
-                <img
-                  src={logoUrl}
-                  alt={branding.app_name}
-                  className="w-full h-full object-contain"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-                {!logoLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-20 h-20 border-4 border-gray-200 border-t-transparent rounded-full animate-spin"
-                         style={{ borderTopColor: branding.primary_color }} />
-                  </div>
-                )}
-              </>
-            ) : (
+        {/* App Name */}
+        <h1 
+          className={`text-4xl font-bold tracking-tight transform transition-all duration-700 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          }`}
+          style={{ 
+            color: branding.primary_color,
+            transitionDelay: '400ms'
+          }}
+        >
+          {branding.app_name}
+        </h1>
+        
+        {/* Tagline */}
+        <p 
+          className={`text-gray-600 text-lg font-medium px-4 leading-relaxed transform transition-all duration-700 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          }`}
+          style={{ transitionDelay: '600ms' }}
+        >
+          {branding.app_tagline}
+        </p>
+
+        {/* Progress Bar */}
+        <div 
+          className={`w-full max-w-xs mx-auto mt-12 transform transition-all duration-700 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          }`}
+          style={{ transitionDelay: '800ms' }}
+        >
+          <div className="relative">
+            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div 
-                className="w-full h-full rounded-3xl flex items-center justify-center shadow-xl"
+                className="h-full rounded-full relative overflow-hidden transition-all duration-300 ease-out"
                 style={{ 
-                  background: `linear-gradient(135deg, ${branding.primary_color}, ${branding.secondary_color})` 
+                  width: `${progress}%`,
+                  background: `linear-gradient(90deg, ${branding.primary_color}, ${branding.secondary_color})`
                 }}
               >
-                <span className="text-white text-5xl font-bold">
-                  {branding.app_name.charAt(0)}
-                </span>
-              </div>
-            )}
-          </motion.div>
-
-          {/* App Name */}
-          <motion.h1 
-            className="text-4xl font-bold tracking-tight"
-            style={{ color: branding.primary_color }}
-            variants={textVariants}
-            custom={1}
-          >
-            {branding.app_name}
-          </motion.h1>
-          
-          {/* Tagline */}
-          <motion.p 
-            className="text-gray-600 text-lg font-medium px-4 leading-relaxed"
-            variants={textVariants}
-            custom={2}
-          >
-            {branding.app_tagline}
-          </motion.p>
-
-          {/* Progress Bar */}
-          <motion.div 
-            className="w-full max-w-xs mx-auto mt-12"
-            variants={textVariants}
-            custom={3}
-          >
-            <div className="relative">
-              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full rounded-full relative overflow-hidden"
-                  style={{ 
-                    width: `${progress}%`,
-                    background: `linear-gradient(90deg, ${branding.primary_color}, ${branding.secondary_color})`
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer" />
-                </motion.div>
-              </div>
-              
-              {/* Progress percentage */}
-              <div className="mt-3 text-center">
-                <span className="text-sm font-medium" style={{ color: branding.primary_color }}>
-                  {Math.round(progress)}%
-                </span>
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 shimmer-animation" />
               </div>
             </div>
-          </motion.div>
+            
+            {/* Progress percentage */}
+            <div className="mt-3 text-center">
+              <span className="text-sm font-medium" style={{ color: branding.primary_color }}>
+                {Math.round(progress)}%
+              </span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <motion.div 
-          className="absolute bottom-8 text-center w-full"
-          variants={textVariants}
-          custom={4}
-        >
-          <p className="text-xs text-gray-400">
-            {t('splash.version', { defaultValue: 'v1.0.0' })} • {t('splash.powered_by', { defaultValue: 'Powered by AI' })}
-          </p>
-        </motion.div>
+      {/* Footer */}
+      <div 
+        className={`absolute bottom-8 text-center w-full transform transition-all duration-700 ${
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}
+        style={{ transitionDelay: '1000ms' }}
+      >
+        <p className="text-xs text-gray-400">
+          {t('splash.version', { defaultValue: 'v1.0.0' })} • {t('splash.powered_by', { defaultValue: 'Powered by AI' })}
+        </p>
+      </div>
 
-        <style jsx>{`
+      <style>
+        {`
           @keyframes shimmer {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
           }
           
-          .animate-shimmer {
+          @keyframes float {
+            0%, 100% { transform: translateY(-20px) translateX(-10px); }
+            50% { transform: translateY(20px) translateX(10px); }
+          }
+          
+          .shimmer-animation {
             animation: shimmer 1.5s infinite;
           }
-        `}</style>
-      </motion.div>
-    </AnimatePresence>
+          
+          .animate-float {
+            animation: float ease-in-out infinite;
+          }
+        `}
+      </style>
+    </div>
   );
 };
