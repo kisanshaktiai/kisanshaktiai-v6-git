@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
-import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
+import { EnhancedSplashScreen } from '../splash/EnhancedSplashScreen';
+import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
 import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
@@ -79,7 +80,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Show splash screen first
   if (currentStep === 'splash') {
-    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
+    return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Show loading if not initialized
@@ -94,10 +95,10 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Location-based language selection step
+  // Language selection step
   if (currentStep === 'language') {
     return (
-      <LocationBasedLanguageScreen 
+      <EnhancedLanguageScreen 
         onNext={handleLanguageComplete}
       />
     );

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Loader } from 'lucide-react';
+import { Loader, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { tenantCacheService } from '@/services/TenantCacheService';
 import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '@/store/slices/tenantSlice';
 
@@ -15,6 +16,7 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [showNextButton, setShowNextButton] = useState(false);
   const [branding, setBranding] = useState({
     primaryColor: '#8BC34A',
     logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
@@ -58,14 +60,17 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
 
       setStatus(t('common.ready'));
       
-      // Final delay before completing
-      await new Promise(resolve => setTimeout(resolve, 300));
-      onComplete();
+      // Show Next button after completion
+      setTimeout(() => {
+        setShowNextButton(true);
+      }, 500);
 
     } catch (error) {
       console.error('Splash initialization error:', error);
-      // Continue anyway after a short delay
-      setTimeout(onComplete, 1000);
+      // Show Next button even if there's an error
+      setTimeout(() => {
+        setShowNextButton(true);
+      }, 1000);
     }
   };
 
@@ -129,6 +134,10 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
     });
   };
 
+  const handleNext = () => {
+    onComplete();
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white relative overflow-hidden">
       {/* Background Pattern */}
@@ -178,47 +187,67 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         </p>
       </div>
 
-      {/* Progress Section */}
-      <div className="w-full max-w-sm mb-8 z-10">
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
-          <div 
-            className="h-4 rounded-full transition-all duration-300 ease-out relative overflow-hidden"
-            style={{ 
-              width: `${progress}%`,
-              backgroundColor: branding.primaryColor 
-            }}
-          >
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+      {/* Progress Section - Hide when Next button is shown */}
+      {!showNextButton && (
+        <div className="w-full max-w-sm mb-8 z-10">
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
+            <div 
+              className="h-4 rounded-full transition-all duration-300 ease-out relative overflow-hidden"
+              style={{ 
+                width: `${progress}%`,
+                backgroundColor: branding.primaryColor 
+              }}
+            >
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Progress Percentage */}
+          <div className="text-center mb-4">
+            <span className="text-2xl font-bold" style={{ color: branding.primaryColor }}>
+              {progress}%
+            </span>
+            <span className="text-gray-500 ml-2">{t('splash.complete')}</span>
           </div>
         </div>
+      )}
 
-        {/* Progress Percentage */}
-        <div className="text-center mb-4">
-          <span className="text-2xl font-bold" style={{ color: branding.primaryColor }}>
-            {progress}%
-          </span>
-          <span className="text-gray-500 ml-2">{t('splash.complete')}</span>
+      {/* Status Text - Hide when Next button is shown */}
+      {!showNextButton && (
+        <div className="flex items-center space-x-3 text-gray-600 mb-12 z-10">
+          <Loader 
+            className="w-6 h-6 animate-spin" 
+            style={{ color: branding.primaryColor }} 
+          />
+          <span className="text-lg font-medium">{status}</span>
+          <div className="flex space-x-1">
+            <div className="w-2 h-2 rounded-full animate-bounce"
+                 style={{ backgroundColor: branding.primaryColor, animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce"
+                 style={{ backgroundColor: branding.primaryColor, animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 rounded-full animate-bounce"
+                 style={{ backgroundColor: branding.primaryColor, animationDelay: '300ms' }}></div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Status Text */}
-      <div className="flex items-center space-x-3 text-gray-600 mb-12 z-10">
-        <Loader 
-          className="w-6 h-6 animate-spin" 
-          style={{ color: branding.primaryColor }} 
-        />
-        <span className="text-lg font-medium">{status}</span>
-        <div className="flex space-x-1">
-          <div className="w-2 h-2 rounded-full animate-bounce"
-               style={{ backgroundColor: branding.primaryColor, animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 rounded-full animate-bounce"
-               style={{ backgroundColor: branding.primaryColor, animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 rounded-full animate-bounce"
-               style={{ backgroundColor: branding.primaryColor, animationDelay: '300ms' }}></div>
+      {/* Next Button - Show after splash completes */}
+      {showNextButton && (
+        <div className="w-full max-w-sm mb-12 z-10 animate-fade-in">
+          <Button 
+            onClick={handleNext}
+            className="w-full h-14 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+            style={{ backgroundColor: branding.primaryColor }}
+          >
+            <div className="flex items-center space-x-2">
+              <span>{t('common.get_started')}</span>
+              <ChevronRight className="w-5 h-5" />
+            </div>
+          </Button>
         </div>
-      </div>
+      )}
 
       {/* Version Info */}
       <div className="absolute bottom-8 text-sm text-gray-400 z-10">
