@@ -1,9 +1,43 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
-// Explicit type for database tenant row to avoid type inference issues
+// Flattened Tenant Branding Interface
+export interface FlatTenantBrandingData {
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  background_color: string;
+  text_color: string;
+  app_name: string;
+  app_tagline?: string;
+  logo_url?: string;
+  splash_screen_url?: string;
+}
+
+// Flattened Tenant Features Interface
+export interface FlatTenantFeaturesData {
+  ai_chat: boolean;
+  weather_forecast: boolean;
+  marketplace: boolean;
+  community_forum: boolean;
+  satellite_imagery: boolean;
+  soil_testing: boolean;
+  basic_analytics: boolean;
+}
+
+// Simplified Tenant Data Interface
+export interface SimpleTenantData {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  subscription_plan: string;
+  branding: FlatTenantBrandingData;
+  features: FlatTenantFeaturesData;
+}
+
+// Explicit type for database tenant row
 interface DatabaseTenantRow {
   id: string;
   name: string;
@@ -11,7 +45,7 @@ interface DatabaseTenantRow {
   type: string;
   status: string;
   subscription_plan: string;
-  [key: string]: any; // Allow other properties
+  [key: string]: any;
 }
 
 export class TenantCacheService {
@@ -28,17 +62,14 @@ export class TenantCacheService {
   async loadTenantData(): Promise<SimpleTenantData | null> {
     try {
       const cachedTenantId = await secureStorage.get('current_tenant_id');
-      
+
       if (cachedTenantId) {
-        console.log('Found cached tenant ID:', cachedTenantId);
-        
         const cachedTenant = await this.getCachedTenantData(cachedTenantId);
         if (cachedTenant) {
-          console.log('Using cached tenant data');
           this.currentTenant = cachedTenant;
           return cachedTenant;
         }
-        
+
         const tenantData = await this.fetchTenantFromDatabase(cachedTenantId);
         if (tenantData) {
           await this.cacheTenantData(tenantData);
@@ -47,7 +78,6 @@ export class TenantCacheService {
         }
       }
 
-      console.log('Loading default tenant');
       const defaultTenant = await this.fetchDefaultTenant();
       if (defaultTenant) {
         await this.cacheTenantData(defaultTenant);
@@ -64,108 +94,70 @@ export class TenantCacheService {
   }
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
-    try {
-      // Cast to any first to bypass complex Supabase type inference
-      const result = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('is_default', true)
-        .eq('status', 'active')
-        .single() as any;
+    const { data, error } = await supabase
+      .from<DatabaseTenantRow>('tenants')
+      .select('*')
+      .eq('is_default', true)
+      .eq('status', 'active')
+      .single();
 
-      const { data, error } = result;
-
-      if (error || !data) {
-        console.error('Default tenant not found:', error);
-        return null;
-      }
-
-      // Explicitly cast to our interface to avoid type inference issues
-      const tenantRow: DatabaseTenantRow = {
-        id: data.id || '',
-        name: data.name || 'KisanShakti AI',
-        slug: data.slug || 'default',
-        type: data.type || 'default',
-        status: data.status || 'active',
-        subscription_plan: data.subscription_plan || 'kisan'
-      };
-
-      return this.createTenantData(tenantRow);
-    } catch (error) {
-      console.error('Error fetching default tenant:', error);
+    if (error || !data) {
+      console.error('Default tenant not found:', error);
       return null;
     }
+
+    return this.createTenantData(data);
   }
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
-    try {
-      // Cast to any first to bypass complex Supabase type inference
-      const result = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', tenantId)
-        .eq('status', 'active')
-        .single() as any;
+    const { data, error } = await supabase
+      .from<DatabaseTenantRow>('tenants')
+      .select('*')
+      .eq('id', tenantId)
+      .eq('status', 'active')
+      .single();
 
-      const { data, error } = result;
-
-      if (error || !data) {
-        console.error('Tenant not found:', error);
-        return null;
-      }
-
-      // Explicitly cast to our interface to avoid type inference issues
-      const tenantRow: DatabaseTenantRow = {
-        id: data.id || '',
-        name: data.name || 'KisanShakti AI',
-        slug: data.slug || 'default',
-        type: data.type || 'default',
-        status: data.status || 'active',
-        subscription_plan: data.subscription_plan || 'kisan'
-      };
-
-      return this.createTenantData(tenantRow);
-    } catch (error) {
-      console.error('Error fetching tenant from database:', error);
+    if (error || !data) {
+      console.error('Tenant not found:', error);
       return null;
     }
+
+    return this.createTenantData(data);
   }
 
   private createTenantData(tenantRow: DatabaseTenantRow): SimpleTenantData {
-    const branding: TenantBrandingData = {
-      primary_color: '#8BC34A',
-      secondary_color: '#4CAF50',
-      accent_color: '#689F38',
-      background_color: '#FFFFFF',
-      text_color: '#1F2937',
-      app_name: 'KisanShakti AI',
-      app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
-      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
-      splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
+    const branding: FlatTenantBrandingData = {
+      primary_color: tenantRow.primary_color || '#8BC34A',
+      secondary_color: tenantRow.secondary_color || '#4CAF50',
+      accent_color: tenantRow.accent_color || '#689F38',
+      background_color: tenantRow.background_color || '#FFFFFF',
+      text_color: tenantRow.text_color || '#1F2937',
+      app_name: tenantRow.app_name || 'KisanShakti AI',
+      app_tagline: tenantRow.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
+      logo_url: tenantRow.logo_url,
+      splash_screen_url: tenantRow.splash_screen_url
     };
 
-    const features: TenantFeaturesData = {
-      ai_chat: true,
-      weather_forecast: true,
-      marketplace: true,
-      community_forum: true,
-      satellite_imagery: true,
-      soil_testing: true,
-      basic_analytics: true
+    const features: FlatTenantFeaturesData = {
+      ai_chat: tenantRow.ai_chat ?? true,
+      weather_forecast: tenantRow.weather_forecast ?? true,
+      marketplace: tenantRow.marketplace ?? true,
+      community_forum: tenantRow.community_forum ?? true,
+      satellite_imagery: tenantRow.satellite_imagery ?? false,
+      soil_testing: tenantRow.soil_testing ?? false,
+      basic_analytics: tenantRow.basic_analytics ?? true
     };
 
-    const result: SimpleTenantData = {
+    return {
       id: tenantRow.id,
       name: tenantRow.name,
       slug: tenantRow.slug,
       type: tenantRow.type,
       status: tenantRow.status,
       subscription_plan: tenantRow.subscription_plan,
-      branding: branding,
-      features: features
+      branding,
+      features
     };
-
-    return result;
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
@@ -181,7 +173,6 @@ export class TenantCacheService {
   private async cacheTenantData(tenantData: SimpleTenantData): Promise<void> {
     try {
       await secureStorage.setObject(`tenant_data_${tenantData.id}`, tenantData);
-      console.log('Tenant data cached successfully');
     } catch (error) {
       console.error('Error caching tenant data:', error);
     }
