@@ -1,7 +1,17 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
+
+// Explicit type for database tenant row to avoid type inference issues
+interface DatabaseTenantRow {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  subscription_plan: string;
+  [key: string]: any; // Allow other properties
+}
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
@@ -54,19 +64,29 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      const { data: tenant, error: tenantError } = await supabase
+      const { data, error } = await supabase
         .from('tenants')
         .select('*')
         .eq('is_default', true)
         .eq('status', 'active')
         .single();
 
-      if (tenantError || !tenant) {
-        console.error('Default tenant not found:', tenantError);
+      if (error || !data) {
+        console.error('Default tenant not found:', error);
         return null;
       }
 
-      return this.createTenantData(tenant);
+      // Explicitly cast to our interface to avoid type inference issues
+      const tenantRow: DatabaseTenantRow = {
+        id: data.id || '',
+        name: data.name || 'KisanShakti AI',
+        slug: data.slug || 'default',
+        type: data.type || 'default',
+        status: data.status || 'active',
+        subscription_plan: data.subscription_plan || 'kisan'
+      };
+
+      return this.createTenantData(tenantRow);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -75,26 +95,36 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
-      const { data: tenant, error: tenantError } = await supabase
+      const { data, error } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', tenantId)
         .eq('status', 'active')
         .single();
 
-      if (tenantError || !tenant) {
-        console.error('Tenant not found:', tenantError);
+      if (error || !data) {
+        console.error('Tenant not found:', error);
         return null;
       }
 
-      return this.createTenantData(tenant);
+      // Explicitly cast to our interface to avoid type inference issues
+      const tenantRow: DatabaseTenantRow = {
+        id: data.id || '',
+        name: data.name || 'KisanShakti AI',
+        slug: data.slug || 'default',
+        type: data.type || 'default',
+        status: data.status || 'active',
+        subscription_plan: data.subscription_plan || 'kisan'
+      };
+
+      return this.createTenantData(tenantRow);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
   }
 
-  private createTenantData(tenantRow: any): SimpleTenantData {
+  private createTenantData(tenantRow: DatabaseTenantRow): SimpleTenantData {
     const branding: TenantBrandingData = {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
@@ -118,12 +148,12 @@ export class TenantCacheService {
     };
 
     const result: SimpleTenantData = {
-      id: tenantRow.id || '',
-      name: tenantRow.name || 'KisanShakti AI',
-      slug: tenantRow.slug || 'default',
-      type: tenantRow.type || 'default',
-      status: tenantRow.status || 'active',
-      subscription_plan: tenantRow.subscription_plan || 'kisan',
+      id: tenantRow.id,
+      name: tenantRow.name,
+      slug: tenantRow.slug,
+      type: tenantRow.type,
+      status: tenantRow.status,
+      subscription_plan: tenantRow.subscription_plan,
       branding: branding,
       features: features
     };
