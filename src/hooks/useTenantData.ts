@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { tenantApiService } from '@/services/TenantApiService';
+import { offlineManager } from '@/services/OfflineManager';
 
 interface UseTenantDataOptions {
   enabled?: boolean;
@@ -10,24 +11,23 @@ interface UseTenantDataOptions {
 }
 
 interface UseTenantDataResult<T> {
-  data: T[] | null;
+  data: T | null;
   loading: boolean;
   error: any;
   fromCache: boolean;
   refetch: () => Promise<void>;
-  mutate: (newData: T[]) => void;
+  mutate: (newData: T) => void;
 }
 
-// Simplified hook without complex generics
-export function useTenantData<T = any>(
+export function useTenantData<T>(
   table: string,
   query: any = {},
   options: UseTenantDataOptions = {}
-): UseTenantDataResult<T> {
+): UseTenantDataResult<T[]> {
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
-  const [fromCache] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!options.enabled && options.enabled !== undefined) {
@@ -39,24 +39,18 @@ export function useTenantData<T = any>(
     setError(null);
 
     try {
-      // Use type assertion to avoid complex type inference
-      const queryBuilder = (supabase as any).from(table).select(query.select || '*');
-      
-      // Apply filters if they exist
-      let finalQuery = queryBuilder;
-      if (query.filters) {
-        Object.entries(query.filters).forEach(([key, value]) => {
-          finalQuery = finalQuery.eq(key, value);
-        });
-      }
+      const result = await tenantApiService.queryWithTenant<T>(table, query, {
+        useCache: true,
+        cacheKey: options.cacheKey,
+        requireOnline: options.requireOnline
+      });
 
-      const { data: result, error: queryError } = await finalQuery;
-
-      if (queryError) {
-        setError(queryError);
+      if (result.error) {
+        setError(result.error);
         setData(null);
       } else {
-        setData(result || []);
+        setData(result.data);
+        setFromCache(result.fromCache || false);
       }
     } catch (err) {
       setError(err);
@@ -64,13 +58,26 @@ export function useTenantData<T = any>(
     } finally {
       setLoading(false);
     }
-  }, [table, JSON.stringify(query), options.enabled]);
+  }, [table, JSON.stringify(query), options.cacheKey, options.requireOnline, options.enabled]);
 
   useEffect(() => {
     if (options.refetchOnMount !== false) {
       fetchData();
     }
   }, [fetchData, options.refetchOnMount]);
+
+  // Listen for network status changes
+  useEffect(() => {
+    const handleNetworkChange = (event: any) => {
+      // Refetch when coming back online if we have cached data
+      if (event.detail.isOnline && fromCache) {
+        fetchData();
+      }
+    };
+
+    window.addEventListener('network-status-change', handleNetworkChange);
+    return () => window.removeEventListener('network-status-change', handleNetworkChange);
+  }, [fetchData, fromCache]);
 
   const mutate = useCallback((newData: T[]) => {
     setData(newData);
@@ -141,28 +148,8 @@ export function useTenantMutation() {
     setError(null);
 
     try {
-      const supabaseTable = (supabase as any).from(table);
-      let result;
-
-      switch (operation) {
-        case 'create':
-          result = await supabaseTable.insert(data).select();
-          break;
-        case 'update':
-          result = await supabaseTable
-            .update(data)
-            .eq('id', data.id)
-            .select();
-          break;
-        case 'delete':
-          result = await supabaseTable
-            .delete()
-            .eq('id', data.id);
-          break;
-        default:
-          throw new Error(`Unknown operation: ${operation}`);
-      }
-
+      const result = await tenantApiService.mutateWithTenant(operation, table, data);
+      
       if (result.error) {
         setError(result.error);
         return { success: false, data: null, error: result.error };

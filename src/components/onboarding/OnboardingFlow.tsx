@@ -1,22 +1,22 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
+import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
-import { EnhancedPhoneAuthScreen } from '../auth/EnhancedPhoneAuthScreen';
+import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
-type OnboardingStep = 'language' | 'auth';
+type OnboardingStep = 'splash' | 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated: contextIsAuthenticated } = useCustomAuth();
+  const { isAuthenticated: contextIsAuthenticated } = useAuth();
   const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('language');
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Use the most reliable source of authentication state
@@ -45,23 +45,29 @@ export const OnboardingFlow: React.FC = () => {
           console.error('Error applying saved language:', error);
         }
       }
-      
-      setIsInitialized(true);
-      
-      // Check if language was already selected on this device
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
-        setCurrentStep('language');
-      } else {
-        // Language recently selected, proceed to auth
-        setCurrentStep('auth');
-      }
     };
 
     initializeApp();
   }, [i18n]);
+
+  const handleSplashComplete = () => {
+    setIsInitialized(true);
+    
+    // Check if language was already selected on this device
+    const savedLanguage = localStorage.getItem('selectedLanguage');
+    const languageSelectedAt = localStorage.getItem('languageSelectedAt');
+    
+    // Show language selection if not previously selected or if it was selected more than 30 days ago
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
+      setCurrentStep('language');
+    } else {
+      // Language recently selected, proceed to auth
+      setCurrentStep('auth');
+    }
+  };
 
   const handleLanguageComplete = () => {
     setCurrentStep('auth');
@@ -70,6 +76,11 @@ export const OnboardingFlow: React.FC = () => {
   const handleAuthComplete = () => {
     dispatch(setOnboardingCompleted());
   };
+
+  // Show splash screen first
+  if (currentStep === 'splash') {
+    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
+  }
 
   // Show loading if not initialized
   if (!isInitialized) {
@@ -94,7 +105,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Authentication step - only show if not authenticated
   if (currentStep === 'auth') {
-    return <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />;
+    return <PhoneAuthScreen onComplete={handleAuthComplete} />;
   }
 
   // Fallback - should not reach here
