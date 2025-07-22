@@ -1,18 +1,21 @@
+
 import React, { useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { StatusBar } from './StatusBar';
 import { BottomNavigation } from './BottomNavigation';
-import { MobileHome } from '../home/MobileHome';
-import { Weather } from '../weather/Weather';
-import { MyLands } from '../lands/MyLands';
-import { Market } from '../market/Market';
-import { CropSchedule } from '../schedule/CropSchedule';
-import { Analytics } from '../analytics/Analytics';
-import { SatelliteMonitoring } from '../satellite/SatelliteMonitoring';
-import { AiChat } from '../ai-chat/AiChat';
-import { Community } from '../community/Community';
-import { Profile } from '../profile/Profile';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
+
+// Import pages from the pages directory
+import MobileHome from '@/pages/mobile/MobileHome';
+import Weather from '@/pages/mobile/Weather';
+import MyLands from '@/pages/mobile/MyLands';
+import Market from '@/pages/mobile/Market';
+import CropSchedule from '@/pages/mobile/CropSchedule';
+import Analytics from '@/pages/mobile/Analytics';
+import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
+import AiChat from '@/pages/mobile/AiChat';
+import Community from '@/pages/mobile/Community';
+import Profile from '@/pages/mobile/Profile';
 
 export const MobileApp: React.FC = () => {
   const { isSplashScreenVisible, hideSplashScreen } = useSplashScreen();
@@ -29,10 +32,10 @@ export const MobileApp: React.FC = () => {
     loadData();
   }, [hideSplashScreen]);
 
-  // Returning users skip the splash screen
+  // Update StatusBar component to include isOnline prop
   return (
     <div className="mobile-app h-full w-full">
-      <StatusBar />
+      <StatusBar isOnline={true} />
       <div className="mobile-content h-full overflow-auto">
         <Routes>
           <Route path="/" element={<MobileHome />} />

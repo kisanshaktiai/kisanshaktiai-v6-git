@@ -1,35 +1,26 @@
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { WifiOff, Wifi } from 'lucide-react';
+import { Wifi, WifiOff, Battery, Signal } from 'lucide-react';
 
-interface StatusBarProps {
+export interface StatusBarProps {
   isOnline: boolean;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({ isOnline }) => {
-  const { t } = useTranslation();
+  const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="bg-primary text-primary-foreground px-4 py-2 safe-area-top">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <h1 className="text-lg font-semibold">KisanShaktiAI</h1>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {isOnline ? (
-            <>
-              <Wifi className="h-4 w-4" />
-              <span className="text-xs">{t('common.online')}</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-4 w-4" />
-              <span className="text-xs">{t('common.offline')}</span>
-            </>
-          )}
-        </div>
+    <div className="status-bar bg-background h-7 px-3 flex items-center justify-between text-xs text-foreground border-b border-border">
+      <div className="status-left">
+        {currentTime}
+      </div>
+      <div className="status-right flex items-center space-x-2">
+        {isOnline ? 
+          <Wifi className="w-3 h-3" /> : 
+          <WifiOff className="w-3 h-3 text-red-500" />
+        }
+        <Signal className="w-3 h-3" />
+        <Battery className="w-3 h-3" />
       </div>
     </div>
   );

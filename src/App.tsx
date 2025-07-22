@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,8 +31,11 @@ function App() {
 
     const initializeTenant = async () => {
       try {
-        const tenantId = await TenantService.getInstance().getTenantId();
-        dispatch(setTenantId(tenantId));
+        // Changed getTenantId to getTenantData since getTenantId doesn't exist
+        const tenantData = await TenantService.getInstance().getTenantData();
+        if (tenantData && tenantData.id) {
+          dispatch(setTenantId(tenantData.id));
+        }
       } catch (error) {
         console.error("Error initializing tenant:", error);
       }

@@ -18,7 +18,7 @@ export const OnboardingFlow: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, loading } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
-  const { branding, loadingBranding } = useBranding();
+  const { branding, loading: loadingBranding, error } = useBranding();
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
