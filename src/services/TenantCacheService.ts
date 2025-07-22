@@ -64,9 +64,15 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      // Use raw query to avoid complex type inference
-      const { data, error } = await supabase.rpc('get_default_tenant_simple');
-      
+      // Direct query to get default tenant instead of using RPC
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, slug, type, status, subscription_plan')
+        .eq('is_default', true)
+        .eq('status', 'active')
+        .limit(1)
+        .single();
+        
       if (error || !data) {
         console.error('Default tenant not found, falling back to first active tenant');
         
@@ -82,10 +88,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return this.createTenantData(fallbackQuery.data as DatabaseTenantRow);
+        return this.createTenantData(fallbackQuery.data as any);
       }
 
-      return this.createTenantData(data as DatabaseTenantRow);
+      return this.createTenantData(data as any);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -106,7 +112,7 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.createTenantData(data as DatabaseTenantRow);
+      return this.createTenantData(data as any);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
