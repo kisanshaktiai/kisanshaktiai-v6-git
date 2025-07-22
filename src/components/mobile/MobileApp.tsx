@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { UpgradedSplashScreen } from '@/components/splash/UpgradedSplashScreen';
+import { EnhancedSplashScreen } from '@/components/splash/EnhancedSplashScreen';
 import { MobileLayout } from './MobileLayout';
 
 // Import all page components - fix default imports
@@ -32,7 +31,7 @@ export const MobileApp: React.FC = () => {
 
   // Show splash screen first when app loads
   if (showSplash) {
-    return <UpgradedSplashScreen onComplete={handleSplashComplete} />;
+    return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
   }
 
   return (
