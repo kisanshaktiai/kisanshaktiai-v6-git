@@ -71,17 +71,16 @@ export class TenantDataFetcher {
         .maybeSingle();
         
       if (!defaultResponse.error && defaultResponse.data) {
-        // Extract properties individually to avoid complex type inference
-        const tenantData = defaultResponse.data;
-        const result: BasicTenantRow = {
-          id: String(tenantData.id),
-          name: String(tenantData.name),
-          slug: String(tenantData.slug),
-          type: String(tenantData.type),
-          status: String(tenantData.status),
-          subscription_plan: String(tenantData.subscription_plan)
+        // Create a simple object to avoid type inference issues
+        const tenant = defaultResponse.data;
+        return {
+          id: String(tenant.id),
+          name: String(tenant.name),
+          slug: String(tenant.slug),
+          type: String(tenant.type),
+          status: String(tenant.status),
+          subscription_plan: String(tenant.subscription_plan)
         };
-        return result;
       }
 
       console.log('Default tenant not found, trying first active tenant');
@@ -98,17 +97,16 @@ export class TenantDataFetcher {
         return null;
       }
       
-      // Extract properties individually to avoid complex type inference
-      const fallbackData = fallbackResponse.data;
-      const result: BasicTenantRow = {
-        id: String(fallbackData.id),
-        name: String(fallbackData.name),
-        slug: String(fallbackData.slug),
-        type: String(fallbackData.type),
-        status: String(fallbackData.status),
-        subscription_plan: String(fallbackData.subscription_plan)
+      // Create a simple object to avoid type inference issues
+      const tenant = fallbackResponse.data;
+      return {
+        id: String(tenant.id),
+        name: String(tenant.name),
+        slug: String(tenant.slug),
+        type: String(tenant.type),
+        status: String(tenant.status),
+        subscription_plan: String(tenant.subscription_plan)
       };
-      return result;
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
