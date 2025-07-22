@@ -66,7 +66,8 @@ export class TenantCacheService {
     try {
       // Use explicit typing to avoid type inference issues
       const { data, error } = await supabase
-        .from('tenants')
+        .from<BasicTenant>('tenants')
+        //.from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('is_default', true)
         .eq('status', 'active')
