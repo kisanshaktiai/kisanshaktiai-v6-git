@@ -1,44 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-
-// Simple, explicit types to avoid TypeScript inference issues
-export interface SimpleTenantBranding {
-  primary_color: string;
-  secondary_color: string;
-  accent_color: string;
-  background_color: string;
-  text_color: string;
-  app_name: string;
-  app_tagline: string;
-  logo_url: string;
-  splash_screen_url?: string;
-}
-
-export interface SimpleTenantFeatures {
-  ai_chat: boolean;
-  weather_forecast: boolean;
-  marketplace: boolean;
-  community_forum: boolean;
-  satellite_imagery: boolean;
-  soil_testing: boolean;
-  basic_analytics: boolean;
-}
-
-export interface SimpleTenant {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  status: string;
-  subscription_plan: string;
-  branding: SimpleTenantBranding;
-  features: SimpleTenantFeatures;
-}
+import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
-  private currentTenant: SimpleTenant | null = null;
+  private currentTenant: SimpleTenantData | null = null;
 
   static getInstance(): TenantCacheService {
     if (!TenantCacheService.instance) {
@@ -47,7 +14,7 @@ export class TenantCacheService {
     return TenantCacheService.instance;
   }
 
-  async loadTenantData(): Promise<SimpleTenant | null> {
+  async loadTenantData(): Promise<SimpleTenantData | null> {
     try {
       // First check if we have a cached tenant ID
       const cachedTenantId = await secureStorage.get('current_tenant_id');
@@ -89,7 +56,7 @@ export class TenantCacheService {
     }
   }
 
-  private async fetchDefaultTenant(): Promise<SimpleTenant | null> {
+  private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -103,14 +70,14 @@ export class TenantCacheService {
         return null;
       }
 
-      return await this.buildTenantData(tenant);
+      return this.buildTenantData(tenant);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
     }
   }
 
-  private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenant | null> {
+  private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -124,29 +91,16 @@ export class TenantCacheService {
         return null;
       }
 
-      return await this.buildTenantData(tenant);
+      return this.buildTenantData(tenant);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
   }
 
-  private async buildTenantData(tenantRow: any): Promise<SimpleTenant> {
-    // Fetch branding data
-    const brandingQuery = await supabase
-      .from('tenant_branding')
-      .select('*')
-      .eq('tenant_id', tenantRow.id)
-      .single();
-
-    // Fetch features data
-    const featuresQuery = await supabase
-      .from('tenant_features')
-      .select('*')
-      .eq('tenant_id', tenantRow.id)
-      .single();
-
-    const defaultBranding: SimpleTenantBranding = {
+  private buildTenantData(tenantRow: any): SimpleTenantData {
+    // Create default branding
+    const defaultBranding: TenantBrandingData = {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
       accent_color: '#689F38',
@@ -158,7 +112,8 @@ export class TenantCacheService {
       splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
-    const defaultFeatures: SimpleTenantFeatures = {
+    // Create default features
+    const defaultFeatures: TenantFeaturesData = {
       ai_chat: true,
       weather_forecast: true,
       marketplace: true,
@@ -168,54 +123,32 @@ export class TenantCacheService {
       basic_analytics: true
     };
 
-    const branding = brandingQuery.data || defaultBranding;
-    const features = featuresQuery.data || defaultFeatures;
-
-    const tenantBranding: SimpleTenantBranding = {
-      primary_color: branding.primary_color || defaultBranding.primary_color,
-      secondary_color: branding.secondary_color || defaultBranding.secondary_color,
-      accent_color: branding.accent_color || defaultBranding.accent_color,
-      background_color: branding.background_color || defaultBranding.background_color,
-      text_color: branding.text_color || defaultBranding.text_color,
-      app_name: branding.app_name || defaultBranding.app_name,
-      app_tagline: branding.app_tagline || defaultBranding.app_tagline,
-      logo_url: branding.logo_url || defaultBranding.logo_url,
-      splash_screen_url: branding.splash_screen_url || defaultBranding.splash_screen_url
+    // Build tenant data with explicit typing
+    const tenantData: SimpleTenantData = {
+      id: tenantRow.id || '',
+      name: tenantRow.name || 'KisanShakti AI',
+      slug: tenantRow.slug || 'default',
+      type: tenantRow.type || 'default',
+      status: tenantRow.status || 'active',
+      subscription_plan: tenantRow.subscription_plan || 'kisan',
+      branding: defaultBranding,
+      features: defaultFeatures
     };
 
-    const tenantFeatures: SimpleTenantFeatures = {
-      ai_chat: features.ai_chat ?? defaultFeatures.ai_chat,
-      weather_forecast: features.weather_forecast ?? defaultFeatures.weather_forecast,
-      marketplace: features.marketplace ?? defaultFeatures.marketplace,
-      community_forum: features.community_forum ?? defaultFeatures.community_forum,
-      satellite_imagery: features.satellite_imagery ?? defaultFeatures.satellite_imagery,
-      soil_testing: features.soil_testing ?? defaultFeatures.soil_testing,
-      basic_analytics: features.basic_analytics ?? defaultFeatures.basic_analytics
-    };
-
-    return {
-      id: tenantRow.id,
-      name: tenantRow.name,
-      slug: tenantRow.slug,
-      type: tenantRow.type,
-      status: tenantRow.status,
-      subscription_plan: tenantRow.subscription_plan,
-      branding: tenantBranding,
-      features: tenantFeatures
-    };
+    return tenantData;
   }
 
-  private async getCachedTenantData(tenantId: string): Promise<SimpleTenant | null> {
+  private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
     try {
       const cachedData = await secureStorage.getObject(`tenant_data_${tenantId}`);
-      return cachedData as SimpleTenant | null;
+      return cachedData as SimpleTenantData | null;
     } catch (error) {
       console.error('Error getting cached tenant data:', error);
       return null;
     }
   }
 
-  private async cacheTenantData(tenantData: SimpleTenant): Promise<void> {
+  private async cacheTenantData(tenantData: SimpleTenantData): Promise<void> {
     try {
       await secureStorage.setObject(`tenant_data_${tenantData.id}`, tenantData);
       console.log('Tenant data cached successfully');
@@ -224,7 +157,7 @@ export class TenantCacheService {
     }
   }
 
-  getCurrentTenant(): SimpleTenant | null {
+  getCurrentTenant(): SimpleTenantData | null {
     return this.currentTenant;
   }
 
