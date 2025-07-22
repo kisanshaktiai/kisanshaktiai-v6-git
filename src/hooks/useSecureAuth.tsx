@@ -1,10 +1,15 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { secureApiGateway, type AuthState } from '@/services/SecureApiGateway';
-import { tenantApiService } from '@/services/api/TenantApiService';
 import type { LoginRequest, RegisterRequest } from '@/services/api/AuthApiService';
 import type { FarmerProfile } from '@/services/api/FarmerApiService';
-import type { TenantInfo } from '@/services/api/TenantApiService';
+
+// Simple tenant info type
+interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface SecureAuthContextType extends AuthState {
   login: (request: LoginRequest) => Promise<{ success: boolean; error?: string }>;

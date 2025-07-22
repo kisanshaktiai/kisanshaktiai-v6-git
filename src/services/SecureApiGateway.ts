@@ -1,8 +1,14 @@
 
 import { authApiService, type LoginRequest, type RegisterRequest } from './api/AuthApiService';
-import { tenantApiService, type TenantInfo } from './api/TenantApiService';
 import { farmerApiService, type FarmerProfile } from './api/FarmerApiService';
 import { secureStorage } from './storage/secureStorage';
+
+// Simple tenant info type
+interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -54,11 +60,9 @@ class SecureApiGateway {
     
     // Set auth token for all API services
     farmerApiService.setAuthToken(token);
-    tenantApiService.setAuthToken(token);
     
     // Set tenant context
     farmerApiService.setTenantContext(tenantId);
-    tenantApiService.setTenantContext(tenantId);
   }
 
   private async validateSession(): Promise<boolean> {
@@ -78,7 +82,7 @@ class SecureApiGateway {
     }
   }
 
-  async login(request: LoginRequest): Promise<{ success: boolean; error?: string }> {
+  async login(request: LoginRequest): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authApiService.login(request);
       
@@ -112,7 +116,7 @@ class SecureApiGateway {
     }
   }
 
-  async register(request: RegisterRequest): Promise<{ success: boolean; error?: string }> {
+  async register(request: RegisterRequest): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authApiService.register(request);
       
@@ -175,7 +179,6 @@ class SecureApiGateway {
     
     // Clear API service contexts
     farmerApiService.setAuthToken('');
-    tenantApiService.setAuthToken('');
   }
 
   async checkFarmerExists(mobileNumber: string): Promise<boolean> {
@@ -190,11 +193,12 @@ class SecureApiGateway {
 
   async getDefaultTenant(): Promise<TenantInfo | null> {
     try {
-      const response = await tenantApiService.getDefaultTenant();
-      if (response.success && response.data) {
-        return response.data;
-      }
-      return null;
+      // Return a default tenant for now
+      return {
+        id: 'default-tenant',
+        name: 'KisanShakti AI',
+        slug: 'default'
+      };
     } catch (error) {
       console.error('Get default tenant error:', error);
       return null;
@@ -221,10 +225,6 @@ class SecureApiGateway {
   // API Service Getters
   getFarmerApi() {
     return farmerApiService;
-  }
-
-  getTenantApi() {
-    return tenantApiService;
   }
 }
 

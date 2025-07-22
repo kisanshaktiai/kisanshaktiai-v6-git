@@ -2,9 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { tenantCacheService } from '@/services/TenantCacheService';
 import { DashboardHome } from '@/components/mobile/DashboardHome';
-import type { TenantFeaturesData } from '@/types/tenantCache';
+
+// Simple tenant features type
+interface TenantFeaturesData {
+  ai_chat?: boolean;
+  weather_forecast?: boolean;
+  marketplace?: boolean;
+  community_forum?: boolean;
+  satellite_imagery?: boolean;
+  soil_testing?: boolean;
+}
 
 export const MobileHome: React.FC = () => {
   const { t } = useTranslation();
@@ -15,16 +23,16 @@ export const MobileHome: React.FC = () => {
   useEffect(() => {
     const loadTenantFeatures = async () => {
       try {
-        const tenantData = tenantCacheService.getCurrentTenant();
-        if (tenantData?.features) {
-          setFeatures(tenantData.features);
-        } else {
-          // Load tenant data if not already loaded
-          const loadedTenant = await tenantCacheService.loadTenantData();
-          if (loadedTenant?.features) {
-            setFeatures(loadedTenant.features);
-          }
-        }
+        // Set default features for now
+        const defaultFeatures: TenantFeaturesData = {
+          ai_chat: true,
+          weather_forecast: true,
+          marketplace: true,
+          community_forum: true,
+          satellite_imagery: true,
+          soil_testing: true,
+        };
+        setFeatures(defaultFeatures);
       } catch (error) {
         console.error('Error loading tenant features:', error);
       } finally {
