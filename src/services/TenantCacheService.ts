@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
-// Simplified tenant interface to avoid type recursion
-interface DatabaseTenant {
+// Simple interface to avoid type recursion
+interface BasicTenant {
   id: string;
   name: string;
   slug: string;
@@ -64,34 +64,35 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      // Direct query to get default tenant
+      // Use explicit typing to avoid type inference issues
       const { data, error } = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('is_default', true)
         .eq('status', 'active')
         .limit(1)
-        .maybeSingle();
+        .single();
         
       if (error || !data) {
-        console.error('Default tenant not found, falling back to first active tenant');
+        console.log('Default tenant not found, trying first active tenant');
         
         // Fallback: get first active tenant
-        const fallbackQuery = await supabase
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from('tenants')
           .select('id, name, slug, type, status, subscription_plan')
           .eq('status', 'active')
           .limit(1)
-          .maybeSingle();
+          .single();
           
-        if (fallbackQuery.error || !fallbackQuery.data) {
+        if (fallbackError || !fallbackData) {
+          console.error('No active tenants found');
           return null;
         }
         
-        return this.createTenantData(fallbackQuery.data);
+        return this.createTenantData(fallbackData as BasicTenant);
       }
 
-      return this.createTenantData(data);
+      return this.createTenantData(data as BasicTenant);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -100,26 +101,27 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
+      // Use explicit typing to avoid recursion
       const { data, error } = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('id', tenantId)
         .eq('status', 'active')
-        .maybeSingle();
+        .single();
 
       if (error || !data) {
         console.error('Tenant not found:', error);
         return null;
       }
 
-      return this.createTenantData(data);
+      return this.createTenantData(data as BasicTenant);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private createTenantData(tenantRow: DatabaseTenant): SimpleTenantData {
+  private createTenantData(tenantRow: BasicTenant): SimpleTenantData {
     const branding: TenantBrandingData = {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
