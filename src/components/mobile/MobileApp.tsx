@@ -5,7 +5,7 @@ import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { UpgradedSplashScreen } from '@/components/splash/UpgradedSplashScreen';
 import { MobileLayout } from './MobileLayout';
 
-// Import all page components - fix default imports
+// Import all page components
 import { MobileHome } from '@/pages/mobile/MobileHome';
 import { AiChat } from '@/pages/mobile/AiChat';
 import Weather from '@/pages/mobile/Weather';
@@ -18,12 +18,24 @@ import { Community } from '@/pages/mobile/Community';
 import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 
 export const MobileApp: React.FC = () => {
-  const { isAuthenticated } = useCustomAuth();
+  const { isAuthenticated, loading } = useCustomAuth();
   const [showSplash, setShowSplash] = useState(true);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
+
+  // Show loading while auth is being checked
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Redirect to auth if not authenticated
   if (!isAuthenticated) {

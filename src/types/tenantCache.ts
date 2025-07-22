@@ -1,5 +1,4 @@
 
-// Simple tenant cache types - separated to avoid circular references
 export interface TenantBrandingData {
   primary_color: string;
   secondary_color: string;
@@ -9,7 +8,7 @@ export interface TenantBrandingData {
   app_name: string;
   app_tagline: string;
   logo_url: string;
-  splash_screen_url?: string;
+  splash_screen_url: string;
 }
 
 export interface TenantFeaturesData {

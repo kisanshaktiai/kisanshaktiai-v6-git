@@ -1,37 +1,28 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tenantApiService } from '@/services/api/TenantApiService';
-import { getCurrentApiConfig } from '@/config/apiGateway';
+import { tenantCacheService } from '@/services/TenantCacheService';
+import type { TenantBrandingData } from '@/types/tenantCache';
 
 interface UpgradedSplashScreenProps {
   onComplete: () => void;
 }
 
-interface TenantBranding {
-  primary_color: string;
-  secondary_color: string;
-  app_name: string;
-  app_tagline: string;
-  logo_url: string;
-  splash_screen_url?: string;
-  splash_animation?: 'fade' | 'scale' | 'slide';
-  splash_duration?: number;
-}
-
-const DEFAULT_BRANDING: TenantBranding = {
+const DEFAULT_BRANDING: TenantBrandingData = {
   primary_color: '#8BC34A',
   secondary_color: '#4CAF50',
+  accent_color: '#689F38',
+  background_color: '#FFFFFF',
+  text_color: '#1F2937',
   app_name: 'KisanShakti AI',
   app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
   logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
-  splash_animation: 'scale',
-  splash_duration: 3000
+  splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
 };
 
 export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onComplete }) => {
-  const { t, i18n } = useTranslation();
-  const [branding, setBranding] = useState<TenantBranding>(DEFAULT_BRANDING);
+  const { t } = useTranslation();
+  const [branding, setBranding] = useState<TenantBrandingData>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [initComplete, setInitComplete] = useState(false);
@@ -46,7 +37,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
   useEffect(() => {
     if (initComplete && logoLoaded && progress >= 100) {
-      const exitDelay = Math.min(500, branding.splash_duration || 3000);
+      const exitDelay = 1000;
       const timer = setTimeout(() => {
         setIsVisible(false);
         setTimeout(onComplete, 300);
@@ -54,7 +45,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
       return () => clearTimeout(timer);
     }
-  }, [initComplete, logoLoaded, progress, branding.splash_duration, onComplete]);
+  }, [initComplete, logoLoaded, progress, onComplete]);
 
   const animateProgress = () => {
     const duration = 2000;
@@ -76,44 +67,19 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
   const initializeTenantBranding = async () => {
     try {
-      console.log('[SplashScreen] Loading tenant branding via API...');
+      console.log('[SplashScreen] Loading tenant branding...');
       
-      // Try to load branding from API Gateway first
-      const apiConfig = getCurrentApiConfig();
-      if (apiConfig && getCurrentApiConfig()) {
-        try {
-          const brandingResponse = await tenantApiService.getTenantBranding('default');
-          
-          if (brandingResponse.success && brandingResponse.data) {
-            setBranding({
-              ...DEFAULT_BRANDING,
-              ...brandingResponse.data
-            });
-            console.log('[SplashScreen] API branding loaded successfully');
-          } else {
-            console.log('[SplashScreen] API branding failed, using default');
-          }
-        } catch (apiError) {
-          console.warn('[SplashScreen] API request failed:', apiError);
-        }
-      }
+      const tenantData = await tenantCacheService.loadTenantData();
       
-      // Fallback to local cache service if API fails
-      if (branding === DEFAULT_BRANDING) {
-        const { tenantCacheService } = await import('@/services/TenantCacheService');
-        const tenantData = await tenantCacheService.loadTenantData();
-        
-        if (tenantData?.branding) {
-          setBranding({
-            ...DEFAULT_BRANDING,
-            ...tenantData.branding
-          });
-          console.log('[SplashScreen] Cache branding loaded successfully');
-        }
+      if (tenantData?.branding) {
+        setBranding(tenantData.branding);
+        console.log('[SplashScreen] Tenant branding loaded successfully');
+      } else {
+        console.log('[SplashScreen] Using default branding');
       }
       
     } catch (error) {
-      console.error('[SplashScreen] Critical error:', error);
+      console.error('[SplashScreen] Error loading branding:', error);
     } finally {
       setLoading(false);
       setInitComplete(true);
@@ -148,7 +114,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
       className={`fixed inset-0 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-300 ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
-      style={{ backgroundColor: '#FFFFFF' }}
+      style={{ backgroundColor: branding.background_color }}
     >
       {/* Premium gradient background */}
       <div 
@@ -161,25 +127,6 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
           `
         }}
       />
-
-      {/* Animated particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full opacity-20 animate-float"
-            style={{
-              backgroundColor: i % 2 === 0 ? branding.primary_color : branding.secondary_color,
-              width: `${20 + i * 15}px`,
-              height: `${20 + i * 15}px`,
-              left: `${10 + i * 20}%`,
-              top: `${20 + i * 15}%`,
-              animationDelay: `${i * 0.2}s`,
-              animationDuration: `${5 + i}s`
-            }}
-          />
-        ))}
-      </div>
 
       {/* Main Content */}
       <div className="z-10 text-center space-y-6 px-6 max-w-md w-full">
@@ -235,10 +182,13 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
         
         {/* Tagline */}
         <p 
-          className={`text-gray-600 text-lg font-medium px-4 leading-relaxed transform transition-all duration-700 ${
+          className={`text-lg font-medium px-4 leading-relaxed transform transition-all duration-700 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           }`}
-          style={{ transitionDelay: '600ms' }}
+          style={{ 
+            color: branding.text_color,
+            transitionDelay: '600ms' 
+          }}
         >
           {branding.app_tagline}
         </p>
@@ -291,17 +241,8 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
             100% { transform: translateX(100%); }
           }
           
-          @keyframes float {
-            0%, 100% { transform: translateY(-20px) translateX(-10px); }
-            50% { transform: translateY(20px) translateX(10px); }
-          }
-          
           .shimmer-animation {
             animation: shimmer 1.5s infinite;
-          }
-          
-          .animate-float {
-            animation: float ease-in-out infinite;
           }
         `}
       </style>

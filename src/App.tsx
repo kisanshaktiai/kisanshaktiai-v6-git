@@ -1,89 +1,71 @@
 
-import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { BrandingProvider } from '@/contexts/BrandingContext';
-import { MobileApp } from '@/components/mobile/MobileApp';
-import { EnhancedPhoneAuthScreen } from '@/components/auth/EnhancedPhoneAuthScreen';
-import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
-import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { useDispatch } from 'react-redux';
-import './App.css';
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { MobileApp } from "@/components/mobile/MobileApp";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
+import "./App.css";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-const AppRoutes: React.FC = () => {
-  const dispatch = useDispatch();
-  const { isAuthenticated, loading } = useCustomAuth();
+const App = () => {
+  const { isAuthenticated } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
 
-  const handleAuthComplete = () => {
-    dispatch(setOnboardingCompleted());
-  };
-
-  // Always show loading while auth is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
   return (
-    <Routes>
-      <Route 
-        path="/auth" 
-        element={
-          isAuthenticated && onboardingCompleted ? 
-            <Navigate to="/" replace /> : 
-            <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />
-        } 
-      />
-      <Route 
-        path="/*" 
-        element={
-          <ProtectedRoute>
-            <MobileApp />
-          </ProtectedRoute>
-        } 
-      />
-    </Routes>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="min-h-screen bg-background font-sans antialiased">
+          <Routes>
+            {/* Auth/Onboarding Route */}
+            <Route 
+              path="/auth" 
+              element={
+                isAuthenticated && onboardingCompleted ? (
+                  <Navigate to="/app" replace />
+                ) : (
+                  <OnboardingFlow />
+                )
+              } 
+            />
+            
+            {/* Main App Route */}
+            <Route 
+              path="/app/*" 
+              element={
+                isAuthenticated && onboardingCompleted ? (
+                  <MobileApp />
+                ) : (
+                  <Navigate to="/auth" replace />
+                )
+              } 
+            />
+            
+            {/* Root redirect */}
+            <Route 
+              path="/" 
+              element={
+                isAuthenticated && onboardingCompleted ? (
+                  <Navigate to="/app" replace />
+                ) : (
+                  <Navigate to="/auth" replace />
+                )
+              } 
+            />
+            
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          
+          <Toaster />
+        </div>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <BrandingProvider>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-white">
-              <LoadingSpinner size="lg" />
-            </div>
-          }>
-            <div className="App">
-              <AppRoutes />
-              <Toaster />
-            </div>
-          </Suspense>
-        </QueryClientProvider>
-      </BrandingProvider>
-    </ErrorBoundary>
-  );
-}
 
 export default App;
