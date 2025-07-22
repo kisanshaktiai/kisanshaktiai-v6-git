@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 
-interface TenantBranding {
+interface SimpleTenantBranding {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -14,7 +14,7 @@ interface TenantBranding {
   splash_screen_url?: string;
 }
 
-interface TenantFeatures {
+interface SimpleTenantFeatures {
   ai_chat: boolean;
   weather_forecast: boolean;
   marketplace: boolean;
@@ -24,20 +24,20 @@ interface TenantFeatures {
   basic_analytics: boolean;
 }
 
-interface TenantData {
+interface SimpleTenantData {
   id: string;
   name: string;
   slug: string;
   type: string;
   status: string;
   subscription_plan: string;
-  branding: TenantBranding;
-  features: TenantFeatures;
+  branding: SimpleTenantBranding;
+  features: SimpleTenantFeatures;
 }
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
-  private currentTenant: TenantData | null = null;
+  private currentTenant: SimpleTenantData | null = null;
 
   static getInstance(): TenantCacheService {
     if (!TenantCacheService.instance) {
@@ -46,7 +46,7 @@ export class TenantCacheService {
     return TenantCacheService.instance;
   }
 
-  async loadTenantData(): Promise<TenantData | null> {
+  async loadTenantData(): Promise<SimpleTenantData | null> {
     try {
       // First check if we have a cached tenant ID
       const cachedTenantId = await secureStorage.get('current_tenant_id');
@@ -88,7 +88,7 @@ export class TenantCacheService {
     }
   }
 
-  private async fetchDefaultTenant(): Promise<TenantData | null> {
+  private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -130,7 +130,7 @@ export class TenantCacheService {
     }
   }
 
-  private async fetchTenantFromDatabase(tenantId: string): Promise<TenantData | null> {
+  private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -172,17 +172,17 @@ export class TenantCacheService {
     }
   }
 
-  private async getCachedTenantData(tenantId: string): Promise<TenantData | null> {
+  private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
     try {
       const cachedData = await secureStorage.getObject(`tenant_data_${tenantId}`);
-      return cachedData as TenantData | null;
+      return cachedData as SimpleTenantData | null;
     } catch (error) {
       console.error('Error getting cached tenant data:', error);
       return null;
     }
   }
 
-  private async cacheTenantData(tenantData: TenantData): Promise<void> {
+  private async cacheTenantData(tenantData: SimpleTenantData): Promise<void> {
     try {
       await secureStorage.setObject(`tenant_data_${tenantData.id}`, tenantData);
       console.log('Tenant data cached successfully');
@@ -191,7 +191,7 @@ export class TenantCacheService {
     }
   }
 
-  private getDefaultBranding(): TenantBranding {
+  private getDefaultBranding(): SimpleTenantBranding {
     return {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
@@ -205,7 +205,7 @@ export class TenantCacheService {
     };
   }
 
-  private getDefaultFeatures(): TenantFeatures {
+  private getDefaultFeatures(): SimpleTenantFeatures {
     return {
       ai_chat: true,
       weather_forecast: true,
@@ -217,7 +217,7 @@ export class TenantCacheService {
     };
   }
 
-  getCurrentTenant(): TenantData | null {
+  getCurrentTenant(): SimpleTenantData | null {
     return this.currentTenant;
   }
 

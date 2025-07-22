@@ -68,8 +68,8 @@ const AppRoutes: React.FC = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <BrandingProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <BrandingProvider>
           <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-white">
               <LoadingSpinner size="lg" />
@@ -80,8 +80,8 @@ function App() {
               <Toaster />
             </div>
           </Suspense>
-        </QueryClientProvider>
-      </BrandingProvider>
+        </BrandingProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
