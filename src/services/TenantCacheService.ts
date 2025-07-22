@@ -87,10 +87,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return this.createTenantData(fallbackData);
+        return this.buildTenantData(fallbackData);
       }
 
-      return this.createTenantData(data);
+      return this.buildTenantData(data);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -111,14 +111,14 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.createTenantData(data);
+      return this.buildTenantData(data);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private async createTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+  private async buildTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
     // Fetch tenant branding
     const { data: brandingData } = await supabase
       .from('tenant_branding')
