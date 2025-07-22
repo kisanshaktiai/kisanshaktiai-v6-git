@@ -87,10 +87,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return await this.constructTenantData(fallbackData);
+        return this.buildSimpleTenantData(fallbackData);
       }
 
-      return await this.constructTenantData(data);
+      return this.buildSimpleTenantData(data);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -111,30 +111,30 @@ export class TenantCacheService {
         return null;
       }
 
-      return await this.constructTenantData(data);
+      return this.buildSimpleTenantData(data);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private async constructTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
-    // Fetch tenant branding with explicit typing
+  private async buildSimpleTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+    // Fetch branding data
     const { data: brandingData } = await supabase
       .from('tenant_branding')
       .select('*')
       .eq('tenant_id', tenantRow.id)
       .single();
 
-    // Fetch tenant features with explicit typing
+    // Fetch features data
     const { data: featuresData } = await supabase
       .from('tenant_features')
       .select('*')
       .eq('tenant_id', tenantRow.id)
       .single();
 
-    // Explicitly construct branding object
-    const branding: TenantBrandingData = {
+    // Build branding object with explicit defaults
+    const brandingObject: TenantBrandingData = {
       primary_color: brandingData?.primary_color || '#8BC34A',
       secondary_color: brandingData?.secondary_color || '#4CAF50',
       accent_color: brandingData?.accent_color || '#689F38',
@@ -146,8 +146,8 @@ export class TenantCacheService {
       splash_screen_url: brandingData?.splash_screen_url || brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
-    // Explicitly construct features object
-    const features: TenantFeaturesData = {
+    // Build features object with explicit defaults
+    const featuresObject: TenantFeaturesData = {
       ai_chat: featuresData?.ai_chat ?? true,
       weather_forecast: featuresData?.weather_forecast ?? true,
       marketplace: featuresData?.marketplace ?? true,
@@ -157,19 +157,19 @@ export class TenantCacheService {
       basic_analytics: featuresData?.basic_analytics ?? true
     };
 
-    // Explicitly construct and return the final object
-    const tenantData: SimpleTenantData = {
+    // Construct final tenant data object
+    const result: SimpleTenantData = {
       id: tenantRow.id,
       name: tenantRow.name,
       slug: tenantRow.slug,
       type: tenantRow.type,
       status: tenantRow.status,
       subscription_plan: tenantRow.subscription_plan,
-      branding: branding,
-      features: features
+      branding: brandingObject,
+      features: featuresObject
     };
 
-    return tenantData;
+    return result;
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
