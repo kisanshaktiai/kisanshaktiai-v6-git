@@ -31,29 +31,29 @@ export class TenantDataFetcher {
 
   static async fetchTenantByIdFromDb(tenantId: string): Promise<BasicTenantRow | null> {
     try {
-      const { data, error } = await supabase
+      const response = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('id', tenantId)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (error || !data) {
-        console.error('Tenant not found:', error);
+      if (response.error || !response.data) {
+        console.error('Tenant not found:', response.error);
         return null;
       }
 
-      // Explicitly construct the return object to avoid type inference issues
-      const result: BasicTenantRow = {
-        id: String(data.id),
-        name: String(data.name),
-        slug: String(data.slug),
-        type: String(data.type),
-        status: String(data.status),
-        subscription_plan: String(data.subscription_plan)
+      // Use simple object destructuring to avoid type inference issues
+      const { id, name, slug, type, status, subscription_plan } = response.data;
+      
+      return {
+        id: String(id),
+        name: String(name),
+        slug: String(slug),
+        type: String(type),
+        status: String(status),
+        subscription_plan: String(subscription_plan)
       };
-
-      return result;
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
@@ -63,49 +63,48 @@ export class TenantDataFetcher {
   static async fetchDefaultTenantFromDb(): Promise<BasicTenantRow | null> {
     try {
       // First try to get default tenant
-      const { data: defaultData, error: defaultError } = await supabase
+      const defaultResponse = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('is_default', true)
         .eq('status', 'active')
         .maybeSingle();
         
-      if (!defaultError && defaultData) {
-        const result: BasicTenantRow = {
-          id: String(defaultData.id),
-          name: String(defaultData.name),
-          slug: String(defaultData.slug),
-          type: String(defaultData.type),
-          status: String(defaultData.status),
-          subscription_plan: String(defaultData.subscription_plan)
+      if (!defaultResponse.error && defaultResponse.data) {
+        const { id, name, slug, type, status, subscription_plan } = defaultResponse.data;
+        return {
+          id: String(id),
+          name: String(name),
+          slug: String(slug),
+          type: String(type),
+          status: String(status),
+          subscription_plan: String(subscription_plan)
         };
-        return result;
       }
 
       console.log('Default tenant not found, trying first active tenant');
       
       // Fallback to first active tenant
-      const { data: fallbackData, error: fallbackError } = await supabase
+      const fallbackResponse = await supabase
         .from('tenants')
         .select('id, name, slug, type, status, subscription_plan')
         .eq('status', 'active')
         .maybeSingle();
         
-      if (fallbackError || !fallbackData) {
+      if (fallbackResponse.error || !fallbackResponse.data) {
         console.error('No active tenants found');
         return null;
       }
       
-      const result: BasicTenantRow = {
-        id: String(fallbackData.id),
-        name: String(fallbackData.name),
-        slug: String(fallbackData.slug),
-        type: String(fallbackData.type),
-        status: String(fallbackData.status),
-        subscription_plan: String(fallbackData.subscription_plan)
+      const { id, name, slug, type, status, subscription_plan } = fallbackResponse.data;
+      return {
+        id: String(id),
+        name: String(name),
+        slug: String(slug),
+        type: String(type),
+        status: String(status),
+        subscription_plan: String(subscription_plan)
       };
-      
-      return result;
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
