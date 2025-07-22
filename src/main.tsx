@@ -7,6 +7,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/store";
 import { CustomAuthProvider } from "@/hooks/useCustomAuth";
 import { AuthProvider } from "@/hooks/useAuth";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import App from "./App.tsx";
 import "./index.css";
 
@@ -16,9 +17,11 @@ createRoot(document.getElementById("root")!).render(
       <PersistGate loading={null} persistor={persistor}>
         <CustomAuthProvider>
           <AuthProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
+            <BrandingProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </BrandingProvider>
           </AuthProvider>
         </CustomAuthProvider>
       </PersistGate>
