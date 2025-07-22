@@ -2,8 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 
-// Completely separate type definitions to avoid any circular references
-type BrandingData = {
+// Simple, explicit type definitions to avoid circular references
+interface BrandingData {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -13,9 +13,9 @@ type BrandingData = {
   app_tagline: string;
   logo_url: string;
   splash_screen_url?: string;
-};
+}
 
-type FeaturesData = {
+interface FeaturesData {
   ai_chat: boolean;
   weather_forecast: boolean;
   marketplace: boolean;
@@ -23,9 +23,9 @@ type FeaturesData = {
   satellite_imagery: boolean;
   soil_testing: boolean;
   basic_analytics: boolean;
-};
+}
 
-type CachedTenantData = {
+interface CachedTenantData {
   id: string;
   name: string;
   slug: string;
@@ -34,7 +34,7 @@ type CachedTenantData = {
   subscription_plan: string;
   branding: BrandingData;
   features: FeaturesData;
-};
+}
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
@@ -103,19 +103,7 @@ export class TenantCacheService {
         return null;
       }
 
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-
-      return this.createTenantData(tenant, branding, features);
+      return this.buildTenantData(tenant);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -136,26 +124,26 @@ export class TenantCacheService {
         return null;
       }
 
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .single();
-
-      return this.createTenantData(tenant, branding, features);
+      return this.buildTenantData(tenant);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
   }
 
-  private createTenantData(tenant: any, branding: any, features: any): CachedTenantData {
+  private async buildTenantData(tenant: any): Promise<CachedTenantData> {
+    const { data: branding } = await supabase
+      .from('tenant_branding')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .single();
+
+    const { data: features } = await supabase
+      .from('tenant_features')
+      .select('*')  
+      .eq('tenant_id', tenant.id)
+      .single();
+
     return {
       id: tenant.id,
       name: tenant.name,
