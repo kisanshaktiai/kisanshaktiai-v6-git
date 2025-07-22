@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { MobileApp } from '@/components/mobile/MobileApp';
 import { NotFound } from '@/components/ui/NotFound';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { setTenantId } from '@/store/slices/authSlice';
 import { TenantService } from '@/services/TenantService';
 import { useTenantContext } from '@/hooks/useTenantContext';

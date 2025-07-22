@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../hooks/useTenant';
 import { LoadingScreen } from '../common/LoadingScreen';
 import { OfflineIndicator } from '../common/OfflineIndicator';
