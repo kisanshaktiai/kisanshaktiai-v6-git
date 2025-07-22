@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,6 +16,7 @@ export interface TenantBranding {
   subdomain?: string;
   customDomain?: string;
   features: string[];
+  tenant_id?: string;
 }
 
 interface BrandingContextType {
@@ -138,7 +138,8 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
         textColor: brandingData?.text_color || defaultBranding.textColor,
         subdomain: tenant.subdomain,
         customDomain: tenant.custom_domain,
-        features: features.length > 0 ? features : defaultBranding.features
+        features: features.length > 0 ? features : defaultBranding.features,
+        tenant_id: tenant.id
       };
 
       setBranding(tenantBranding);

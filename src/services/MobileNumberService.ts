@@ -1,6 +1,6 @@
 
 import { Capacitor } from '@capacitor/core';
-import { SIMPlugin, SIMCard } from '@jonz94/capacitor-sim';
+import { SimPlugin, SimCard } from '@jonz94/capacitor-sim';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
 import { customAuthService } from './customAuthService';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,10 @@ export interface SIMInfo {
   displayName: string;
   simSlotIndex: number;
   isEsim: boolean;
+  // Add missing properties
+  slot: number;
+  isDefault: boolean;
+  isActive: boolean;
 }
 
 export interface AuthResult {
@@ -74,23 +78,27 @@ export class MobileNumberService {
     }
 
     try {
-      if (!SIMPlugin) {
+      if (!SimPlugin) {
         console.warn('SIM Plugin not available');
         return [];
       }
 
-      const result = await SIMPlugin.getSimInfo();
+      const result = await SimPlugin.getSimInfo();
       if (!result.cards || result.cards.length === 0) {
         return [];
       }
 
-      return result.cards.map((card: SIMCard, index: number) => ({
+      return result.cards.map((card: SimCard, index: number) => ({
         phoneNumber: card.phoneNumber || '',
         carrierName: card.carrierName || '',
         countryCode: card.countryCode || 'IN',
         displayName: card.displayName || `SIM ${index + 1}`,
         simSlotIndex: card.simSlotIndex || index,
-        isEsim: card.isEsim || false
+        isEsim: card.isEsim || false,
+        // Add additional properties required by other components
+        slot: index + 1,
+        isDefault: index === 0, // Assuming first SIM is default
+        isActive: true // Assuming all detected SIMs are active
       }));
     } catch (error) {
       console.error('Error accessing SIM information:', error);

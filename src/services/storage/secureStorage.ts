@@ -1,4 +1,3 @@
-
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 
@@ -12,7 +11,7 @@ class SecureStorageService {
     return SecureStorageService.instance;
   }
 
-  async set(key: string, value: string): Promise<void> {
+  async setItem(key: string, value: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Preferences.set({ key, value });
     } else {
@@ -20,7 +19,7 @@ class SecureStorageService {
     }
   }
 
-  async get(key: string): Promise<string | null> {
+  async getItem(key: string): Promise<string | null> {
     if (Capacitor.isNativePlatform()) {
       const { value } = await Preferences.get({ key });
       return value;
@@ -29,7 +28,7 @@ class SecureStorageService {
     }
   }
 
-  async remove(key: string): Promise<void> {
+  async removeItem(key: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Preferences.remove({ key });
     } else {
@@ -46,11 +45,11 @@ class SecureStorageService {
   }
 
   async setObject(key: string, value: any): Promise<void> {
-    await this.set(key, JSON.stringify(value));
+    await this.setItem(key, JSON.stringify(value));
   }
 
   async getObject<T>(key: string): Promise<T | null> {
-    const value = await this.get(key);
+    const value = await this.getItem(key);
     if (value) {
       try {
         return JSON.parse(value) as T;
