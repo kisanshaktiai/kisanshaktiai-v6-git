@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tenantCacheService } from '@/services/TenantCacheService';
+import { tenantApiService } from '@/services/api/TenantApiService';
+import { getCurrentApiConfig } from '@/config/apiGateway';
 
 interface UpgradedSplashScreenProps {
   onComplete: () => void;
@@ -37,8 +39,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Trigger fade-in animation
-    setTimeout(() => setIsVisible(true), 50);
+    setIsVisible(true);
     initializeTenantBranding();
     animateProgress();
   }, []);
@@ -48,7 +49,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
       const exitDelay = Math.min(500, branding.splash_duration || 3000);
       const timer = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(onComplete, 300); // Wait for fade-out
+        setTimeout(onComplete, 300);
       }, exitDelay);
 
       return () => clearTimeout(timer);
@@ -75,36 +76,42 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
 
   const initializeTenantBranding = async () => {
     try {
-      console.log('[SplashScreen] Loading tenant branding...');
+      console.log('[SplashScreen] Loading tenant branding via API...');
       
-      // Race between tenant data load and timeout
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 3000)
-      );
-
-      const tenantDataPromise = tenantCacheService.loadTenantData();
-      
-      const tenantData = await Promise.race([tenantDataPromise, timeoutPromise])
-        .catch(err => {
-          console.warn('[SplashScreen] Tenant data load failed:', err);
-          return null;
-        });
-      
-      if (tenantData?.branding) {
-        setBranding({
-          ...DEFAULT_BRANDING,
-          ...tenantData.branding
-        });
-        
-        // Update app language if tenant has a default
-        if (tenantData.default_language && tenantData.default_language !== i18n.language) {
-          await i18n.changeLanguage(tenantData.default_language);
+      // Try to load branding from API Gateway first
+      const apiConfig = getCurrentApiConfig();
+      if (apiConfig && getCurrentApiConfig()) {
+        try {
+          const brandingResponse = await tenantApiService.getTenantBranding('default');
+          
+          if (brandingResponse.success && brandingResponse.data) {
+            setBranding({
+              ...DEFAULT_BRANDING,
+              ...brandingResponse.data
+            });
+            console.log('[SplashScreen] API branding loaded successfully');
+          } else {
+            console.log('[SplashScreen] API branding failed, using default');
+          }
+        } catch (apiError) {
+          console.warn('[SplashScreen] API request failed:', apiError);
         }
-        
-        console.log('[SplashScreen] Tenant branding loaded successfully');
-      } else {
-        console.log('[SplashScreen] Using default branding');
       }
+      
+      // Fallback to local cache service if API fails
+      if (branding === DEFAULT_BRANDING) {
+        const { tenantCacheService } = await import('@/services/TenantCacheService');
+        const tenantData = await tenantCacheService.loadTenantData();
+        
+        if (tenantData?.branding) {
+          setBranding({
+            ...DEFAULT_BRANDING,
+            ...tenantData.branding
+          });
+          console.log('[SplashScreen] Cache branding loaded successfully');
+        }
+      }
+      
     } catch (error) {
       console.error('[SplashScreen] Critical error:', error);
     } finally {
@@ -123,7 +130,6 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
     setLogoLoaded(true);
   };
 
-  // Ensure logo loading doesn't block splash screen
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!logoLoaded) {
@@ -156,7 +162,7 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
         }}
       />
 
-      {/* Animated particles for premium feel */}
+      {/* Animated particles */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(5)].map((_, i) => (
           <div
@@ -253,12 +259,10 @@ export const UpgradedSplashScreen: React.FC<UpgradedSplashScreenProps> = ({ onCo
                   background: `linear-gradient(90deg, ${branding.primary_color}, ${branding.secondary_color})`
                 }}
               >
-                {/* Shimmer effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 shimmer-animation" />
               </div>
             </div>
             
-            {/* Progress percentage */}
             <div className="mt-3 text-center">
               <span className="text-sm font-medium" style={{ color: branding.primary_color }}>
                 {Math.round(progress)}%

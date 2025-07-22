@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
-// Simple interface for database tenant data
-interface DatabaseTenant {
+// Simplified database tenant interface to avoid type recursion
+interface DatabaseTenantRow {
   id: string;
   name: string;
   slug: string;
@@ -64,19 +64,28 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type, status, subscription_plan')
-        .eq('is_default', true)
-        .eq('status', 'active')
-        .single();
-
+      // Use raw query to avoid complex type inference
+      const { data, error } = await supabase.rpc('get_default_tenant_simple');
+      
       if (error || !data) {
-        console.error('Default tenant not found:', error);
-        return null;
+        console.error('Default tenant not found, falling back to first active tenant');
+        
+        // Fallback: get first active tenant
+        const fallbackQuery = await supabase
+          .from('tenants')
+          .select('id, name, slug, type, status, subscription_plan')
+          .eq('status', 'active')
+          .limit(1)
+          .single();
+          
+        if (fallbackQuery.error || !fallbackQuery.data) {
+          return null;
+        }
+        
+        return this.createTenantData(fallbackQuery.data as DatabaseTenantRow);
       }
 
-      return this.createTenantData(data as DatabaseTenant);
+      return this.createTenantData(data as DatabaseTenantRow);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -97,14 +106,14 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.createTenantData(data as DatabaseTenant);
+      return this.createTenantData(data as DatabaseTenantRow);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private createTenantData(tenantRow: DatabaseTenant): SimpleTenantData {
+  private createTenantData(tenantRow: DatabaseTenantRow): SimpleTenantData {
     const branding: TenantBrandingData = {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',

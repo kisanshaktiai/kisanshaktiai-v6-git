@@ -45,6 +45,8 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
+      console.log(`API Request: ${options.method || 'GET'} ${url}`);
+      
       const response = await fetch(url, {
         ...options,
         headers: {
@@ -56,9 +58,10 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(`API Error: ${response.status}`, data);
         return {
           success: false,
-          error: data.error || `HTTP ${response.status}`,
+          error: data.error || `HTTP ${response.status}: ${response.statusText}`,
         };
       }
 
@@ -111,7 +114,7 @@ class ApiClient {
   }
 }
 
-// API Configuration
+// API Configuration with environment detection
 const API_CONFIG = {
   baseUrl: process.env.NODE_ENV === 'production' 
     ? 'https://api.kisanshaktiai.com' 
