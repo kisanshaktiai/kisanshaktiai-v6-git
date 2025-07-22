@@ -188,6 +188,19 @@ class SecureApiGateway {
     }
   }
 
+  async getDefaultTenant(): Promise<TenantInfo | null> {
+    try {
+      const response = await tenantApiService.getDefaultTenant();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Get default tenant error:', error);
+      return null;
+    }
+  }
+
   // Getters for current state
   getAuthState(): AuthState {
     return { ...this.authState };

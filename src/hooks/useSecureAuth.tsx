@@ -12,6 +12,7 @@ interface SecureAuthContextType extends AuthState {
   logout: () => Promise<void>;
   checkFarmerExists: (mobileNumber: string) => Promise<boolean>;
   updateProfile: (updates: Partial<FarmerProfile>) => Promise<{ success: boolean; error?: string }>;
+  getDefaultTenant: () => Promise<TenantInfo | null>;
   loading: boolean;
   isOnline: boolean;
 }
@@ -137,6 +138,15 @@ export const SecureAuthProvider = ({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const getDefaultTenant = async (): Promise<TenantInfo | null> => {
+    try {
+      return await secureApiGateway.getDefaultTenant();
+    } catch (error) {
+      console.error('Get default tenant error:', error);
+      return null;
+    }
+  };
+
   const updateProfile = async (updates: Partial<FarmerProfile>): Promise<{ success: boolean; error?: string }> => {
     try {
       const farmerApi = secureApiGateway.getFarmerApi();
@@ -165,6 +175,7 @@ export const SecureAuthProvider = ({ children }: { children: React.ReactNode }) 
     register,
     logout,
     checkFarmerExists,
+    getDefaultTenant,
     updateProfile,
     loading,
     isOnline,

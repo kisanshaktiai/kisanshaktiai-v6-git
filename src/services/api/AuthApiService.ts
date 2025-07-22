@@ -64,6 +64,10 @@ class AuthApiService {
     this.apiClient.clearAuth();
     return response;
   }
+
+  async getCurrentFarmer(): Promise<ApiResponse<AuthResponse['farmer']>> {
+    return this.apiClient.get<AuthResponse['farmer']>('/api/auth/me');
+  }
 }
 
 export const authApiService = new AuthApiService();

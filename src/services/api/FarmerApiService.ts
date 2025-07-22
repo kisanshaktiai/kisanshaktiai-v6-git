@@ -48,6 +48,16 @@ interface FinancialTransaction {
   land_id?: string;
 }
 
+interface FarmerSubscription {
+  id: string;
+  plan_id: string;
+  status: string;
+  start_date: string;
+  end_date?: string;
+  trial_end_date?: string;
+  auto_renew: boolean;
+}
+
 class FarmerApiService {
   private apiClient: ApiClient;
 
@@ -70,6 +80,11 @@ class FarmerApiService {
 
   async updateProfile(updates: Partial<FarmerProfile>): Promise<ApiResponse<FarmerProfile>> {
     return this.apiClient.put<FarmerProfile>('/api/farmer/profile', updates);
+  }
+
+  // Subscription Management
+  async getSubscription(): Promise<ApiResponse<FarmerSubscription>> {
+    return this.apiClient.get<FarmerSubscription>('/api/farmer/subscription');
   }
 
   // Land Management
@@ -122,4 +137,4 @@ class FarmerApiService {
 }
 
 export const farmerApiService = new FarmerApiService();
-export type { FarmerProfile, LandRecord, FinancialTransaction };
+export type { FarmerProfile, LandRecord, FinancialTransaction, FarmerSubscription };

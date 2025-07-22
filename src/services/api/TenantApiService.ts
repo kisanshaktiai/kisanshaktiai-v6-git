@@ -40,24 +40,24 @@ class TenantApiService {
     this.apiClient = new ApiClient({ baseUrl: API_CONFIG.baseUrl });
   }
 
-  async getTenantBranding(tenantId: string): Promise<ApiResponse<TenantBranding>> {
-    return this.apiClient.get<TenantBranding>(`/api/branding/${tenantId}`);
+  async getDefaultTenant(): Promise<ApiResponse<TenantInfo>> {
+    return this.apiClient.get<TenantInfo>('/api/tenant/default');
   }
 
-  async getTenantFeatures(tenantId: string): Promise<ApiResponse<TenantFeatures>> {
-    return this.apiClient.get<TenantFeatures>(`/api/features/${tenantId}`);
-  }
-
-  async getTenantInfo(tenantId: string): Promise<ApiResponse<TenantInfo>> {
+  async getTenantById(tenantId: string): Promise<ApiResponse<TenantInfo>> {
     return this.apiClient.get<TenantInfo>(`/api/tenant/${tenantId}`);
   }
 
-  async detectTenantByDomain(domain: string): Promise<ApiResponse<{ tenant_id: string }>> {
-    return this.apiClient.get<{ tenant_id: string }>(`/api/tenant/detect?domain=${domain}`);
+  async getTenantByInviteCode(inviteCode: string): Promise<ApiResponse<TenantInfo>> {
+    return this.apiClient.get<TenantInfo>(`/api/tenant/by-invite/${inviteCode}`);
   }
 
-  async getTenantBySlug(slug: string): Promise<ApiResponse<TenantInfo>> {
-    return this.apiClient.get<TenantInfo>(`/api/tenant/slug/${slug}`);
+  async getTenantBranding(tenantId: string): Promise<ApiResponse<TenantBranding>> {
+    return this.apiClient.get<TenantBranding>(`/api/tenant/branding/${tenantId}`);
+  }
+
+  async getTenantFeatures(tenantId: string): Promise<ApiResponse<TenantFeatures>> {
+    return this.apiClient.get<TenantFeatures>(`/api/tenant/features/${tenantId}`);
   }
 
   setTenantContext(tenantId: string): void {

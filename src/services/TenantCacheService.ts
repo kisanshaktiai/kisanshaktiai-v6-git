@@ -1,16 +1,39 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
-// Simple interface to avoid type recursion
-interface BasicTenant {
+// Simple interfaces to avoid type recursion
+interface TenantBrandingData {
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  background_color: string;
+  text_color: string;
+  app_name: string;
+  app_tagline: string;
+  logo_url: string;
+  splash_screen_url?: string;
+}
+
+interface TenantFeaturesData {
+  ai_chat: boolean;
+  weather_forecast: boolean;
+  marketplace: boolean;
+  community_forum: boolean;
+  satellite_imagery: boolean;
+  soil_testing: boolean;
+  basic_analytics: boolean;
+}
+
+interface SimpleTenantData {
   id: string;
   name: string;
   slug: string;
   type: string;
   status: string;
   subscription_plan: string;
+  branding: TenantBrandingData;
+  features: TenantFeaturesData;
 }
 
 export class TenantCacheService {
@@ -118,7 +141,7 @@ export class TenantCacheService {
     }
   }
 
-  private async createTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+  private async createTenantData(tenantRow: any): Promise<SimpleTenantData> {
     // Fetch tenant branding
     const { data: brandingData } = await supabase
       .from('tenant_branding')
