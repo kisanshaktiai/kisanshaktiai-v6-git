@@ -87,10 +87,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return this.createTenantData(fallbackData);
+        return this.buildTenantFromBasicData(fallbackData);
       }
 
-      return this.createTenantData(data);
+      return this.buildTenantFromBasicData(data);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -111,43 +111,70 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.createTenantData(data);
+      return this.buildTenantFromBasicData(data);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private async createTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
-    // Fetch branding data
-    const { data: brandingData } = await supabase
+  private async buildTenantFromBasicData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+    const [brandingData, featuresData] = await Promise.all([
+      this.fetchBrandingData(tenantRow.id),
+      this.fetchFeaturesData(tenantRow.id)
+    ]);
+
+    const branding = this.createBrandingObject(brandingData, tenantRow.name);
+    const features = this.createFeaturesObject(featuresData);
+
+    const tenantData: SimpleTenantData = {
+      id: tenantRow.id,
+      name: tenantRow.name,
+      slug: tenantRow.slug,
+      type: tenantRow.type,
+      status: tenantRow.status,
+      subscription_plan: tenantRow.subscription_plan,
+      branding: branding,
+      features: features
+    };
+
+    return tenantData;
+  }
+
+  private async fetchBrandingData(tenantId: string) {
+    const { data } = await supabase
       .from('tenant_branding')
       .select('*')
-      .eq('tenant_id', tenantRow.id)
+      .eq('tenant_id', tenantId)
       .single();
+    return data;
+  }
 
-    // Fetch features data
-    const { data: featuresData } = await supabase
+  private async fetchFeaturesData(tenantId: string) {
+    const { data } = await supabase
       .from('tenant_features')
       .select('*')
-      .eq('tenant_id', tenantRow.id)
+      .eq('tenant_id', tenantId)
       .single();
+    return data;
+  }
 
-    // Create branding with explicit type
-    const branding = {
+  private createBrandingObject(brandingData: any, tenantName: string): TenantBrandingData {
+    return {
       primary_color: brandingData?.primary_color || '#8BC34A',
       secondary_color: brandingData?.secondary_color || '#4CAF50',
       accent_color: brandingData?.accent_color || '#689F38',
       background_color: brandingData?.background_color || '#FFFFFF',
       text_color: brandingData?.text_color || '#1F2937',
-      app_name: brandingData?.app_name || tenantRow.name || 'KisanShakti AI',
+      app_name: brandingData?.app_name || tenantName || 'KisanShakti AI',
       app_tagline: brandingData?.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
       logo_url: brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
       splash_screen_url: brandingData?.splash_screen_url || brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
-    } as TenantBrandingData;
+    };
+  }
 
-    // Create features with explicit type
-    const features = {
+  private createFeaturesObject(featuresData: any): TenantFeaturesData {
+    return {
       ai_chat: featuresData?.ai_chat ?? true,
       weather_forecast: featuresData?.weather_forecast ?? true,
       marketplace: featuresData?.marketplace ?? true,
@@ -155,19 +182,7 @@ export class TenantCacheService {
       satellite_imagery: featuresData?.satellite_imagery ?? true,
       soil_testing: featuresData?.soil_testing ?? true,
       basic_analytics: featuresData?.basic_analytics ?? true
-    } as TenantFeaturesData;
-
-    // Return the result with explicit type
-    return {
-      id: tenantRow.id,
-      name: tenantRow.name,
-      slug: tenantRow.slug,
-      type: tenantRow.type,
-      status: tenantRow.status,
-      subscription_plan: tenantRow.subscription_plan,
-      branding,
-      features
-    } as SimpleTenantData;
+    };
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
