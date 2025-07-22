@@ -1,45 +1,12 @@
+
 import { Capacitor } from '@capacitor/core';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
 import { customAuthService } from './customAuthService';
 import { supabase } from '@/integrations/supabase/client';
+import { SIMDetectionService, SIMCard } from './SIMDetectionService';
 
-// Import types only
-type SimCard = {
-  carrierName?: string;
-  displayName?: string;
-  isoCountryCode?: string;
-  mcc?: string;
-  mnc?: string;
-  isEmbedded?: boolean;
-  simSlotIndex?: number;
-  phoneNumber?: string;
-};
-
-interface SimPluginInterface {
-  getSimInfo(): Promise<{
-    cards: SimCard[];
-  }>;
-}
-
-// Declare a global variable for the plugin
-declare global {
-  interface Window {
-    CapacitorSim?: SimPluginInterface;
-  }
-}
-
-export interface SIMInfo {
-  phoneNumber: string;
-  carrierName: string;
-  countryCode: string;
-  displayName: string;
-  simSlotIndex: number;
-  isEsim: boolean;
-  // Additional properties
-  slot: number;
-  isDefault: boolean;
-  isActive: boolean;
-}
+// Re-export the SIMCard interface as SIMInfo for backward compatibility
+export type SIMInfo = SIMCard;
 
 export interface AuthResult {
   success: boolean;
@@ -50,9 +17,11 @@ export interface AuthResult {
 export class MobileNumberService {
   private static instance: MobileNumberService;
   private cachedMobileNumber: string | null = null;
+  private simDetectionService: SIMDetectionService;
 
   private constructor() {
     // Private constructor to enforce singleton
+    this.simDetectionService = new SIMDetectionService();
   }
 
   static getInstance(): MobileNumberService {
@@ -96,39 +65,7 @@ export class MobileNumberService {
   }
 
   async detectSIMCards(): Promise<SIMInfo[]> {
-    if (!Capacitor.isNativePlatform()) {
-      return []; // Not supported in web
-    }
-
-    try {
-      // Check if the plugin is available in the window object
-      const simPlugin = window.CapacitorSim;
-      if (!simPlugin) {
-        console.warn('SIM Plugin not available');
-        return [];
-      }
-
-      const result = await simPlugin.getSimInfo();
-      if (!result.cards || result.cards.length === 0) {
-        return [];
-      }
-
-      return result.cards.map((card: SimCard, index: number) => ({
-        phoneNumber: card.phoneNumber || '',
-        carrierName: card.carrierName || '',
-        countryCode: card.isoCountryCode || 'IN', // Using isoCountryCode instead of countryCode
-        displayName: card.displayName || `SIM ${index + 1}`,
-        simSlotIndex: card.simSlotIndex || index,
-        isEsim: card.isEmbedded || false, // Using isEmbedded instead of isEsim
-        // Additional properties
-        slot: index + 1,
-        isDefault: index === 0, // Assuming first SIM is default
-        isActive: true // Assuming all detected SIMs are active
-      }));
-    } catch (error) {
-      console.error('Error accessing SIM information:', error);
-      return [];
-    }
+    return this.simDetectionService.detectSIMs();
   }
 
   formatMobileNumber(number: string): string {

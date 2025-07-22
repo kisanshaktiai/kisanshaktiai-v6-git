@@ -16,7 +16,7 @@ export interface TenantBranding {
   subdomain?: string;
   customDomain?: string;
   features: string[];
-  tenant_id?: string;
+  tenant_id: string;
 }
 
 interface BrandingContextType {
@@ -37,7 +37,8 @@ const defaultBranding: TenantBranding = {
   accentColor: '#2196F3',
   backgroundColor: '#FFFFFF',
   textColor: '#333333',
-  features: ['ai_chat', 'weather', 'market_prices', 'crop_advisory']
+  features: ['ai_chat', 'weather', 'market_prices', 'crop_advisory'],
+  tenant_id: 'default'
 };
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
