@@ -1,17 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-import type { TenantBrandingData, TenantFeaturesData, SimpleTenantData } from '@/types/tenantCache';
-
-// Basic tenant data from database
-interface BasicTenant {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  status: string;
-  subscription_plan: string;
-}
+import type { SimpleTenantData } from '@/types/tenantCache';
+import { TenantDataBuilder } from './tenant/TenantDataBuilder';
+import { TenantDataFetcher } from './tenant/TenantDataFetcher';
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
@@ -64,33 +56,12 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type, status, subscription_plan')
-        .eq('is_default', true)
-        .eq('status', 'active')
-        .limit(1)
-        .single();
-        
-      if (error || !data) {
-        console.log('Default tenant not found, trying first active tenant');
-        
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('tenants')
-          .select('id, name, slug, type, status, subscription_plan')
-          .eq('status', 'active')
-          .limit(1)
-          .single();
-          
-        if (fallbackError || !fallbackData) {
-          console.error('No active tenants found');
-          return null;
-        }
-        
-        return this.buildTenantFromBasicData(fallbackData);
+      const tenantRow = await TenantDataFetcher.fetchDefaultTenantFromDb();
+      if (!tenantRow) {
+        return null;
       }
 
-      return this.buildTenantFromBasicData(data);
+      return this.buildTenantFromRow(tenantRow);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -99,90 +70,25 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type, status, subscription_plan')
-        .eq('id', tenantId)
-        .eq('status', 'active')
-        .single();
-
-      if (error || !data) {
-        console.error('Tenant not found:', error);
+      const tenantRow = await TenantDataFetcher.fetchTenantByIdFromDb(tenantId);
+      if (!tenantRow) {
         return null;
       }
 
-      return this.buildTenantFromBasicData(data);
+      return this.buildTenantFromRow(tenantRow);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private async buildTenantFromBasicData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+  private async buildTenantFromRow(tenantRow: any): Promise<SimpleTenantData> {
     const [brandingData, featuresData] = await Promise.all([
-      this.fetchBrandingData(tenantRow.id),
-      this.fetchFeaturesData(tenantRow.id)
+      TenantDataFetcher.fetchBrandingData(tenantRow.id),
+      TenantDataFetcher.fetchFeaturesData(tenantRow.id)
     ]);
 
-    const branding = this.createBrandingObject(brandingData, tenantRow.name);
-    const features = this.createFeaturesObject(featuresData);
-
-    const tenantData: SimpleTenantData = {
-      id: tenantRow.id,
-      name: tenantRow.name,
-      slug: tenantRow.slug,
-      type: tenantRow.type,
-      status: tenantRow.status,
-      subscription_plan: tenantRow.subscription_plan,
-      branding: branding,
-      features: features
-    };
-
-    return tenantData;
-  }
-
-  private async fetchBrandingData(tenantId: string) {
-    const { data } = await supabase
-      .from('tenant_branding')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .single();
-    return data;
-  }
-
-  private async fetchFeaturesData(tenantId: string) {
-    const { data } = await supabase
-      .from('tenant_features')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .single();
-    return data;
-  }
-
-  private createBrandingObject(brandingData: any, tenantName: string): TenantBrandingData {
-    return {
-      primary_color: brandingData?.primary_color || '#8BC34A',
-      secondary_color: brandingData?.secondary_color || '#4CAF50',
-      accent_color: brandingData?.accent_color || '#689F38',
-      background_color: brandingData?.background_color || '#FFFFFF',
-      text_color: brandingData?.text_color || '#1F2937',
-      app_name: brandingData?.app_name || tenantName || 'KisanShakti AI',
-      app_tagline: brandingData?.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
-      logo_url: brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
-      splash_screen_url: brandingData?.splash_screen_url || brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
-    };
-  }
-
-  private createFeaturesObject(featuresData: any): TenantFeaturesData {
-    return {
-      ai_chat: featuresData?.ai_chat ?? true,
-      weather_forecast: featuresData?.weather_forecast ?? true,
-      marketplace: featuresData?.marketplace ?? true,
-      community_forum: featuresData?.community_forum ?? true,
-      satellite_imagery: featuresData?.satellite_imagery ?? true,
-      soil_testing: featuresData?.soil_testing ?? true,
-      basic_analytics: featuresData?.basic_analytics ?? true
-    };
+    return TenantDataBuilder.buildTenantData(tenantRow, brandingData, featuresData);
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
