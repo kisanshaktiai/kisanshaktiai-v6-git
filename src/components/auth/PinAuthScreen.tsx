@@ -8,6 +8,7 @@ import { MobileNumberService, SIMInfo } from '@/services/MobileNumberService';
 import { SIMSelectionModal } from './SIMSelectionModal';
 import { Phone, Loader, CheckCircle2, Shield, Smartphone } from 'lucide-react';
 import { RootState } from '@/store';
+import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 interface PinAuthScreenProps {
   onComplete: () => void;
@@ -162,6 +163,8 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ onComplete }) => {
       const formatted = `+91${mobileNumber}`;
       const result = await MobileNumberService.getInstance().registerUser(formatted, pin, {
         fullName: 'User', // Default name, will be updated in profile
+        tenant_id: tenantBranding?.tenant_id || DEFAULT_TENANT_ID, // Use tenant from branding or default
+        is_default: true // Mark this as the default tenant for this user
       });
       
       if (result.success) {

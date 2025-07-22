@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         mobile_number: cleanMobile,
         pin_hash: pinHash,
         farmer_code: farmerCode,
-        tenant_id: null, // Explicitly set to null for new registrations
+        tenant_id: farmer_data.tenant_id || null, // Use provided tenant_id or set to null
         app_install_date: new Date().toISOString().split('T')[0],
         login_attempts: 0,
         is_verified: false,
@@ -128,6 +128,27 @@ Deno.serve(async (req) => {
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Also create user profile if it doesn't exist
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', farmer.id)
+      .maybeSingle()
+
+    if (!existingProfile) {
+      // Create user profile with same ID as farmer
+      await supabase
+        .from('user_profiles')
+        .insert({
+          id: farmer.id,
+          phone: cleanMobile,
+          phone_verified: true,
+          preferred_language: farmer_data.preferred_language || 'hi',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
     }
 
     // Generate JWT token

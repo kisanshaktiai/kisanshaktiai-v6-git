@@ -1,5 +1,4 @@
-
-export const DEFAULT_TENANT_ID = '66372c6f-c996-4425-8749-a7561e5d6ae3';
+export const DEFAULT_TENANT_ID = "66372c6f-c996-4425-8749-a7561e5d6ae3";
 
 export const STORAGE_KEYS = {
   TENANT_ID: 'tenant_id',
