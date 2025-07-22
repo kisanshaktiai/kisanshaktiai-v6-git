@@ -60,17 +60,16 @@ export class TenantDataFetcher {
       .select('id, name, slug, type, status, subscription_plan')
       .eq('is_default', true)
       .eq('status', 'active')
-      .limit(1);
+      .maybeSingle();
       
-    if (!defaultError && defaultData && defaultData.length > 0) {
-      const tenant = defaultData[0];
+    if (!defaultError && defaultData) {
       return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        type: tenant.type,
-        status: tenant.status,
-        subscription_plan: tenant.subscription_plan
+        id: defaultData.id,
+        name: defaultData.name,
+        slug: defaultData.slug,
+        type: defaultData.type,
+        status: defaultData.status,
+        subscription_plan: defaultData.subscription_plan
       };
     }
 
@@ -81,21 +80,20 @@ export class TenantDataFetcher {
       .from('tenants')
       .select('id, name, slug, type, status, subscription_plan')
       .eq('status', 'active')
-      .limit(1);
+      .maybeSingle();
       
-    if (fallbackError || !fallbackData || fallbackData.length === 0) {
+    if (fallbackError || !fallbackData) {
       console.error('No active tenants found');
       return null;
     }
     
-    const tenant = fallbackData[0];
     return {
-      id: tenant.id,
-      name: tenant.name,
-      slug: tenant.slug,
-      type: tenant.type,
-      status: tenant.status,
-      subscription_plan: tenant.subscription_plan
+      id: fallbackData.id,
+      name: fallbackData.name,
+      slug: fallbackData.slug,
+      type: fallbackData.type,
+      status: fallbackData.status,
+      subscription_plan: fallbackData.subscription_plan
     };
   }
 }
