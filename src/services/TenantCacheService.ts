@@ -1,52 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-
-// Flattened Tenant Branding Interface
-export interface FlatTenantBrandingData {
-  primary_color: string;
-  secondary_color: string;
-  accent_color: string;
-  background_color: string;
-  text_color: string;
-  app_name: string;
-  app_tagline?: string;
-  logo_url?: string;
-  splash_screen_url?: string;
-}
-
-// Flattened Tenant Features Interface
-export interface FlatTenantFeaturesData {
-  ai_chat: boolean;
-  weather_forecast: boolean;
-  marketplace: boolean;
-  community_forum: boolean;
-  satellite_imagery: boolean;
-  soil_testing: boolean;
-  basic_analytics: boolean;
-}
-
-// Simplified Tenant Data Interface
-export interface SimpleTenantData {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  status: string;
-  subscription_plan: string;
-  branding: FlatTenantBrandingData;
-  features: FlatTenantFeaturesData;
-}
+import type { Database } from '@/types/supabase'; // Import Supabase types
+import type { SimpleTenantData, TenantBrandingData, TenantFeaturesData } from '@/types/tenantCache';
 
 // Explicit type for database tenant row
-interface DatabaseTenantRow {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  status: string;
-  subscription_plan: string;
-  [key: string]: any;
-}
+type TenantRow = Database['public']['Tables']['tenants']['Row'];
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
@@ -64,8 +22,11 @@ export class TenantCacheService {
       const cachedTenantId = await secureStorage.get('current_tenant_id');
 
       if (cachedTenantId) {
+        console.log('Found cached tenant ID:', cachedTenantId);
+
         const cachedTenant = await this.getCachedTenantData(cachedTenantId);
         if (cachedTenant) {
+          console.log('Using cached tenant data');
           this.currentTenant = cachedTenant;
           return cachedTenant;
         }
@@ -78,6 +39,7 @@ export class TenantCacheService {
         }
       }
 
+      console.log('Loading default tenant');
       const defaultTenant = await this.fetchDefaultTenant();
       if (defaultTenant) {
         await this.cacheTenantData(defaultTenant);
@@ -95,7 +57,7 @@ export class TenantCacheService {
 
   private async fetchDefaultTenant(): Promise<SimpleTenantData | null> {
     const { data, error } = await supabase
-      .from<DatabaseTenantRow>('tenants')
+      .from<TenantRow>('tenants')
       .select('*')
       .eq('is_default', true)
       .eq('status', 'active')
@@ -111,7 +73,7 @@ export class TenantCacheService {
 
   private async fetchTenantFromDatabase(tenantId: string): Promise<SimpleTenantData | null> {
     const { data, error } = await supabase
-      .from<DatabaseTenantRow>('tenants')
+      .from<TenantRow>('tenants')
       .select('*')
       .eq('id', tenantId)
       .eq('status', 'active')
@@ -125,27 +87,27 @@ export class TenantCacheService {
     return this.createTenantData(data);
   }
 
-  private createTenantData(tenantRow: DatabaseTenantRow): SimpleTenantData {
-    const branding: FlatTenantBrandingData = {
-      primary_color: tenantRow.primary_color || '#8BC34A',
-      secondary_color: tenantRow.secondary_color || '#4CAF50',
-      accent_color: tenantRow.accent_color || '#689F38',
-      background_color: tenantRow.background_color || '#FFFFFF',
-      text_color: tenantRow.text_color || '#1F2937',
-      app_name: tenantRow.app_name || 'KisanShakti AI',
-      app_tagline: tenantRow.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
-      logo_url: tenantRow.logo_url,
-      splash_screen_url: tenantRow.splash_screen_url
+  private createTenantData(tenantRow: TenantRow): SimpleTenantData {
+    const branding: TenantBrandingData = {
+      primary_color: '#8BC34A',
+      secondary_color: '#4CAF50',
+      accent_color: '#689F38',
+      background_color: '#FFFFFF',
+      text_color: '#1F2937',
+      app_name: tenantRow.name || 'KisanShakti AI',
+      app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
+      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+      splash_screen_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
-    const features: FlatTenantFeaturesData = {
-      ai_chat: tenantRow.ai_chat ?? true,
-      weather_forecast: tenantRow.weather_forecast ?? true,
-      marketplace: tenantRow.marketplace ?? true,
-      community_forum: tenantRow.community_forum ?? true,
-      satellite_imagery: tenantRow.satellite_imagery ?? false,
-      soil_testing: tenantRow.soil_testing ?? false,
-      basic_analytics: tenantRow.basic_analytics ?? true
+    const features: TenantFeaturesData = {
+      ai_chat: true,
+      weather_forecast: true,
+      marketplace: true,
+      community_forum: true,
+      satellite_imagery: true,
+      soil_testing: true,
+      basic_analytics: true
     };
 
     return {
@@ -173,6 +135,7 @@ export class TenantCacheService {
   private async cacheTenantData(tenantData: SimpleTenantData): Promise<void> {
     try {
       await secureStorage.setObject(`tenant_data_${tenantData.id}`, tenantData);
+      console.log('Tenant data cached successfully');
     } catch (error) {
       console.error('Error caching tenant data:', error);
     }
