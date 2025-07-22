@@ -114,16 +114,7 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        type: tenant.type,
-        status: tenant.status,
-        subscription_plan: tenant.subscription_plan,
-        branding: branding || this.getDefaultBranding(),
-        features: features || this.getDefaultFeatures()
-      };
+      return this.mapToSimpleTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -156,20 +147,24 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        type: tenant.type,
-        status: tenant.status,
-        subscription_plan: tenant.subscription_plan,
-        branding: branding || this.getDefaultBranding(),
-        features: features || this.getDefaultFeatures()
-      };
+      return this.mapToSimpleTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
+  }
+
+  private mapToSimpleTenantData(tenant: any, branding: any, features: any): SimpleTenantData {
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      type: tenant.type,
+      status: tenant.status,
+      subscription_plan: tenant.subscription_plan,
+      branding: branding || this.getDefaultBranding(),
+      features: features || this.getDefaultFeatures()
+    };
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
