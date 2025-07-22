@@ -2,8 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 
-// Simplified type definitions to avoid circular references
-interface TenantBranding {
+// Completely separate type definitions to avoid any circular references
+type BrandingData = {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -13,9 +13,9 @@ interface TenantBranding {
   app_tagline: string;
   logo_url: string;
   splash_screen_url?: string;
-}
+};
 
-interface TenantFeatures {
+type FeaturesData = {
   ai_chat: boolean;
   weather_forecast: boolean;
   marketplace: boolean;
@@ -23,22 +23,22 @@ interface TenantFeatures {
   satellite_imagery: boolean;
   soil_testing: boolean;
   basic_analytics: boolean;
-}
+};
 
-interface TenantData {
+type CachedTenantData = {
   id: string;
   name: string;
   slug: string;
   type: string;
   status: string;
   subscription_plan: string;
-  branding: TenantBranding;
-  features: TenantFeatures;
-}
+  branding: BrandingData;
+  features: FeaturesData;
+};
 
 export class TenantCacheService {
   private static instance: TenantCacheService;
-  private currentTenant: TenantData | null = null;
+  private currentTenant: CachedTenantData | null = null;
 
   static getInstance(): TenantCacheService {
     if (!TenantCacheService.instance) {
@@ -47,7 +47,7 @@ export class TenantCacheService {
     return TenantCacheService.instance;
   }
 
-  async loadTenantData(): Promise<TenantData | null> {
+  async loadTenantData(): Promise<CachedTenantData | null> {
     try {
       // First check if we have a cached tenant ID
       const cachedTenantId = await secureStorage.get('current_tenant_id');
@@ -89,7 +89,7 @@ export class TenantCacheService {
     }
   }
 
-  private async fetchDefaultTenant(): Promise<TenantData | null> {
+  private async fetchDefaultTenant(): Promise<CachedTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -115,14 +115,14 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return this.buildTenantData(tenant, branding, features);
+      return this.createTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
     }
   }
 
-  private async fetchTenantFromDatabase(tenantId: string): Promise<TenantData | null> {
+  private async fetchTenantFromDatabase(tenantId: string): Promise<CachedTenantData | null> {
     try {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -148,14 +148,14 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return this.buildTenantData(tenant, branding, features);
+      return this.createTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
   }
 
-  private buildTenantData(tenant: any, branding: any, features: any): TenantData {
+  private createTenantData(tenant: any, branding: any, features: any): CachedTenantData {
     return {
       id: tenant.id,
       name: tenant.name,
@@ -168,17 +168,17 @@ export class TenantCacheService {
     };
   }
 
-  private async getCachedTenantData(tenantId: string): Promise<TenantData | null> {
+  private async getCachedTenantData(tenantId: string): Promise<CachedTenantData | null> {
     try {
       const cachedData = await secureStorage.getObject(`tenant_data_${tenantId}`);
-      return cachedData as TenantData | null;
+      return cachedData as CachedTenantData | null;
     } catch (error) {
       console.error('Error getting cached tenant data:', error);
       return null;
     }
   }
 
-  private async cacheTenantData(tenantData: TenantData): Promise<void> {
+  private async cacheTenantData(tenantData: CachedTenantData): Promise<void> {
     try {
       await secureStorage.setObject(`tenant_data_${tenantData.id}`, tenantData);
       console.log('Tenant data cached successfully');
@@ -187,7 +187,7 @@ export class TenantCacheService {
     }
   }
 
-  private getDefaultBranding(): TenantBranding {
+  private getDefaultBranding(): BrandingData {
     return {
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
@@ -201,7 +201,7 @@ export class TenantCacheService {
     };
   }
 
-  private getDefaultFeatures(): TenantFeatures {
+  private getDefaultFeatures(): FeaturesData {
     return {
       ai_chat: true,
       weather_forecast: true,
@@ -213,7 +213,7 @@ export class TenantCacheService {
     };
   }
 
-  getCurrentTenant(): TenantData | null {
+  getCurrentTenant(): CachedTenantData | null {
     return this.currentTenant;
   }
 
