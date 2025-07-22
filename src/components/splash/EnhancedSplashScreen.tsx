@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -80,10 +79,10 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         dispatch(setCurrentTenant({
           id: tenantData.id,
           name: tenantData.name,
-          slug: tenantData.slug,
-          type: tenantData.type,
-          status: tenantData.status,
-          subscription_plan: tenantData.subscription_plan as any,
+          slug: 'default',
+          type: 'default' as any,
+          status: 'active' as any,
+          subscription_plan: 'basic' as any,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }));
@@ -94,7 +93,7 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         // Update local branding state for the splash screen
         setBranding({
           primaryColor: tenantData.branding.primary_color,
-          logo: tenantData.branding.splash_screen_url || tenantData.branding.logo_url,
+          logo: tenantData.branding.logo_url,
           appName: tenantData.branding.app_name,
           tagline: tenantData.branding.app_tagline
         });
