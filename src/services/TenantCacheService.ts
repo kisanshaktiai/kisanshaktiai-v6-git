@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 
+// Simplified type definitions to avoid circular references
 interface TenantBranding {
   primary_color: string;
   secondary_color: string;
@@ -114,16 +115,7 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        type: tenant.type,
-        status: tenant.status,
-        subscription_plan: tenant.subscription_plan,
-        branding: branding || this.getDefaultBranding(),
-        features: features || this.getDefaultFeatures()
-      };
+      return this.buildTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -156,20 +148,24 @@ export class TenantCacheService {
         .eq('tenant_id', tenant.id)
         .single();
 
-      return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        type: tenant.type,
-        status: tenant.status,
-        subscription_plan: tenant.subscription_plan,
-        branding: branding || this.getDefaultBranding(),
-        features: features || this.getDefaultFeatures()
-      };
+      return this.buildTenantData(tenant, branding, features);
     } catch (error) {
       console.error('Error fetching tenant from database:', error);
       return null;
     }
+  }
+
+  private buildTenantData(tenant: any, branding: any, features: any): TenantData {
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      type: tenant.type,
+      status: tenant.status,
+      subscription_plan: tenant.subscription_plan,
+      branding: branding || this.getDefaultBranding(),
+      features: features || this.getDefaultFeatures()
+    };
   }
 
   private async getCachedTenantData(tenantId: string): Promise<TenantData | null> {
