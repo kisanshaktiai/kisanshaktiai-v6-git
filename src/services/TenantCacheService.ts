@@ -87,10 +87,10 @@ export class TenantCacheService {
           return null;
         }
         
-        return this.buildTenantData(fallbackData);
+        return await this.constructTenantData(fallbackData);
       }
 
-      return this.buildTenantData(data);
+      return await this.constructTenantData(data);
     } catch (error) {
       console.error('Error fetching default tenant:', error);
       return null;
@@ -111,28 +111,29 @@ export class TenantCacheService {
         return null;
       }
 
-      return this.buildTenantData(data);
+      return await this.constructTenantData(data);
     } catch (error) {
       console.error('Error fetching tenant:', error);
       return null;
     }
   }
 
-  private async buildTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
-    // Fetch tenant branding
+  private async constructTenantData(tenantRow: BasicTenant): Promise<SimpleTenantData> {
+    // Fetch tenant branding with explicit typing
     const { data: brandingData } = await supabase
       .from('tenant_branding')
       .select('*')
       .eq('tenant_id', tenantRow.id)
       .single();
 
-    // Fetch tenant features
+    // Fetch tenant features with explicit typing
     const { data: featuresData } = await supabase
       .from('tenant_features')
       .select('*')
       .eq('tenant_id', tenantRow.id)
       .single();
 
+    // Explicitly construct branding object
     const branding: TenantBrandingData = {
       primary_color: brandingData?.primary_color || '#8BC34A',
       secondary_color: brandingData?.secondary_color || '#4CAF50',
@@ -145,6 +146,7 @@ export class TenantCacheService {
       splash_screen_url: brandingData?.splash_screen_url || brandingData?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
     };
 
+    // Explicitly construct features object
     const features: TenantFeaturesData = {
       ai_chat: featuresData?.ai_chat ?? true,
       weather_forecast: featuresData?.weather_forecast ?? true,
@@ -155,16 +157,19 @@ export class TenantCacheService {
       basic_analytics: featuresData?.basic_analytics ?? true
     };
 
-    return {
+    // Explicitly construct and return the final object
+    const tenantData: SimpleTenantData = {
       id: tenantRow.id,
       name: tenantRow.name,
       slug: tenantRow.slug,
       type: tenantRow.type,
       status: tenantRow.status,
       subscription_plan: tenantRow.subscription_plan,
-      branding,
-      features
+      branding: branding,
+      features: features
     };
+
+    return tenantData;
   }
 
   private async getCachedTenantData(tenantId: string): Promise<SimpleTenantData | null> {
