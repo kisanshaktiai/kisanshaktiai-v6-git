@@ -30,9 +30,10 @@ class CustomAuthService {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('Registering farmer with mobile:', cleanMobile);
+      console.log('CustomAuthService: Registering farmer with mobile:', cleanMobile);
+      console.log('CustomAuthService: Registration data:', farmerData);
       
-      // Enhanced registration with better error handling
+      // Enhanced registration with proper tenant ID
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: cleanMobile,
@@ -44,23 +45,34 @@ class CustomAuthService {
         }
       });
 
+      console.log('CustomAuthService: Registration response:', { data, error });
+
       if (error) {
-        console.error('Registration error:', error);
+        console.error('CustomAuthService: Registration error:', error);
         return { 
           success: false, 
           error: error.message || 'Registration failed' 
         };
       }
 
-      if (!data.success) {
-        console.error('Registration failed:', data.error);
+      if (!data || !data.success) {
+        console.error('CustomAuthService: Registration failed:', data?.error);
         return { 
           success: false, 
-          error: data.error || 'Registration failed' 
+          error: data?.error || 'Registration failed' 
         };
       }
 
-      console.log('Registration successful:', data);
+      console.log('CustomAuthService: Registration successful:', data);
+
+      // Validate response data
+      if (!data.farmer || !data.farmer.id) {
+        console.error('CustomAuthService: Invalid farmer data in response');
+        return {
+          success: false,
+          error: 'Invalid registration response'
+        };
+      }
 
       // Store authentication data
       this.currentFarmer = data.farmer;
@@ -68,12 +80,15 @@ class CustomAuthService {
       this.currentUserProfile = data.user_profile;
       
       // Save to secure storage with enhanced data
-      await secureStorage.setItem('farmer_auth', JSON.stringify({
+      const authData = {
         farmer: data.farmer,
         token: data.token,
         user_profile: data.user_profile,
         registered_at: new Date().toISOString()
-      }));
+      };
+
+      await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
+      console.log('CustomAuthService: Auth data stored successfully');
 
       return { 
         success: true, 
@@ -83,7 +98,7 @@ class CustomAuthService {
         token: data.token
       };
     } catch (error) {
-      console.error('Registration process error:', error);
+      console.error('CustomAuthService: Registration process error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Registration failed' 
@@ -96,7 +111,7 @@ class CustomAuthService {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('Logging in farmer with mobile:', cleanMobile);
+      console.log('CustomAuthService: Logging in farmer with mobile:', cleanMobile);
       
       // Enhanced login with better error handling
       const { data, error } = await supabase.functions.invoke('custom-auth-login', {
@@ -106,23 +121,34 @@ class CustomAuthService {
         }
       });
 
+      console.log('CustomAuthService: Login response:', { data, error });
+
       if (error) {
-        console.error('Login error:', error);
+        console.error('CustomAuthService: Login error:', error);
         return { 
           success: false, 
           error: error.message || 'Login failed' 
         };
       }
 
-      if (!data.success) {
-        console.error('Login failed:', data.error);
+      if (!data || !data.success) {
+        console.error('CustomAuthService: Login failed:', data?.error);
         return { 
           success: false, 
-          error: data.error || 'Login failed' 
+          error: data?.error || 'Login failed' 
         };
       }
 
-      console.log('Login successful:', data);
+      console.log('CustomAuthService: Login successful:', data);
+
+      // Validate response data
+      if (!data.farmer || !data.farmer.id) {
+        console.error('CustomAuthService: Invalid farmer data in response');
+        return {
+          success: false,
+          error: 'Invalid login response'
+        };
+      }
 
       // Store authentication data
       this.currentFarmer = data.farmer;
@@ -130,12 +156,15 @@ class CustomAuthService {
       this.currentUserProfile = data.user_profile;
       
       // Save to secure storage with enhanced data
-      await secureStorage.setItem('farmer_auth', JSON.stringify({
+      const authData = {
         farmer: data.farmer,
         token: data.token,
         user_profile: data.user_profile,
         logged_in_at: new Date().toISOString()
-      }));
+      };
+
+      await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
+      console.log('CustomAuthService: Auth data stored successfully');
 
       return { 
         success: true, 
@@ -145,7 +174,7 @@ class CustomAuthService {
         token: data.token
       };
     } catch (error) {
-      console.error('Login process error:', error);
+      console.error('CustomAuthService: Login process error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Login failed' 
@@ -157,68 +186,62 @@ class CustomAuthService {
     try {
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('Checking existing farmer with mobile:', cleanMobile);
+      console.log('CustomAuthService: Checking existing farmer with mobile:', cleanMobile);
       
       const { data, error } = await supabase
         .from('farmers')
-        .select('id')
+        .select('id, mobile_number, tenant_id')
         .eq('mobile_number', cleanMobile)
         .maybeSingle();
 
       if (error) {
-        console.error('Error checking farmer existence:', error);
+        console.error('CustomAuthService: Error checking farmer existence:', error);
         return false;
       }
 
       const exists = !!data;
-      console.log('Farmer exists:', exists);
+      console.log('CustomAuthService: Farmer exists:', exists, data);
       return exists;
     } catch (error) {
-      console.error('Error in checkExistingFarmer:', error);
+      console.error('CustomAuthService: Error in checkExistingFarmer:', error);
       return false;
     }
   }
 
   async restoreSession(): Promise<boolean> {
     try {
+      console.log('CustomAuthService: Attempting to restore session');
       const storedAuth = await secureStorage.getItem('farmer_auth');
       
       if (!storedAuth) {
-        console.log('No stored authentication found');
+        console.log('CustomAuthService: No stored authentication found');
         return false;
       }
 
       const { farmer, token, user_profile } = JSON.parse(storedAuth);
       
-      if (!farmer || !token) {
-        console.log('Invalid stored authentication data');
+      if (!farmer || !token || !farmer.id) {
+        console.log('CustomAuthService: Invalid stored authentication data');
         return false;
       }
 
-      console.log('Restoring session for farmer:', farmer.id);
+      console.log('CustomAuthService: Restoring session for farmer:', farmer.id);
 
-      // Validate token
-      if (token.startsWith('offline_')) {
-        // Offline token, just restore session
-        this.currentFarmer = farmer;
-        this.currentToken = token;
-        this.currentUserProfile = user_profile;
-        return true;
-      } else {
-        // Online token, restore session
-        this.currentFarmer = farmer;
-        this.currentToken = token;
-        this.currentUserProfile = user_profile;
-        return true;
-      }
+      // Restore session state
+      this.currentFarmer = farmer;
+      this.currentToken = token;
+      this.currentUserProfile = user_profile;
+      
+      console.log('CustomAuthService: Session restored successfully');
+      return true;
     } catch (error) {
-      console.error('Error restoring session:', error);
+      console.error('CustomAuthService: Error restoring session:', error);
       return false;
     }
   }
 
   async signOut(): Promise<void> {
-    console.log('Signing out farmer');
+    console.log('CustomAuthService: Signing out farmer');
     this.currentFarmer = null;
     this.currentToken = null;
     this.currentUserProfile = null;
@@ -238,7 +261,9 @@ class CustomAuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.currentFarmer && !!this.currentToken;
+    const authenticated = !!this.currentFarmer && !!this.currentToken;
+    console.log('CustomAuthService: Authentication status:', authenticated);
+    return authenticated;
   }
 
   // Enhanced method to get complete user data
@@ -255,6 +280,8 @@ class CustomAuthService {
     if (!this.currentFarmer) return;
 
     try {
+      console.log('CustomAuthService: Refreshing user profile for farmer:', this.currentFarmer.id);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -263,6 +290,7 @@ class CustomAuthService {
 
       if (!error && data) {
         this.currentUserProfile = data;
+        console.log('CustomAuthService: User profile refreshed successfully');
         
         // Update stored data
         const storedAuth = await secureStorage.getItem('farmer_auth');
@@ -271,9 +299,11 @@ class CustomAuthService {
           authData.user_profile = data;
           await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
         }
+      } else {
+        console.error('CustomAuthService: Error refreshing user profile:', error);
       }
     } catch (error) {
-      console.error('Error refreshing user profile:', error);
+      console.error('CustomAuthService: Error refreshing user profile:', error);
     }
   }
 }

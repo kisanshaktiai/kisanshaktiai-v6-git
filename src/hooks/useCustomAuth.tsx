@@ -51,11 +51,13 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     // Monitor online/offline status
     const handleOnline = () => {
+      console.log('CustomAuthProvider: Coming back online');
       setIsOnline(true);
       refreshSession(); // Refresh session when coming back online
     };
     
     const handleOffline = () => {
+      console.log('CustomAuthProvider: Going offline');
       setIsOnline(false);
     };
 
@@ -74,6 +76,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const initializeAuth = async () => {
     try {
+      console.log('CustomAuthProvider: Initializing authentication');
       setLoading(true);
       
       // Try to restore session
@@ -83,19 +86,24 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
         const currentFarmer = customAuthService.getCurrentFarmer();
         const currentUserProfile = customAuthService.getCurrentUserProfile();
         
-        if (currentFarmer) {
+        console.log('CustomAuthProvider: Session restored:', {
+          farmer: currentFarmer,
+          profile: currentUserProfile
+        });
+        
+        if (currentFarmer && currentFarmer.id) {
           setFarmer(currentFarmer);
         }
-        if (currentUserProfile) {
+        if (currentUserProfile && currentUserProfile.id) {
           setUserProfile(currentUserProfile);
         }
         
-        console.log('Session restored successfully');
+        console.log('CustomAuthProvider: Session restored successfully');
       } else {
-        console.log('No session to restore');
+        console.log('CustomAuthProvider: No session to restore');
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
+      console.error('CustomAuthProvider: Auth initialization error:', error);
     } finally {
       setLoading(false);
     }
@@ -103,16 +111,18 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const refreshSession = async () => {
     try {
+      console.log('CustomAuthProvider: Refreshing session');
       const currentFarmer = customAuthService.getCurrentFarmer();
       const currentUserProfile = customAuthService.getCurrentUserProfile();
       const token = customAuthService.getCurrentToken();
       
       if (currentFarmer && token) {
+        console.log('CustomAuthProvider: Refreshing session with stored data');
         // If we have stored credentials but no current farmer state, restore it
-        if (!farmer) {
+        if (!farmer && currentFarmer.id) {
           setFarmer(currentFarmer);
         }
-        if (!userProfile && currentUserProfile) {
+        if (!userProfile && currentUserProfile && currentUserProfile.id) {
           setUserProfile(currentUserProfile);
         }
         
@@ -122,39 +132,45 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
         }
       }
     } catch (error) {
-      console.error('Session refresh error:', error);
+      console.error('CustomAuthProvider: Session refresh error:', error);
     }
   };
 
   const refreshUserProfile = async () => {
     try {
+      console.log('CustomAuthProvider: Refreshing user profile');
       await customAuthService.refreshUserProfile();
       const updatedProfile = customAuthService.getCurrentUserProfile();
-      if (updatedProfile) {
+      if (updatedProfile && updatedProfile.id) {
         setUserProfile(updatedProfile);
+        console.log('CustomAuthProvider: User profile refreshed');
       }
     } catch (error) {
-      console.error('User profile refresh error:', error);
+      console.error('CustomAuthProvider: User profile refresh error:', error);
     }
   };
 
   const login = async (mobileNumber: string, pin: string) => {
     try {
+      console.log('CustomAuthProvider: Attempting login');
       setLoading(true);
       const response = await customAuthService.login(mobileNumber, pin);
       
       if (response.success && response.farmer) {
+        console.log('CustomAuthProvider: Login successful', response);
         setFarmer(response.farmer);
         if (response.user_profile) {
           setUserProfile(response.user_profile);
         }
-        console.log('Login successful, farmer and profile set');
+        console.log('CustomAuthProvider: Login successful, farmer and profile set');
+      } else {
+        console.error('CustomAuthProvider: Login failed:', response.error);
       }
       
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('Login error:', error);
+      console.error('CustomAuthProvider: Login error:', error);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -163,21 +179,25 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const register = async (mobileNumber: string, pin: string, farmerData?: any) => {
     try {
+      console.log('CustomAuthProvider: Attempting registration');
       setLoading(true);
       const response = await customAuthService.register(mobileNumber, pin, farmerData);
       
       if (response.success && response.farmer) {
+        console.log('CustomAuthProvider: Registration successful', response);
         setFarmer(response.farmer);
         if (response.user_profile) {
           setUserProfile(response.user_profile);
         }
-        console.log('Registration successful, farmer and profile set');
+        console.log('CustomAuthProvider: Registration successful, farmer and profile set');
+      } else {
+        console.error('CustomAuthProvider: Registration failed:', response.error);
       }
       
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-      console.error('Registration error:', error);
+      console.error('CustomAuthProvider: Registration error:', error);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -186,32 +206,44 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const checkExistingFarmer = async (mobileNumber: string) => {
     try {
+      console.log('CustomAuthProvider: Checking existing farmer');
       return await customAuthService.checkExistingFarmer(mobileNumber);
     } catch (error) {
-      console.error('Check existing farmer error:', error);
+      console.error('CustomAuthProvider: Check existing farmer error:', error);
       return false;
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('CustomAuthProvider: Signing out');
       setLoading(true);
       await customAuthService.signOut();
       setFarmer(null);
       setUserProfile(null);
-      console.log('Sign out successful');
+      console.log('CustomAuthProvider: Sign out successful');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('CustomAuthProvider: Sign out error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const isAuthenticated = !!farmer && !!farmer.id;
+  
+  console.log('CustomAuthProvider: Current state:', {
+    farmer: farmer?.id,
+    userProfile: userProfile?.id,
+    loading,
+    isAuthenticated,
+    isOnline
+  });
+
   const contextValue: CustomAuthContextType = {
     farmer,
     userProfile,
     loading,
-    isAuthenticated: !!farmer,
+    isAuthenticated,
     isOnline,
     login,
     register,

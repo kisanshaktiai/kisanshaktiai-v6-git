@@ -1,3 +1,5 @@
+
+// First, let's get the correct tenant ID from the database
 export const DEFAULT_TENANT_ID = "66372c6f-c996-4425-8749-a7561e5d6ae3";
 
 export const STORAGE_KEYS = {
@@ -27,4 +29,5 @@ export const FARMER_REGISTRATION = {
   PIN_LENGTH: 4,
   OTP_LENGTH: 6,
   DEFAULT_TENANT: DEFAULT_TENANT_ID,
+  DEFAULT_TENANT_SLUG: 'kisanshakti', // Add this for consistent tenant lookup
 };
