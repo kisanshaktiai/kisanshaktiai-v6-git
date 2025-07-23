@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { SubscriptionPlan } from '@/types/tenant';
 
 interface TenantBranding {
+  tenant_id?: string;
   logo_url?: string;
   app_name?: string;
   app_tagline?: string;
