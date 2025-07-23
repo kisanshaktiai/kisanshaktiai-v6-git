@@ -1,133 +1,135 @@
 
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
+import { WelcomeScreen } from './WelcomeScreen';
+import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
+import { AuthScreen } from './AuthScreen';
+import { ProfileRegistrationScreen } from './ProfileRegistrationScreen';
+import { OnboardingProgress } from './OnboardingProgress';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { RootState } from '@/store';
-import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { EnhancedSplashScreen } from '../splash/EnhancedSplashScreen';
-import { EnhancedLanguageScreen } from './EnhancedLanguageScreen';
-import { EnhancedPhoneAuthScreen } from '../auth/EnhancedPhoneAuthScreen';
-import { useBranding } from '@/contexts/BrandingContext';
-import { Loader } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-type OnboardingStep = 'splash' | 'language' | 'auth';
+interface OnboardingFlowProps {
+  onComplete: () => void;
+}
 
-export const OnboardingFlow: React.FC = () => {
-  const dispatch = useDispatch();
-  const { t, i18n } = useTranslation();
-  const { isAuthenticated, loading } = useCustomAuth();
-  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
-  const { branding, loading: loadingBranding, error } = useBranding();
-  
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
-  const [isInitialized, setIsInitialized] = useState(false);
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('hi');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { farmer, userProfile, loading } = useCustomAuth();
+  const navigate = useNavigate();
 
-  // Initialize app and check for existing language preference
   useEffect(() => {
-    const initializeApp = async () => {
-      // Check if language was already selected on this device
-      const savedLanguage = localStorage.getItem('selectedLanguage');
-      const languageSelectedAt = localStorage.getItem('languageSelectedAt');
-      
-      if (savedLanguage && languageSelectedAt) {
-        // Apply saved language
-        try {
-          await i18n.changeLanguage(savedLanguage);
-          console.log('Applied saved language:', savedLanguage);
-        } catch (error) {
-          console.error('Error applying saved language:', error);
-        }
-      }
-    };
-
-    initializeApp();
-  }, [i18n]);
-
-  const handleSplashComplete = () => {
-    setIsInitialized(true);
+    console.log('OnboardingFlow: Auth state changed:', { farmer: !!farmer, userProfile: !!userProfile, loading });
     
-    // For returning users (authenticated), skip language and go to auth completion
-    if (isAuthenticated) {
-      console.log('Returning user detected, completing onboarding');
-      dispatch(setOnboardingCompleted());
-      return;
+    if (!loading && farmer) {
+      console.log('OnboardingFlow: User is authenticated, redirecting to dashboard');
+      setIsAuthenticated(true);
+      // Navigate to dashboard instead of calling onComplete
+      navigate('/dashboard');
     }
-    
-    // For first-time users, check language selection
-    const savedLanguage = localStorage.getItem('selectedLanguage');
-    const languageSelectedAt = localStorage.getItem('languageSelectedAt');
-    
-    // Show language selection if not previously selected or if it was selected more than 30 days ago
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
-      setCurrentStep('language');
-    } else {
-      // Language recently selected, proceed to auth
-      setCurrentStep('auth');
+  }, [farmer, userProfile, loading, navigate]);
+
+  const steps = [
+    'welcome',
+    'language',
+    'auth',
+    'profile'
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const handleLanguageComplete = () => {
-    setCurrentStep('auth');
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleLanguageSelect = (language: string) => {
+    console.log('OnboardingFlow: Language selected:', language);
+    setSelectedLanguage(language);
+    handleNext();
   };
 
   const handleAuthComplete = () => {
-    dispatch(setOnboardingCompleted());
+    console.log('OnboardingFlow: Auth completed');
+    // Check if profile is complete
+    if (userProfile?.full_name) {
+      console.log('OnboardingFlow: Profile complete, finishing onboarding');
+      navigate('/dashboard');
+    } else {
+      console.log('OnboardingFlow: Profile incomplete, moving to profile step');
+      setCurrentStep(3); // Move to profile step
+    }
   };
 
-  // Show loading if auth is still being determined or branding is loading
-  if (loading || loadingBranding) {
+  const handleProfileComplete = () => {
+    console.log('OnboardingFlow: Profile completed, finishing onboarding');
+    navigate('/dashboard');
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.initializing')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show splash screen first (always, for branding and tenant loading)
-  if (currentStep === 'splash') {
-    return <EnhancedSplashScreen onComplete={handleSplashComplete} />;
-  }
-
-  // Show loading if not initialized
-  if (!isInitialized) {
+  if (isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.initializing')}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Language selection step (only for first-time users or expired language selection)
-  if (currentStep === 'language') {
-    return (
-      <EnhancedLanguageScreen 
-        onNext={handleLanguageComplete}
-      />
-    );
-  }
+  const renderCurrentStep = () => {
+    switch (steps[currentStep]) {
+      case 'welcome':
+        return <WelcomeScreen onNext={handleNext} />;
+      case 'language':
+        return (
+          <LocationBasedLanguageScreen 
+            onLanguageSelect={handleLanguageSelect}
+            onBack={handleBack}
+          />
+        );
+      case 'auth':
+        return (
+          <AuthScreen 
+            onComplete={handleAuthComplete}
+            onBack={handleBack}
+            selectedLanguage={selectedLanguage}
+          />
+        );
+      case 'profile':
+        return (
+          <ProfileRegistrationScreen 
+            onComplete={handleProfileComplete}
+            onBack={handleBack}
+            selectedLanguage={selectedLanguage}
+          />
+        );
+      default:
+        return <WelcomeScreen onNext={handleNext} />;
+    }
+  };
 
-  // Authentication step - only show if not authenticated
-  if (currentStep === 'auth' && !isAuthenticated) {
-    return <EnhancedPhoneAuthScreen onComplete={handleAuthComplete} />;
-  }
-
-  // Fallback - should not reach here
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-      <div className="text-center">
-        <Loader className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-        <p className="text-gray-600">{t('common.redirecting')}</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      <OnboardingProgress currentStep={currentStep} totalSteps={steps.length} />
+      {renderCurrentStep()}
     </div>
   );
 };

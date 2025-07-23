@@ -3,7 +3,7 @@ import { SubscriptionPlan, getSubscriptionPlanLimits } from '@/types/tenant';
 
 export class TenantService {
   private static instance: TenantService;
-  private currentTenantId: string = 'fallback-tenant-id';
+  private currentTenantId: string | null = null;
 
   static getInstance(): TenantService {
     if (!TenantService.instance) {
@@ -13,69 +13,67 @@ export class TenantService {
   }
 
   getCurrentTenantId(): string {
-    return this.currentTenantId;
+    return this.currentTenantId || 'no-tenant-set';
   }
 
   setCurrentTenantId(tenantId: string): void {
     this.currentTenantId = tenantId;
-    console.log('Tenant ID set to:', tenantId);
+    console.log('TenantService: Tenant ID set to:', tenantId);
   }
 
   async getTenantData() {
     try {
-      console.log('TenantService: Getting tenant data for:', this.currentTenantId);
+      console.log('TenantService: Getting tenant data');
 
-      // If we don't have a valid tenant ID, try to get the default tenant
-      if (this.currentTenantId === 'fallback-tenant-id') {
-        try {
-          const { data: defaultTenant, error } = await supabase.functions.invoke('tenant-default', {
-            method: 'GET'
-          });
-
-          if (!error && defaultTenant?.id) {
-            this.currentTenantId = defaultTenant.id;
-            console.log('TenantService: Updated tenant ID to:', this.currentTenantId);
-          }
-        } catch (tenantError) {
-          console.warn('TenantService: Could not get default tenant, using fallback');
-        }
-      }
-
-      // First, let's try a simple query to test if the database is accessible
+      // Always get the default tenant dynamically from database
       try {
-        const { data: testQuery, error: testError } = await supabase
-          .from('tenants')
-          .select('id')
-          .limit(1);
-        
-        if (testError) {
-          console.error('TenantService: Database connectivity test failed:', testError);
-          // Return default data if database is not accessible
-          return this.getDefaultTenantData();
+        const { data: defaultTenant, error } = await supabase.functions.invoke('tenant-default', {
+          method: 'GET'
+        });
+
+        if (!error && defaultTenant?.id) {
+          this.currentTenantId = defaultTenant.id;
+          console.log('TenantService: Using dynamic tenant ID:', this.currentTenantId);
+          
+          return {
+            tenant: {
+              id: defaultTenant.id,
+              name: defaultTenant.name,
+              slug: 'default',
+              type: 'default',
+              status: 'active',
+              subscription_plan: 'kisan' as SubscriptionPlan,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            branding: defaultTenant.branding || this.getDefaultBranding(),
+            features: defaultTenant.features || this.getDefaultFeatures()
+          };
         }
-        
-        console.log('TenantService: Database connectivity confirmed');
-      } catch (connectError) {
-        console.error('TenantService: Database connection error:', connectError);
-        return this.getDefaultTenantData();
+      } catch (tenantError) {
+        console.warn('TenantService: Could not get default tenant from edge function, trying direct query');
       }
 
-      // Load tenant with error handling
+      // Fallback: try direct database query
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
-        .eq('id', this.currentTenantId)
+        .eq('is_default', true)
+        .eq('status', 'active')
         .maybeSingle();
 
       if (tenantError) {
-        console.error('TenantService: Tenant query error:', tenantError);
-        return this.getDefaultTenantData();
+        console.error('TenantService: Database query error:', tenantError);
+        return this.getFallbackTenantData();
       }
 
       if (!tenant) {
-        console.log('TenantService: No tenant found, using default');
-        return this.getDefaultTenantData();
+        console.log('TenantService: No default tenant found, using fallback');
+        return this.getFallbackTenantData();
       }
+
+      this.currentTenantId = tenant.id;
+      console.log('TenantService: Using database tenant ID:', this.currentTenantId);
 
       // Load branding and features in parallel with error handling
       const [brandingResult, featuresResult] = await Promise.allSettled([
@@ -99,14 +97,6 @@ export class TenantService {
         ? featuresResult.value.data 
         : null;
 
-      if (brandingResult.status === 'rejected') {
-        console.warn('TenantService: Branding load failed (non-critical):', brandingResult.reason);
-      }
-
-      if (featuresResult.status === 'rejected') {
-        console.warn('TenantService: Features load failed (non-critical):', featuresResult.reason);
-      }
-
       console.log('TenantService: Tenant data loaded successfully');
       return {
         tenant,
@@ -115,16 +105,20 @@ export class TenantService {
       };
     } catch (error) {
       console.error('TenantService: Error loading tenant data:', error);
-      return this.getDefaultTenantData();
+      return this.getFallbackTenantData();
     }
   }
 
-  private getDefaultTenantData() {
+  private getFallbackTenantData() {
+    // Generate a temporary tenant ID for fallback
+    const fallbackId = crypto.randomUUID();
+    this.currentTenantId = fallbackId;
+    
     return {
       tenant: {
-        id: this.currentTenantId,
+        id: fallbackId,
         name: 'KisanShakti AI',
-        slug: 'default',
+        slug: 'fallback',
         type: 'default',
         status: 'active',
         subscription_plan: 'kisan' as SubscriptionPlan,
@@ -181,6 +175,10 @@ export class TenantService {
 
   async createUserTenantAssociation(userId: string, role: 'farmer' | 'dealer' | 'super_admin' | 'tenant_owner' | 'tenant_admin' | 'tenant_manager' | 'agent' = 'farmer') {
     try {
+      if (!this.currentTenantId) {
+        throw new Error('No tenant ID available for user association');
+      }
+
       const { data, error } = await supabase
         .from('user_tenants')
         .insert({

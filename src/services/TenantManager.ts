@@ -55,7 +55,7 @@ class TenantManager {
     try {
       console.log('TenantManager: Initializing tenant:', tenantId);
 
-      // Get default tenant if no specific ID provided
+      // Get dynamic default tenant if no specific ID provided
       if (!tenantId) {
         try {
           const { data: defaultTenant, error } = await supabase.functions.invoke('tenant-default', {
@@ -64,24 +64,22 @@ class TenantManager {
 
           if (error) {
             console.error('TenantManager: Error getting default tenant:', error);
-            this.setFallbackTenant();
-            return false;
+            return await this.initializeFallbackTenant();
           }
 
           if (defaultTenant?.id) {
             tenantId = defaultTenant.id;
+            console.log('TenantManager: Using dynamic tenant ID:', tenantId);
           }
         } catch (error) {
           console.error('TenantManager: Failed to get default tenant:', error);
-          this.setFallbackTenant();
-          return false;
+          return await this.initializeFallbackTenant();
         }
       }
 
       if (!tenantId) {
         console.log('TenantManager: No tenant ID available, using fallback');
-        this.setFallbackTenant();
-        return true;
+        return await this.initializeFallbackTenant();
       }
 
       // Load tenant data
@@ -93,14 +91,12 @@ class TenantManager {
 
       if (tenantError) {
         console.error('TenantManager: Error loading tenant:', tenantError);
-        this.setFallbackTenant();
-        return false;
+        return await this.initializeFallbackTenant();
       }
 
       if (!tenant) {
         console.log('TenantManager: Tenant not found, using fallback');
-        this.setFallbackTenant();
-        return true;
+        return await this.initializeFallbackTenant();
       }
 
       this.currentTenant = {
@@ -128,7 +124,47 @@ class TenantManager {
 
     } catch (error) {
       console.error('TenantManager: Critical error initializing tenant:', error);
-      this.setFallbackTenant();
+      return await this.initializeFallbackTenant();
+    }
+  }
+
+  private async initializeFallbackTenant(): Promise<boolean> {
+    try {
+      // Try to get any active tenant from database
+      const { data: anyTenant, error } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && anyTenant) {
+        console.log('TenantManager: Using first available tenant as fallback:', anyTenant.id);
+        return await this.initializeTenant(anyTenant.id);
+      }
+
+      // Complete fallback with generated ID
+      const fallbackId = crypto.randomUUID();
+      this.currentTenant = {
+        id: fallbackId,
+        name: 'KisanShakti AI',
+        slug: 'fallback',
+        type: 'default',
+        status: 'active',
+        subscription_plan: 'kisan' as SubscriptionPlan
+      };
+      this.tenantBranding = this.getDefaultBranding();
+      this.tenantFeatures = this.getDefaultFeatures();
+      
+      if (this.tenantBranding) {
+        applyTenantTheme(this.tenantBranding);
+        this.updateDocumentTitle();
+      }
+
+      console.log('TenantManager: Fallback tenant initialized with ID:', fallbackId);
+      return true;
+    } catch (error) {
+      console.error('TenantManager: Error in fallback initialization:', error);
       return false;
     }
   }
@@ -160,24 +196,6 @@ class TenantManager {
     } catch (error) {
       console.warn('TenantManager: Error loading features:', error);
       this.tenantFeatures = this.getDefaultFeatures();
-    }
-  }
-
-  private setFallbackTenant() {
-    this.currentTenant = {
-      id: 'fallback-tenant-id',
-      name: 'KisanShakti AI',
-      slug: 'default',
-      type: 'default',
-      status: 'active',
-      subscription_plan: 'kisan' as SubscriptionPlan
-    };
-    this.tenantBranding = this.getDefaultBranding();
-    this.tenantFeatures = this.getDefaultFeatures();
-    
-    if (this.tenantBranding) {
-      applyTenantTheme(this.tenantBranding);
-      this.updateDocumentTitle();
     }
   }
 
@@ -271,7 +289,7 @@ class TenantManager {
   }
 
   getCurrentTenantId(): string {
-    return this.currentTenant?.id || 'fallback-tenant-id';
+    return this.currentTenant?.id || 'no-tenant-available';
   }
 
   getSubscriptionPlanInfo() {

@@ -22,21 +22,21 @@ export const useTenantContext = () => {
       setLoading(true);
       setError(null);
       
-      console.log('Loading tenant context data');
+      console.log('useTenantContext: Loading tenant context data');
       
       const data = await tenantService.getTenantData();
       setTenantData(data);
-      console.log('Tenant context data loaded successfully:', data);
+      console.log('useTenantContext: Tenant context data loaded successfully:', data);
     } catch (err) {
-      console.error('Error loading tenant context data:', err);
+      console.error('useTenantContext: Error loading tenant context data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load tenant data');
       
       // Set fallback data
       setTenantData({
         tenant: {
-          id: 'fallback-tenant-id',
+          id: crypto.randomUUID(),
           name: 'KisanShakti AI',
-          slug: 'default',
+          slug: 'fallback',
           type: 'default'
         },
         branding: null,
@@ -48,7 +48,7 @@ export const useTenantContext = () => {
   };
 
   const getCurrentTenantId = () => {
-    return tenantData?.tenant?.id || 'fallback-tenant-id';
+    return tenantData?.tenant?.id || 'no-tenant-available';
   };
 
   const switchTenant = async (tenantId: string) => {
@@ -56,7 +56,7 @@ export const useTenantContext = () => {
       tenantService.setCurrentTenantId(tenantId);
       await loadTenantData();
     } catch (err) {
-      console.error('Error switching tenant:', err);
+      console.error('useTenantContext: Error switching tenant:', err);
       setError(err instanceof Error ? err.message : 'Failed to switch tenant');
     }
   };

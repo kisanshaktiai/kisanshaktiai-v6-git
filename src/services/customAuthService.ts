@@ -1,23 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { secureStorage } from './storage/secureStorage';
+import { secureStorage } from '@/services/storage/secureStorage';
 
-export interface AuthResponse {
-  success: boolean;
-  farmer?: any;
-  user_profile?: any;
-  token?: string;
-  error?: string;
-}
-
-export interface Farmer {
+interface Farmer {
   id: string;
   farmer_code: string;
   mobile_number: string;
   tenant_id: string;
 }
 
-export interface UserProfile {
+interface UserProfile {
   id: string;
   mobile_number: string;
   preferred_language: string;
@@ -25,15 +17,31 @@ export interface UserProfile {
   farmer_id: string;
 }
 
+interface AuthResponse {
+  success: boolean;
+  error?: string;
+  token?: string;
+  farmer?: Farmer;
+  user_profile?: UserProfile;
+}
+
 class CustomAuthService {
+  private static instance: CustomAuthService;
   private currentFarmer: Farmer | null = null;
   private currentUserProfile: UserProfile | null = null;
   private currentToken: string | null = null;
 
+  static getInstance(): CustomAuthService {
+    if (!CustomAuthService.instance) {
+      CustomAuthService.instance = new CustomAuthService();
+    }
+    return CustomAuthService.instance;
+  }
+
   async login(mobileNumber: string, pin: string): Promise<AuthResponse> {
     try {
-      console.log('CustomAuthService: Attempting login for mobile:', mobileNumber);
-      
+      console.log('CustomAuthService: Attempting login for:', mobileNumber);
+
       const { data, error } = await supabase.functions.invoke('custom-auth-login', {
         body: {
           mobile_number: mobileNumber,
@@ -42,168 +50,154 @@ class CustomAuthService {
       });
 
       if (error) {
-        console.error('CustomAuthService: Login function error:', error);
+        console.error('CustomAuthService: Login error:', error);
         return {
           success: false,
-          error: 'Authentication service error. Please try again.'
+          error: error.message || 'Login failed'
         };
       }
 
-      if (!data || !data.success) {
-        console.error('CustomAuthService: Login failed:', data?.error);
+      if (!data.success) {
+        console.error('CustomAuthService: Login failed:', data.error);
         return {
           success: false,
-          error: data?.error || 'Login failed'
+          error: data.error || 'Login failed'
         };
       }
 
       console.log('CustomAuthService: Login successful:', data);
 
-      // Store the authentication data
+      // Store session data
       this.currentFarmer = data.farmer;
       this.currentUserProfile = data.user_profile;
       this.currentToken = data.token;
 
-      // Persist to secure storage
-      await this.persistAuthData();
+      // Cache in secure storage
+      await secureStorage.setItem('auth_token', data.token);
+      await secureStorage.setItem('current_farmer', JSON.stringify(data.farmer));
+      if (data.user_profile) {
+        await secureStorage.setItem('current_user_profile', JSON.stringify(data.user_profile));
+      }
 
       return {
         success: true,
+        token: data.token,
         farmer: data.farmer,
-        user_profile: data.user_profile,
-        token: data.token
+        user_profile: data.user_profile
       };
+
     } catch (error) {
-      console.error('CustomAuthService: Login error:', error);
+      console.error('CustomAuthService: Login network error:', error);
       return {
         success: false,
-        error: 'Network error. Please check your connection and try again.'
+        error: 'Network error during login'
       };
     }
   }
 
-  async register(mobileNumber: string, pin: string, farmerData: any = {}): Promise<AuthResponse> {
+  async register(mobileNumber: string, pin: string, farmerData?: any): Promise<AuthResponse> {
     try {
-      console.log('CustomAuthService: Attempting registration for mobile:', mobileNumber);
-      
+      console.log('CustomAuthService: Attempting registration for:', mobileNumber);
+
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: mobileNumber,
           pin: pin,
-          farmer_data: farmerData
+          full_name: farmerData?.full_name
         }
       });
 
       if (error) {
-        console.error('CustomAuthService: Registration function error:', error);
+        console.error('CustomAuthService: Registration error:', error);
         return {
           success: false,
-          error: 'Registration service error. Please try again.'
+          error: error.message || 'Registration failed'
         };
       }
 
-      if (!data || !data.success) {
-        console.error('CustomAuthService: Registration failed:', data?.error);
+      if (!data.success) {
+        console.error('CustomAuthService: Registration failed:', data.error);
         return {
           success: false,
-          error: data?.error || 'Registration failed'
+          error: data.error || 'Registration failed'
         };
       }
 
       console.log('CustomAuthService: Registration successful:', data);
 
-      // Store the authentication data
+      // Store session data (registration doesn't return token, so we'll need to login)
       this.currentFarmer = data.farmer;
       this.currentUserProfile = data.user_profile;
-      this.currentToken = data.token;
 
-      // Persist to secure storage
-      await this.persistAuthData();
+      // Cache farmer data
+      await secureStorage.setItem('current_farmer', JSON.stringify(data.farmer));
+      if (data.user_profile) {
+        await secureStorage.setItem('current_user_profile', JSON.stringify(data.user_profile));
+      }
 
       return {
         success: true,
         farmer: data.farmer,
-        user_profile: data.user_profile,
-        token: data.token
+        user_profile: data.user_profile
       };
+
     } catch (error) {
-      console.error('CustomAuthService: Registration error:', error);
+      console.error('CustomAuthService: Registration network error:', error);
       return {
         success: false,
-        error: 'Network error. Please check your connection and try again.'
+        error: 'Network error during registration'
       };
     }
   }
 
   async checkExistingFarmer(mobileNumber: string): Promise<boolean> {
     try {
-      console.log('CustomAuthService: Checking existing farmer for mobile:', mobileNumber);
-      
-      const cleanMobile = mobileNumber.replace(/\D/g, '');
-      
-      // Use a simple query to check if farmer exists
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('id')
-        .eq('mobile_number', cleanMobile)
-        .limit(1);
+      console.log('CustomAuthService: Checking existing farmer for:', mobileNumber);
+
+      const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+        body: {
+          mobile_number: mobileNumber
+        }
+      });
 
       if (error) {
-        console.error('CustomAuthService: Error checking farmer:', error);
+        console.error('CustomAuthService: Check farmer error:', error);
         return false;
       }
 
-      const exists = data && data.length > 0;
-      console.log('CustomAuthService: Farmer exists check result:', exists);
-      return exists;
+      return data?.exists || false;
+
     } catch (error) {
-      console.error('CustomAuthService: Check existing farmer error:', error);
+      console.error('CustomAuthService: Network error checking farmer:', error);
       return false;
-    }
-  }
-
-  async signOut(): Promise<void> {
-    try {
-      console.log('CustomAuthService: Signing out');
-      
-      // Clear in-memory data
-      this.currentFarmer = null;
-      this.currentUserProfile = null;
-      this.currentToken = null;
-
-      // Clear persistent storage
-      await secureStorage.removeItem('auth_farmer');
-      await secureStorage.removeItem('auth_user_profile');
-      await secureStorage.removeItem('auth_token');
-      
-      console.log('CustomAuthService: Sign out completed');
-    } catch (error) {
-      console.error('CustomAuthService: Sign out error:', error);
-      throw error;
     }
   }
 
   async restoreSession(): Promise<boolean> {
     try {
-      console.log('CustomAuthService: Attempting to restore session');
-      
-      const [farmerData, userProfileData, tokenData] = await Promise.all([
-        secureStorage.getItem('auth_farmer'),
-        secureStorage.getItem('auth_user_profile'),
-        secureStorage.getItem('auth_token')
+      console.log('CustomAuthService: Restoring session');
+
+      const [token, farmerData, profileData] = await Promise.all([
+        secureStorage.getItem('auth_token'),
+        secureStorage.getItem('current_farmer'),
+        secureStorage.getItem('current_user_profile')
       ]);
 
-      if (farmerData && tokenData) {
+      if (token && farmerData) {
+        this.currentToken = token;
         this.currentFarmer = JSON.parse(farmerData);
-        this.currentUserProfile = userProfileData ? JSON.parse(userProfileData) : null;
-        this.currentToken = tokenData;
         
+        if (profileData) {
+          this.currentUserProfile = JSON.parse(profileData);
+        }
+
         console.log('CustomAuthService: Session restored successfully');
         return true;
       }
 
       console.log('CustomAuthService: No session to restore');
       return false;
+
     } catch (error) {
       console.error('CustomAuthService: Error restoring session:', error);
       return false;
@@ -211,62 +205,58 @@ class CustomAuthService {
   }
 
   async refreshUserProfile(): Promise<void> {
-    try {
-      if (!this.currentFarmer) {
-        console.log('CustomAuthService: No current farmer to refresh profile for');
-        return;
-      }
+    if (!this.currentFarmer) return;
 
+    try {
       console.log('CustomAuthService: Refreshing user profile');
       
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('farmer_id', this.currentFarmer.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('CustomAuthService: Error refreshing user profile:', error);
-        return;
-      }
+      if (!error && data) {
+        this.currentUserProfile = {
+          id: data.id,
+          mobile_number: data.mobile_number,
+          preferred_language: data.preferred_language,
+          full_name: data.full_name,
+          farmer_id: data.farmer_id
+        };
 
-      if (data) {
-        this.currentUserProfile = data;
-        await secureStorage.setItem('auth_user_profile', JSON.stringify(data));
+        await secureStorage.setItem('current_user_profile', JSON.stringify(this.currentUserProfile));
         console.log('CustomAuthService: User profile refreshed');
       }
+
     } catch (error) {
-      console.error('CustomAuthService: Refresh user profile error:', error);
+      console.error('CustomAuthService: Error refreshing user profile:', error);
     }
   }
 
-  private async persistAuthData(): Promise<void> {
+  async signOut(): Promise<void> {
     try {
-      console.log('CustomAuthService: Persisting auth data');
-      
-      const promises = [];
-      
-      if (this.currentFarmer) {
-        promises.push(secureStorage.setItem('auth_farmer', JSON.stringify(this.currentFarmer)));
-      }
-      
-      if (this.currentUserProfile) {
-        promises.push(secureStorage.setItem('auth_user_profile', JSON.stringify(this.currentUserProfile)));
-      }
-      
-      if (this.currentToken) {
-        promises.push(secureStorage.setItem('auth_token', this.currentToken));
-      }
+      console.log('CustomAuthService: Signing out');
 
-      await Promise.all(promises);
-      console.log('CustomAuthService: Auth data persisted successfully');
+      // Clear memory
+      this.currentFarmer = null;
+      this.currentUserProfile = null;
+      this.currentToken = null;
+
+      // Clear storage
+      await Promise.all([
+        secureStorage.removeItem('auth_token'),
+        secureStorage.removeItem('current_farmer'),
+        secureStorage.removeItem('current_user_profile')
+      ]);
+
+      console.log('CustomAuthService: Sign out successful');
+
     } catch (error) {
-      console.error('CustomAuthService: Error persisting auth data:', error);
-      throw error;
+      console.error('CustomAuthService: Error during sign out:', error);
     }
   }
 
-  // Getters for current state
   getCurrentFarmer(): Farmer | null {
     return this.currentFarmer;
   }
@@ -280,8 +270,8 @@ class CustomAuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!(this.currentFarmer && this.currentToken);
+    return !!this.currentFarmer && !!this.currentToken;
   }
 }
 
-export const customAuthService = new CustomAuthService();
+export const customAuthService = CustomAuthService.getInstance();
