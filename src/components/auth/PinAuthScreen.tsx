@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { MobileNumberService } from '@/services/MobileNumberService';
 import { AuthHeader } from './AuthHeader';
 import { toast } from 'sonner';
 
@@ -100,8 +99,9 @@ export const PinAuthScreen: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <AuthHeader 
-          title={isRegistration ? "Create Your PIN" : "Enter Your PIN"}
-          subtitle={`${isRegistration ? "Create" : "Enter"} a 4-digit PIN for ${mobileNumber}`}
+          userCheckComplete={true}
+          isNewUser={isRegistration || false}
+          currentStep={isRegistration ? 'signup' : 'login'}
         />
 
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
@@ -119,6 +119,9 @@ export const PinAuthScreen: React.FC = () => {
                   ? "Choose a secure 4-digit PIN" 
                   : "Enter your 4-digit PIN to continue"
                 }
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Mobile: {mobileNumber}
               </p>
             </div>
           </div>
