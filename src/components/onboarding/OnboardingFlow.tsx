@@ -25,16 +25,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     if (!loading && farmer) {
       console.log('OnboardingFlow: User is authenticated, redirecting to dashboard');
       setIsAuthenticated(true);
-      // Navigate to dashboard instead of calling onComplete
-      navigate('/dashboard');
+      // Navigate to mobile app instead of calling onComplete
+      navigate('/mobile');
     }
   }, [farmer, userProfile, loading, navigate]);
 
   const steps = [
-    'welcome',
-    'language',
-    'auth',
-    'profile'
+    'Welcome',
+    'Language',
+    'Authentication',
+    'Profile'
   ];
 
   const handleNext = () => {
@@ -60,7 +60,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     // Check if profile is complete
     if (userProfile?.full_name) {
       console.log('OnboardingFlow: Profile complete, finishing onboarding');
-      navigate('/dashboard');
+      navigate('/mobile');
     } else {
       console.log('OnboardingFlow: Profile incomplete, moving to profile step');
       setCurrentStep(3); // Move to profile step
@@ -69,7 +69,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
 
   const handleProfileComplete = () => {
     console.log('OnboardingFlow: Profile completed, finishing onboarding');
-    navigate('/dashboard');
+    navigate('/mobile');
   };
 
   if (loading) {
@@ -96,39 +96,55 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
 
   const renderCurrentStep = () => {
     switch (steps[currentStep]) {
-      case 'welcome':
-        return <WelcomeScreen onNext={handleNext} />;
-      case 'language':
+      case 'Welcome':
         return (
-          <LocationBasedLanguageScreen 
-            onLanguageSelect={handleLanguageSelect}
-            onBack={handleBack}
+          <WelcomeScreen 
+            onNext={handleNext} 
+            onPrev={handleBack}
+            isFirstStep={currentStep === 0}
+            isLastStep={currentStep === steps.length - 1}
           />
         );
-      case 'auth':
+      case 'Language':
+        return (
+          <LocationBasedLanguageScreen 
+            onNext={handleNext}
+            onPrev={handleBack}
+          />
+        );
+      case 'Authentication':
         return (
           <AuthScreen 
             onComplete={handleAuthComplete}
-            onBack={handleBack}
             selectedLanguage={selectedLanguage}
           />
         );
-      case 'profile':
+      case 'Profile':
         return (
           <ProfileRegistrationScreen 
             onComplete={handleProfileComplete}
-            onBack={handleBack}
             selectedLanguage={selectedLanguage}
           />
         );
       default:
-        return <WelcomeScreen onNext={handleNext} />;
+        return (
+          <WelcomeScreen 
+            onNext={handleNext} 
+            onPrev={handleBack}
+            isFirstStep={currentStep === 0}
+            isLastStep={currentStep === steps.length - 1}
+          />
+        );
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <OnboardingProgress currentStep={currentStep} totalSteps={steps.length} />
+      <OnboardingProgress 
+        currentStep={currentStep} 
+        totalSteps={steps.length} 
+        steps={steps}
+      />
       {renderCurrentStep()}
     </div>
   );

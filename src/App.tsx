@@ -44,6 +44,11 @@ function App() {
     initializeTenant();
   }, [i18n, dispatch]);
 
+  const handleOnboardingComplete = () => {
+    console.log('App: Onboarding completed');
+    navigate('/mobile');
+  };
+
   if (loadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -67,7 +72,7 @@ function App() {
           isAuthenticated && onboardingCompleted ? (
             <Navigate to="/mobile" replace />
           ) : (
-            <OnboardingFlow />
+            <OnboardingFlow onComplete={handleOnboardingComplete} />
           )
         } />
 
