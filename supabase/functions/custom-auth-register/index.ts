@@ -12,14 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { mobile_number, pin, tenant_id, farmer_data = {} } = await req.json()
-
-    console.log('Registration request received:', { 
-      mobile_number, 
-      pin_length: pin?.length, 
-      tenant_id,
-      farmer_data_keys: Object.keys(farmer_data)
-    })
+    const { mobile_number, pin, farmer_data = {} } = await req.json()
 
     if (!mobile_number || !pin) {
       return new Response(
@@ -57,52 +50,14 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // If tenant_id is provided, validate it exists and is active
-    let validatedTenantId = tenant_id;
-    if (tenant_id) {
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .select('id, status')
-        .eq('id', tenant_id)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (tenantError) {
-        console.error('Error validating tenant:', tenantError);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Invalid tenant configuration' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (!tenant) {
-        console.error('Tenant not found or inactive:', tenant_id);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Tenant not found or inactive' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      console.log('Validated tenant:', tenant);
-    }
-
     // Check if farmer already exists with this mobile number
     const { data: existingFarmer } = await supabase
       .from('farmers')
-      .select('id, mobile_number, tenant_id')
+      .select('id')
       .eq('mobile_number', cleanMobile)
       .maybeSingle()
 
-    console.log('Existing farmer check:', existingFarmer)
-
     if (existingFarmer) {
-      console.log('Farmer already exists, returning conflict')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -128,44 +83,33 @@ Deno.serve(async (req) => {
     // Generate a UUID for the farmer
     const farmerId = crypto.randomUUID()
 
-    console.log('Creating farmer:', { 
-      farmerId, 
-      farmerCode, 
-      cleanMobile, 
-      tenant_id: validatedTenantId 
-    })
-
-    // Create farmer record with tenant_id
-    const farmerRecord = {
-      id: farmerId,
-      mobile_number: cleanMobile,
-      pin_hash: pinHash,
-      farmer_code: farmerCode,
-      tenant_id: validatedTenantId, // Use validated tenant_id
-      app_install_date: new Date().toISOString().split('T')[0],
-      login_attempts: 0,
-      is_verified: false,
-      farming_experience_years: farmer_data.farming_experience_years || null,
-      farm_type: farmer_data.farm_type || null,
-      total_land_acres: farmer_data.total_land_acres || null,
-      primary_crops: farmer_data.primary_crops || null,
-      annual_income_range: farmer_data.annual_income_range || null,
-      has_loan: farmer_data.has_loan || false,
-      loan_amount: farmer_data.loan_amount || null,
-      has_tractor: farmer_data.has_tractor || false,
-      has_irrigation: farmer_data.has_irrigation || false,
-      irrigation_type: farmer_data.irrigation_type || null,
-      has_storage: farmer_data.has_storage || false,
-      ...farmer_data
-    }
-
+    // Create farmer record directly (no auth user needed for this approach)
     const { data: farmer, error: insertError } = await supabase
       .from('farmers')
-      .insert([farmerRecord])
+      .insert([{
+        id: farmerId,
+        mobile_number: cleanMobile,
+        pin_hash: pinHash,
+        farmer_code: farmerCode,
+        tenant_id: farmer_data.tenant_id || null,
+        app_install_date: new Date().toISOString().split('T')[0],
+        login_attempts: 0,
+        is_verified: false,
+        farming_experience_years: farmer_data.farming_experience_years || null,
+        farm_type: farmer_data.farm_type || null,
+        total_land_acres: farmer_data.total_land_acres || null,
+        primary_crops: farmer_data.primary_crops || null,
+        annual_income_range: farmer_data.annual_income_range || null,
+        has_loan: farmer_data.has_loan || false,
+        loan_amount: farmer_data.loan_amount || null,
+        has_tractor: farmer_data.has_tractor || false,
+        has_irrigation: farmer_data.has_irrigation || false,
+        irrigation_type: farmer_data.irrigation_type || null,
+        has_storage: farmer_data.has_storage || false,
+        ...farmer_data
+      }])
       .select()
       .single()
-
-    console.log('Insert result:', { farmer, insertError })
 
     if (insertError) {
       console.error('Insert error:', insertError)
@@ -201,27 +145,23 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Try to create user profile, but don't fail if it doesn't work
-    try {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: farmerId,
-          mobile_number: cleanMobile,
-          phone_verified: true,
-          preferred_language: farmer_data.preferred_language || 'hi',
-          full_name: farmer_data.full_name || farmerCode,
-          farmer_id: farmerId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+    // Create user profile
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: farmerId,
+        phone: cleanMobile,
+        phone_verified: true,
+        preferred_language: farmer_data.preferred_language || 'hi',
+        full_name: farmer_data.full_name || farmerCode,
+        farmer_id: farmerId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError)
-        // Don't fail registration if profile creation fails
-      }
-    } catch (profileErr) {
-      console.error('Profile creation failed:', profileErr)
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+      // Don't fail registration if profile creation fails
     }
 
     // Generate JWT token
@@ -241,8 +181,6 @@ Deno.serve(async (req) => {
       payload,
       jwtSecret
     )
-
-    console.log('Registration successful, returning farmer data with tenant_id:', farmer.tenant_id)
 
     return new Response(
       JSON.stringify({ 

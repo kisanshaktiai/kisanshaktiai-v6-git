@@ -1,27 +1,20 @@
 
-import { localStorageService } from './storage/localStorageService';
-import { customAuthService } from './customAuthService';
+import { Preferences } from '@capacitor/preferences';
+import { Capacitor } from '@capacitor/core';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
 
-interface Session {
-  user: any;
-  token: string;
-  permissions: string[];
-  featureAccess: Record<string, boolean>;
-  expiresAt: number;
-  lastActivity: number;
-}
-
-interface SessionValidation {
-  isValid: boolean;
-  error?: string;
+interface StoredSession {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: User;
+  stored_at: number;
 }
 
 export class SessionService {
   private static instance: SessionService;
-  private session: Session | null = null;
-  private activityTimer: NodeJS.Timeout | null = null;
-  private readonly SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly ACTIVITY_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+  private readonly SESSION_KEY = 'kisanshakti_session';
 
   static getInstance(): SessionService {
     if (!SessionService.instance) {
@@ -30,201 +23,255 @@ export class SessionService {
     return SessionService.instance;
   }
 
-  async createSession(user: any, token: string): Promise<void> {
+  /**
+   * Basic session validation - simplified approach
+   */
+  validateSessionData(sessionData: any): { isValid: boolean; session?: Session; error?: string } {
+    console.log('Validating session data');
+
+    if (!sessionData || typeof sessionData !== 'object') {
+      return { isValid: false, error: 'Invalid session data structure' };
+    }
+
+    if (!sessionData.access_token || !sessionData.refresh_token) {
+      return { isValid: false, error: 'Missing session tokens' };
+    }
+
+    if (!sessionData.user || !sessionData.user.id) {
+      return { isValid: false, error: 'Missing user data' };
+    }
+
+    // Basic token format check - just ensure they're strings
+    if (typeof sessionData.access_token !== 'string' || typeof sessionData.refresh_token !== 'string') {
+      return { isValid: false, error: 'Invalid token format' };
+    }
+
     const session: Session = {
-      user,
-      token,
-      permissions: this.getUserPermissions(user),
-      featureAccess: this.getFeatureAccess(user),
-      expiresAt: Date.now() + this.SESSION_DURATION,
-      lastActivity: Date.now()
+      access_token: sessionData.access_token,
+      refresh_token: sessionData.refresh_token,
+      expires_at: sessionData.expires_at,
+      expires_in: sessionData.expires_in || 3600,
+      token_type: sessionData.token_type || 'bearer',
+      user: sessionData.user
     };
 
-    this.session = session;
-    localStorageService.setSecure('user_session', session);
-    this.startActivityTimer();
+    return { isValid: true, session };
   }
 
-  async restoreSession(): Promise<boolean> {
+  /**
+   * Store session securely
+   */
+  async storeSession(sessionData: any): Promise<void> {
     try {
-      const storedSession = localStorageService.getSecure('user_session');
-      if (!storedSession) return false;
-
-      const session: Session = storedSession;
-      
-      // Check if session is expired
-      if (Date.now() > session.expiresAt) {
-        this.clearSession();
-        return false;
+      const validation = this.validateSessionData(sessionData);
+      if (!validation.isValid) {
+        throw new Error(`Cannot store invalid session: ${validation.error}`);
       }
 
-      // Check if session is stale (no activity for threshold time)
-      if (Date.now() - session.lastActivity > this.ACTIVITY_THRESHOLD) {
-        // Try to refresh session
-        const refreshed = await this.refreshSession(session);
-        if (!refreshed) {
-          this.clearSession();
-          return false;
-        }
+      const storedSession: StoredSession = {
+        access_token: sessionData.access_token,
+        refresh_token: sessionData.refresh_token,
+        expires_at: sessionData.expires_at || Math.floor(Date.now() / 1000) + 3600,
+        user: sessionData.user,
+        stored_at: Date.now()
+      };
+
+      if (Capacitor.isNativePlatform()) {
+        await Preferences.set({
+          key: this.SESSION_KEY,
+          value: JSON.stringify(storedSession)
+        });
+      } else {
+        localStorage.setItem(this.SESSION_KEY, JSON.stringify(storedSession));
       }
 
-      this.session = session;
-      this.startActivityTimer();
-      return true;
+      console.log('Session stored successfully');
     } catch (error) {
-      console.error('Error restoring session:', error);
-      return false;
+      console.error('Error storing session:', error);
+      throw error;
     }
   }
 
-  private async refreshSession(session: Session): Promise<boolean> {
+  /**
+   * Retrieve stored session
+   */
+  async getStoredSession(): Promise<StoredSession | null> {
     try {
-      // Validate with custom auth service
-      const currentFarmer = customAuthService.getCurrentFarmer();
-      const currentToken = customAuthService.getCurrentToken();
-      
-      if (!currentFarmer || !currentToken) {
-        return false;
+      let sessionData: string | null = null;
+
+      if (Capacitor.isNativePlatform()) {
+        const result = await Preferences.get({ key: this.SESSION_KEY });
+        sessionData = result.value;
+      } else {
+        sessionData = localStorage.getItem(this.SESSION_KEY);
       }
 
-      // Update session with fresh data
-      session.user = currentFarmer;
-      session.token = currentToken;
-      session.lastActivity = Date.now();
-      session.expiresAt = Date.now() + this.SESSION_DURATION;
+      if (!sessionData) {
+        return null;
+      }
 
-      localStorageService.setSecure('user_session', session);
-      return true;
+      const stored: StoredSession = JSON.parse(sessionData);
+
+      // Simple expiry check
+      const now = Math.floor(Date.now() / 1000);
+      if (stored.expires_at <= now) {
+        console.log('Stored session is expired, removing...');
+        await this.clearSession();
+        return null;
+      }
+
+      return stored;
     } catch (error) {
-      console.error('Error refreshing session:', error);
-      return false;
+      console.error('Error retrieving stored session:', error);
+      await this.clearSession();
+      return null;
     }
   }
 
-  validateSessionData(sessionData: any): SessionValidation {
-    if (!sessionData) {
-      return { isValid: false, error: 'No session data provided' };
-    }
-
-    if (!sessionData.user || !sessionData.token) {
-      return { isValid: false, error: 'Invalid session structure' };
-    }
-
-    if (Date.now() > sessionData.expiresAt) {
-      return { isValid: false, error: 'Session expired' };
-    }
-
-    return { isValid: true };
-  }
-
-  updateActivity(): void {
-    if (this.session) {
-      this.session.lastActivity = Date.now();
-      localStorageService.setSecure('user_session', this.session);
+  /**
+   * Clear stored session
+   */
+  async clearSession(): Promise<void> {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Preferences.remove({ key: this.SESSION_KEY });
+      } else {
+        localStorage.removeItem(this.SESSION_KEY);
+      }
+      console.log('Session cleared successfully');
+    } catch (error) {
+      console.error('Error clearing session:', error);
     }
   }
 
-  private startActivityTimer(): void {
-    if (this.activityTimer) {
-      clearInterval(this.activityTimer);
-    }
-
-    this.activityTimer = setInterval(() => {
-      this.updateActivity();
-    }, 60000); // Update every minute
-  }
-
-  getSession(): Session | null {
-    return this.session;
-  }
-
-  getCurrentUser(): any {
-    return this.session?.user || null;
-  }
-
-  hasPermission(permission: string): boolean {
-    return this.session?.permissions.includes(permission) || false;
-  }
-
-  hasFeatureAccess(feature: string): boolean {
-    return this.session?.featureAccess[feature] || false;
-  }
-
-  updateFeatureAccess(feature: string, hasAccess: boolean): void {
-    if (this.session) {
-      this.session.featureAccess[feature] = hasAccess;
-      localStorageService.setSecure('user_session', this.session);
+  /**
+   * Restore session from storage
+   */
+  async restoreSession(): Promise<Session | null> {
+    try {
+      console.log('Attempting to restore session from storage...');
       
-      // Also update the feature access cache
-      localStorageService.setFeatureAccessStatus(feature, hasAccess);
-    }
-  }
-
-  clearSession(): void {
-    this.session = null;
-    localStorageService.setSecure('user_session', null);
-    
-    if (this.activityTimer) {
-      clearInterval(this.activityTimer);
-      this.activityTimer = null;
-    }
-  }
-
-  private getUserPermissions(user: any): string[] {
-    // Define user permissions based on user type/role
-    const basePermissions = ['read:profile', 'update:profile'];
-    
-    if (user.is_verified) {
-      basePermissions.push('access:verified_features');
-    }
-    
-    if (user.profile_completion_percentage >= 50) {
-      basePermissions.push('access:advanced_features');
-    }
-    
-    return basePermissions;
-  }
-
-  private getFeatureAccess(user: any): Record<string, boolean> {
-    const completion = user.profile_completion_percentage || 0;
-    const featureRules = localStorageService.getFeatureAccessRules();
-    
-    const access: Record<string, boolean> = {};
-    
-    Object.entries(featureRules).forEach(([feature, rule]) => {
-      access[feature] = rule.alwaysAvailable || completion >= rule.minCompletion;
-    });
-    
-    return access;
-  }
-
-  calculateProfileCompletion(user: any): number {
-    const requiredFields = ['farmer_code', 'mobile_number'];
-    const optionalFields = [
-      'primary_crops', 'total_land_acres', 'farming_experience_years',
-      'annual_income_range', 'farm_type', 'has_irrigation'
-    ];
-    
-    let completedRequired = 0;
-    let completedOptional = 0;
-    
-    requiredFields.forEach(field => {
-      if (user[field] && user[field].toString().trim()) {
-        completedRequired++;
+      const storedSession = await this.getStoredSession();
+      if (!storedSession) {
+        console.log('No valid stored session found');
+        return null;
       }
-    });
-    
-    optionalFields.forEach(field => {
-      if (user[field] !== null && user[field] !== undefined) {
-        completedOptional++;
+
+      console.log('Found stored session, restoring...');
+      
+      // Try to set the session with Supabase
+      const { data, error } = await supabase.auth.setSession({
+        access_token: storedSession.access_token,
+        refresh_token: storedSession.refresh_token
+      });
+
+      if (error) {
+        console.error('Error restoring session:', error);
+        await this.clearSession();
+        return null;
       }
-    });
-    
-    // Required fields count for 50%, optional for 50%
-    const requiredPercentage = (completedRequired / requiredFields.length) * 50;
-    const optionalPercentage = (completedOptional / optionalFields.length) * 50;
-    
-    return Math.round(requiredPercentage + optionalPercentage);
+
+      if (!data.session) {
+        console.log('Session restoration failed - no session returned');
+        await this.clearSession();
+        return null;
+      }
+
+      console.log('Session restored successfully');
+      
+      // Update stored session if tokens refreshed
+      if (data.session.access_token !== storedSession.access_token) {
+        await this.storeSession(data.session);
+      }
+
+      return data.session;
+    } catch (error) {
+      console.error('Error during session restoration:', error);
+      await this.clearSession();
+      return null;
+    }
+  }
+
+  /**
+   * Set session with simplified retry mechanism
+   */
+  async setSession(sessionData: any): Promise<Session> {
+    try {
+      console.log('Setting session...');
+
+      // Validate session data
+      const validation = this.validateSessionData(sessionData);
+      if (!validation.isValid || !validation.session) {
+        throw new Error(`Invalid session data: ${validation.error}`);
+      }
+
+      // Set session with Supabase
+      const { data, error } = await supabase.auth.setSession({
+        access_token: sessionData.access_token,
+        refresh_token: sessionData.refresh_token
+      });
+
+      if (error) {
+        console.error('Supabase setSession error:', error);
+        throw new Error(`Failed to set session: ${error.message}`);
+      }
+
+      if (!data.session) {
+        throw new Error('Session establishment failed - no session returned');
+      }
+
+      console.log('Session set successfully, storing for future use...');
+      
+      // Store the session for future restoration
+      await this.storeSession(data.session);
+      
+      // Track session in database
+      await this.trackSession(data.session);
+
+      return data.session;
+    } catch (error) {
+      console.error('Session setting failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Track session in database
+   */
+  private async trackSession(session: Session): Promise<void> {
+    try {
+      const deviceInfo = {
+        platform: Capacitor.getPlatform(),
+        isNative: Capacitor.isNativePlatform(),
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+      };
+
+      await supabase.from('user_sessions').insert({
+        user_id: session.user.id,
+        session_id: session.access_token.substring(0, 32),
+        access_token_hash: await this.hashToken(session.access_token),
+        refresh_token_hash: await this.hashToken(session.refresh_token),
+        expires_at: new Date(session.expires_at! * 1000).toISOString(),
+        device_info: deviceInfo
+      });
+
+      console.log('Session tracked in database');
+    } catch (error) {
+      console.error('Error tracking session:', error);
+      // Don't throw - session tracking is not critical
+    }
+  }
+
+  /**
+   * Hash token for storage
+   */
+  private async hashToken(token: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
   }
 }
 

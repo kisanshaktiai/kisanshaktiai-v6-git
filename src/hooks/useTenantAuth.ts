@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Tenant, TenantBranding, TenantFeatures, UserProfile, UserTenant, SubscriptionPlan, LanguageCode } from '@/types/tenant';
+import { Tenant, TenantBranding, TenantFeatures, UserProfile, UserTenant, SubscriptionPlan } from '@/types/tenant';
 
 interface TenantAuthState {
   user: User | null;
@@ -79,19 +80,6 @@ const convertDatabaseTenant = (dbTenant: any): Tenant => {
   };
 };
 
-// Helper function to safely cast language code
-const castLanguageCode = (lang: string | null | undefined): LanguageCode => {
-  if (!lang) return 'en';
-  
-  const validLanguages: LanguageCode[] = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
-  
-  if (validLanguages.includes(lang as LanguageCode)) {
-    return lang as LanguageCode;
-  }
-  
-  return 'en'; // Default fallback
-};
-
 export const useTenantAuth = () => {
   const [state, setState] = useState<TenantAuthState>({
     user: null,
@@ -156,8 +144,6 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
-          phone: profileData.mobile_number || '', // Map mobile_number to phone
-          preferred_language: castLanguageCode(profileData.preferred_language), // Safe cast
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,

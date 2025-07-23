@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile, LanguageCode } from '@/types/tenant';
+import { UserProfile } from '@/types/tenant';
 
 // Helper function to safely parse JSON
 const safeJsonParse = (value: any, fallback: any = null) => {
@@ -14,19 +14,6 @@ const safeJsonParse = (value: any, fallback: any = null) => {
     }
   }
   return value;
-};
-
-// Helper function to safely cast language code
-const castLanguageCode = (lang: string | null | undefined): LanguageCode => {
-  if (!lang) return 'en';
-  
-  const validLanguages: LanguageCode[] = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
-  
-  if (validLanguages.includes(lang as LanguageCode)) {
-    return lang as LanguageCode;
-  }
-  
-  return 'en'; // Default fallback
 };
 
 export const useUserProfile = (userId?: string) => {
@@ -47,11 +34,9 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly and map mobile_number to phone
+      // Type cast JSON fields properly
       return {
         ...data,
-        phone: data.mobile_number || '', // Map mobile_number to phone
-        preferred_language: castLanguageCode(data.preferred_language), // Safe cast
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -73,16 +58,9 @@ export const useUserProfile = (userId?: string) => {
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required');
 
-      // Convert phone back to mobile_number for database
-      const dbUpdates = {
-        ...updates,
-        mobile_number: updates.phone, // Map phone to mobile_number
-      };
-      delete dbUpdates.phone; // Remove phone property
-
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(dbUpdates)
+        .update(updates)
         .eq('id', userId)
         .select()
         .single();
@@ -97,16 +75,9 @@ export const useUserProfile = (userId?: string) => {
 
   const createMutation = useMutation({
     mutationFn: async (profileData: Partial<UserProfile> & { id: string; phone: string }) => {
-      // Convert phone to mobile_number for database
-      const dbData = {
-        ...profileData,
-        mobile_number: profileData.phone,
-      };
-      delete dbData.phone; // Remove phone property
-
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([dbData])
+        .insert([profileData])
         .select()
         .single();
 

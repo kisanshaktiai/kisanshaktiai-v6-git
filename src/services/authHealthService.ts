@@ -1,12 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-
-interface HealthCheck {
-  service: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  message: string;
-  timestamp: Date;
-  details?: any;
-}
+import { sessionService } from './sessionService';
 
 interface AuthHealthCheck {
   status: 'healthy' | 'warning' | 'error';
@@ -20,24 +13,8 @@ interface AuthHealthCheck {
   timestamp: string;
 }
 
-interface AuthDiagnosis {
-  userExists: boolean;
-  profileExists: boolean;
-  authRecordExists: boolean;
-  issues: string[];
-  recommendations: string[];
-}
-
-interface DebugLogEntry {
-  event: string;
-  timestamp: string;
-  details?: any;
-}
-
-class AuthHealthService {
+export class AuthHealthService {
   private static instance: AuthHealthService;
-  private healthChecks: HealthCheck[] = [];
-  private debugLogs: DebugLogEntry[] = [];
 
   static getInstance(): AuthHealthService {
     if (!AuthHealthService.instance) {
@@ -46,263 +23,206 @@ class AuthHealthService {
     return AuthHealthService.instance;
   }
 
+  /**
+   * Perform comprehensive authentication health check
+   */
   async performHealthCheck(): Promise<AuthHealthCheck> {
-    const checks = await this.runAllHealthChecks();
-    
-    const supabaseConnection = checks.find(c => c.service === 'database')?.status === 'healthy';
-    const sessionValid = true; // Simplified for now
-    const profileExists = checks.find(c => c.service === 'user_profiles')?.status === 'healthy';
-    const edgeFunctionReachable = checks.find(c => c.service === 'auth')?.status === 'healthy';
-
-    const errors: string[] = [];
-    checks.forEach(check => {
-      if (check.status !== 'healthy') {
-        errors.push(`${check.service}: ${check.message}`);
-      }
-    });
-
-    let status: 'healthy' | 'warning' | 'error' = 'healthy';
-    if (errors.length > 0) {
-      status = errors.length > 2 ? 'error' : 'warning';
-    }
-
-    return {
-      status,
+    const healthCheck: AuthHealthCheck = {
+      status: 'healthy',
       checks: {
-        supabaseConnection,
-        sessionValid,
-        profileExists,
-        edgeFunctionReachable
+        supabaseConnection: false,
+        sessionValid: false,
+        profileExists: false,
+        edgeFunctionReachable: false
       },
-      errors,
+      errors: [],
       timestamp: new Date().toISOString()
     };
-  }
 
-  getDebugLogs(): DebugLogEntry[] {
-    return this.debugLogs;
-  }
-
-  addDebugLog(event: string, details?: any): void {
-    this.debugLogs.unshift({
-      event,
-      timestamp: new Date().toISOString(),
-      details
-    });
-    
-    // Keep only last 50 logs
-    if (this.debugLogs.length > 50) {
-      this.debugLogs = this.debugLogs.slice(0, 50);
-    }
-  }
-
-  clearDebugLogs(): void {
-    this.debugLogs = [];
-  }
-
-  async diagnoseAuthIssue(phoneNumber: string): Promise<AuthDiagnosis> {
-    const issues: string[] = [];
-    const recommendations: string[] = [];
-
+    // Test Supabase connection
     try {
-      // Check if farmer exists
-      const { data: farmer, error: farmerError } = await supabase
-        .from('farmers')
-        .select('id, mobile_number')
-        .eq('mobile_number', phoneNumber)
-        .single();
-
-      const userExists = !farmerError && farmer !== null;
-      
-      // Check if profile exists
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id, mobile_number')
-        .eq('mobile_number', phoneNumber)
-        .single();
-
-      const profileExists = !profileError && profile !== null;
-
-      // Check auth record (simplified)
-      const authRecordExists = userExists; // For now, same as farmer exists
-
-      if (!userExists) {
-        issues.push('User does not exist in farmers table');
-        recommendations.push('User needs to register first');
-      }
-
-      if (!profileExists) {
-        issues.push('User profile does not exist');
-        recommendations.push('Create user profile after registration');
-      }
-
-      this.addDebugLog('auth_diagnosis', {
-        phoneNumber,
-        userExists,
-        profileExists,
-        authRecordExists,
-        issues,
-        recommendations
-      });
-
-      return {
-        userExists,
-        profileExists,
-        authRecordExists,
-        issues,
-        recommendations
-      };
-    } catch (error) {
-      this.addDebugLog('auth_diagnosis_error', { phoneNumber, error });
-      throw error;
-    }
-  }
-
-  async checkDatabaseHealth(): Promise<HealthCheck> {
-    try {
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('id')
-        .limit(1);
-
+      const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
       if (error) throw error;
-
-      return {
-        service: 'database',
-        status: 'healthy',
-        message: 'Database connection successful',
-        timestamp: new Date(),
-        details: { recordsAccessible: data ? data.length : 0 }
-      };
+      healthCheck.checks.supabaseConnection = true;
     } catch (error) {
-      return {
-        service: 'database',
-        status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Database connection failed',
-        timestamp: new Date(),
-        details: { error }
-      };
+      healthCheck.errors.push(`Supabase connection failed: ${error}`);
+      healthCheck.status = 'error';
     }
-  }
 
-  async checkAuthServiceHealth(): Promise<HealthCheck> {
+    // Test current session validity
     try {
-      const { data, error } = await supabase.functions.invoke('custom-auth-register', {
-        body: {
-          mobile_number: '0000000000',
-          pin: '0000',
-          test: true
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const validation = sessionService.validateSessionData(session);
+        healthCheck.checks.sessionValid = validation.isValid;
+        if (!validation.isValid) {
+          healthCheck.errors.push(`Session validation failed: ${validation.error}`);
+          healthCheck.status = 'warning';
         }
-      });
-
-      // Even if registration fails, if we get a response, the service is up
-      return {
-        service: 'auth',
-        status: 'healthy',
-        message: 'Auth service is responding',
-        timestamp: new Date(),
-        details: { responsive: true }
-      };
-    } catch (error) {
-      return {
-        service: 'auth',
-        status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Auth service unavailable',
-        timestamp: new Date(),
-        details: { error }
-      };
-    }
-  }
-
-  async checkUserProfilesHealth(): Promise<HealthCheck> {
-    try {
-      // Check if user_profiles table exists and is accessible
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .limit(1);
-
-      if (error) throw error;
-
-      return {
-        service: 'user_profiles',
-        status: 'healthy',
-        message: 'User profiles table accessible',
-        timestamp: new Date(),
-        details: { accessible: true }
-      };
-    } catch (error) {
-      return {
-        service: 'user_profiles',
-        status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'User profiles table inaccessible',
-        timestamp: new Date(),
-        details: { error }
-      };
-    }
-  }
-
-  async checkFarmersTableHealth(): Promise<HealthCheck> {
-    try {
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('id, mobile_number')
-        .limit(1);
-
-      if (error) throw error;
-
-      return {
-        service: 'farmers_table',
-        status: 'healthy',
-        message: 'Farmers table accessible',
-        timestamp: new Date(),
-        details: { accessible: true, sampleData: data }
-      };
-    } catch (error) {
-      return {
-        service: 'farmers_table',
-        status: 'unhealthy',
-        message: error instanceof Error ? error.message : 'Farmers table inaccessible',
-        timestamp: new Date(),
-        details: { error }
-      };
-    }
-  }
-
-  async runAllHealthChecks(): Promise<HealthCheck[]> {
-    const checks = await Promise.allSettled([
-      this.checkDatabaseHealth(),
-      this.checkAuthServiceHealth(),
-      this.checkUserProfilesHealth(),
-      this.checkFarmersTableHealth()
-    ]);
-
-    this.healthChecks = checks.map(result => 
-      result.status === 'fulfilled' ? result.value : {
-        service: 'unknown',
-        status: 'unhealthy' as const,
-        message: 'Health check failed',
-        timestamp: new Date(),
-        details: { reason: result.reason }
       }
-    );
+    } catch (error) {
+      healthCheck.errors.push(`Session check failed: ${error}`);
+      healthCheck.status = 'error';
+    }
 
-    return this.healthChecks;
+    // Test user profile existence (if session exists)
+    if (healthCheck.checks.sessionValid) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          healthCheck.checks.profileExists = !!profile && !error;
+          if (!profile && !error) {
+            healthCheck.errors.push('User profile not found');
+            healthCheck.status = 'warning';
+          } else if (error) {
+            healthCheck.errors.push(`Profile check failed: ${error.message}`);
+            healthCheck.status = 'error';
+          }
+        }
+      } catch (error) {
+        healthCheck.errors.push(`Profile existence check failed: ${error}`);
+        healthCheck.status = 'error';
+      }
+    }
+
+    // Test edge function reachability
+    try {
+      const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+        body: { phone: '0000000000', checkOnly: true }
+      });
+      
+      healthCheck.checks.edgeFunctionReachable = !error;
+      if (error) {
+        healthCheck.errors.push(`Edge function test failed: ${error.message}`);
+        healthCheck.status = 'warning';
+      }
+    } catch (error) {
+      healthCheck.errors.push(`Edge function reachability test failed: ${error}`);
+      healthCheck.status = 'warning';
+    }
+
+    console.log('Auth health check completed:', healthCheck);
+    return healthCheck;
   }
 
-  getLastHealthChecks(): HealthCheck[] {
-    return this.healthChecks;
+  /**
+   * Diagnose specific authentication issues
+   */
+  async diagnoseAuthIssue(phone: string): Promise<{
+    userExists: boolean;
+    profileExists: boolean;
+    authRecordExists: boolean;
+    issues: string[];
+    recommendations: string[];
+  }> {
+    const diagnosis = {
+      userExists: false,
+      profileExists: false,
+      authRecordExists: false,
+      issues: [],
+      recommendations: []
+    };
+
+    try {
+      const cleanPhone = phone.replace(/\D/g, '');
+
+      // Check if user profile exists
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id, phone')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+
+      diagnosis.profileExists = !!profile;
+      diagnosis.userExists = !!profile;
+
+      if (profile) {
+        // Check if auth record exists
+        try {
+          const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+          diagnosis.authRecordExists = !!authUser.user;
+        } catch (error) {
+          diagnosis.authRecordExists = false;
+          diagnosis.issues.push('Auth record missing for existing profile');
+          diagnosis.recommendations.push('User may need to re-register');
+        }
+      } else {
+        diagnosis.issues.push('User profile not found');
+        diagnosis.recommendations.push('User needs to complete registration');
+      }
+
+      // Test edge function with this phone number
+      try {
+        const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+          body: { phone: cleanPhone, checkOnly: true }
+        });
+
+        if (error) {
+          diagnosis.issues.push(`Edge function error: ${error.message}`);
+          diagnosis.recommendations.push('Check network connectivity and try again');
+        }
+      } catch (error) {
+        diagnosis.issues.push('Edge function unreachable');
+        diagnosis.recommendations.push('Service may be temporarily unavailable');
+      }
+
+    } catch (error) {
+      diagnosis.issues.push(`Diagnosis failed: ${error}`);
+      diagnosis.recommendations.push('Contact support for assistance');
+    }
+
+    return diagnosis;
   }
 
-  getOverallHealth(): 'healthy' | 'degraded' | 'unhealthy' {
-    if (this.healthChecks.length === 0) return 'unhealthy';
-    
-    const healthyCount = this.healthChecks.filter(check => check.status === 'healthy').length;
-    const totalCount = this.healthChecks.length;
-    
-    if (healthyCount === totalCount) return 'healthy';
-    if (healthyCount > totalCount / 2) return 'degraded';
-    return 'unhealthy';
+  /**
+   * Log authentication event for debugging
+   */
+  async logAuthEvent(event: string, details: any): Promise<void> {
+    try {
+      const logEntry = {
+        event,
+        details,
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        url: window.location.href
+      };
+
+      console.log('Auth Event:', logEntry);
+
+      // Store in local storage for debugging (last 50 events)
+      const logs = JSON.parse(localStorage.getItem('auth_debug_logs') || '[]');
+      logs.unshift(logEntry);
+      if (logs.length > 50) logs.splice(50);
+      localStorage.setItem('auth_debug_logs', JSON.stringify(logs));
+    } catch (error) {
+      console.error('Error logging auth event:', error);
+    }
+  }
+
+  /**
+   * Get recent authentication debug logs
+   */
+  getDebugLogs(): any[] {
+    try {
+      return JSON.parse(localStorage.getItem('auth_debug_logs') || '[]');
+    } catch (error) {
+      console.error('Error retrieving debug logs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Clear debug logs
+   */
+  clearDebugLogs(): void {
+    localStorage.removeItem('auth_debug_logs');
+    console.log('Auth debug logs cleared');
   }
 }
 

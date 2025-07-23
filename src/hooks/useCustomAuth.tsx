@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { customAuthService } from '@/services/customAuthService';
 import { secureStorage } from '@/services/storage/secureStorage';
 
@@ -32,14 +32,10 @@ export const useCustomAuth = () => {
   return context;
 };
 
-interface CustomAuthProviderProps {
-  children: ReactNode;
-}
-
-export const CustomAuthProvider: React.FC<CustomAuthProviderProps> = ({ children }) => {
+export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [farmer, setFarmer] = useState<Farmer | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     // Monitor online/offline status

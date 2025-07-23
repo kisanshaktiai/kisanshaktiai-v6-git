@@ -1,12 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Loader, ChevronRight, WifiOff } from 'lucide-react';
+import { Loader, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { tenantCacheService } from '@/services/TenantCacheService';
-import { localStorageService } from '@/services/storage/localStorageService';
-import { useNetworkState } from '@/hooks/useNetworkState';
 import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '@/store/slices/tenantSlice';
 
 interface EnhancedSplashScreenProps {
@@ -15,8 +12,7 @@ interface EnhancedSplashScreenProps {
 
 export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onComplete }) => {
   const dispatch = useDispatch();
-  const { t, i18n } = useTranslation();
-  const { isOnline } = useNetworkState();
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
@@ -32,7 +28,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
     { key: 'initializing', duration: 800 },
     { key: 'loading_tenant_data', duration: 1000 },
     { key: 'loading_branding', duration: 600 },
-    { key: 'checking_language', duration: 400 },
     { key: 'preparing_services', duration: 400 },
     { key: 'finalizing', duration: 200 }
   ];
@@ -53,11 +48,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
           await loadTenantData();
         }
         
-        // Check language preference during language step
-        if (step.key === 'checking_language') {
-          await checkLanguagePreference();
-        }
-        
         // Animate progress
         const startProgress = (i / initSteps.length) * 100;
         const endProgress = ((i + 1) / initSteps.length) * 100;
@@ -70,14 +60,10 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
 
       setStatus(t('common.ready'));
       
-      // Minimum 3-second display time for branding
-      const minDisplayTime = 3000;
-      const elapsedTime = Date.now() - (Date.now() - (initSteps.length * 400));
-      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
-      
+      // Show Next button after completion
       setTimeout(() => {
         setShowNextButton(true);
-      }, remainingTime);
+      }, 500);
 
     } catch (error) {
       console.error('Splash initialization error:', error);
@@ -91,15 +77,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
   const loadTenantData = async () => {
     try {
       console.log('Loading tenant data...');
-      
-      // First check cache
-      const cachedBranding = localStorageService.getCacheIfValid('tenant_branding_cache');
-      if (cachedBranding) {
-        setBranding(cachedBranding);
-        console.log('Using cached tenant branding');
-      }
-
-      // Load from service (will use cache if available)
       const tenantData = await tenantCacheService.loadTenantData();
       
       if (tenantData) {
@@ -118,43 +95,19 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
         dispatch(setTenantBranding(tenantData.branding));
         dispatch(setTenantFeatures(tenantData.features));
         
-        // Update local branding state and cache
-        const newBranding = {
+        // Update local branding state for the splash screen
+        setBranding({
           primaryColor: tenantData.branding.primary_color,
           logo: tenantData.branding.logo_url,
           appName: tenantData.branding.app_name,
           tagline: tenantData.branding.app_tagline
-        };
-        
-        setBranding(newBranding);
-        localStorageService.setCacheWithTTL('tenant_branding_cache', newBranding, 1440); // 24 hours
+        });
         
         console.log('Tenant data loaded and cached successfully');
       }
     } catch (error) {
       console.error('Error loading tenant data:', error);
-      // Continue with cached or default branding
-    }
-  };
-
-  const checkLanguagePreference = async () => {
-    try {
-      // Check localStorage first
-      const cachedLanguage = localStorageService.getCacheIfValid('user_language_preference');
-      if (cachedLanguage) {
-        await i18n.changeLanguage(cachedLanguage);
-        console.log('Applied cached language preference:', cachedLanguage);
-        return;
-      }
-
-      // If online, check user_profiles table
-      if (isOnline) {
-        // This would be implemented when we have user authentication
-        // For now, just continue with default language detection
-        console.log('No cached language preference found');
-      }
-    } catch (error) {
-      console.error('Error checking language preference:', error);
+      // Continue with default branding
     }
   };
 
@@ -187,14 +140,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white relative overflow-hidden">
-      {/* Offline Indicator */}
-      {!isOnline && (
-        <div className="absolute top-4 left-4 right-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center justify-center space-x-2 z-20">
-          <WifiOff className="w-4 h-4 text-red-600" />
-          <span className="text-red-600 text-sm font-medium">{t('common.offline_mode')}</span>
-        </div>
-      )}
-
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 w-20 h-20 rounded-full"
@@ -307,9 +252,6 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onCo
       {/* Version Info */}
       <div className="absolute bottom-8 text-sm text-gray-400 z-10">
         {t('splash.version')} {t('splash.powered_by_ai')}
-        {!isOnline && (
-          <span className="ml-2 text-orange-500">• {t('common.offline_mode')}</span>
-        )}
       </div>
     </div>
   );

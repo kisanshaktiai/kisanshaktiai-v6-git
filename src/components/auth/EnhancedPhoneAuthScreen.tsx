@@ -1,18 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Loader, WifiOff, Wifi, Shield } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader, WifiOff, Wifi } from 'lucide-react';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { localStorageService } from '@/services/storage/localStorageService';
-import { offlineSyncManager } from '@/services/sync/offlineSyncManager';
 import { AuthHeader } from './AuthHeader';
 import { AuthButton } from './AuthButton';
 import { PhoneInput } from './PhoneInput';
 import { FeaturesInfo } from './FeaturesInfo';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedPhoneAuthScreenProps {
   onComplete: () => void;
@@ -20,109 +18,35 @@ interface EnhancedPhoneAuthScreenProps {
 
 type AuthStep = 'phone' | 'pin-login' | 'pin-create' | 'success';
 type UserStatus = 'checking' | 'existing' | 'new' | null;
-type CurrentStep = 'phone' | 'login' | 'signup';
 
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const { branding } = useBranding();
-  const { login, register } = useCustomAuth();
-  
-  // Simple network state handling without complex hooks
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const { login, register, checkExistingFarmer, isOnline } = useCustomAuth();
   
   const [step, setStep] = useState<AuthStep>('phone');
-  const [mobileNumber, setMobileNumber] = useState<string>('');
-  const [pin, setPin] = useState<string>('');
-  const [confirmPin, setConfirmPin] = useState<string>('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [userStatus, setUserStatus] = useState<UserStatus>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState<number>(0);
-  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
-
-  // Network state effect
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const [retryCount, setRetryCount] = useState(0);
 
   const validateMobileNumber = (mobile: string): boolean => {
     const mobileRegex = /^[6-9]\d{9}$/;
     return mobileRegex.test(mobile);
   };
 
-  const checkUserExists = async (mobile: string): Promise<boolean> => {
+  const checkUserExists = async (mobile: string) => {
     try {
       setUserStatus('checking');
       setError(null);
       
-      // Check cache first
-      const cacheKey = `user_check_${mobile}`;
-      const cached = localStorageService.getCacheIfValid(cacheKey);
-      if (cached) {
-        const exists = Boolean(cached.exists);
-        setUserStatus(exists ? 'existing' : 'new');
-        return exists;
-      }
-      
-      if (!isOnline) {
-        setError(t('auth.offline_check_user'));
-        setUserStatus(null);
-        return false;
-      }
-      
-      // Use type assertions to bypass complex type inference
-      let userProfileExists = false;
-      let farmerExists = false;
-      
-      // Check user profiles with type assertion
-      try {
-        const { data: userProfileData, error: userProfileError } = await (supabase as any)
-          .from('user_profiles')
-          .select('mobile_number')
-          .eq('mobile_number', mobile)
-          .limit(1);
-        
-        if (!userProfileError && userProfileData && userProfileData.length > 0) {
-          userProfileExists = true;
-        }
-      } catch (err) {
-        console.error('User profile query error:', err);
-        userProfileExists = false;
-      }
-      
-      // Check farmers with type assertion
-      try {
-        const { data: farmerData, error: farmerError } = await (supabase as any)
-          .from('farmers')
-          .select('mobile_number')
-          .eq('mobile_number', mobile)
-          .limit(1);
-        
-        if (!farmerError && farmerData && farmerData.length > 0) {
-          farmerExists = true;
-        }
-      } catch (err) {
-        console.error('Farmer query error:', err);
-        farmerExists = false;
-      }
-      
-      const exists = userProfileExists || farmerExists;
-      
-      // Cache the result
-      localStorageService.setCacheWithTTL(cacheKey, { exists }, 30); // 30 minutes
-      
+      const exists = await checkExistingFarmer(mobile);
       setUserStatus(exists ? 'existing' : 'new');
-      return exists;
       
+      return exists;
     } catch (err) {
       console.error('Error checking user:', err);
       setError(isOnline ? t('auth.error_checking_user') : t('auth.offline_check_user'));
@@ -131,7 +55,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  const handleAutoCheck = async (mobile: string): Promise<void> => {
+  const handleAutoCheck = async (mobile: string) => {
     if (validateMobileNumber(mobile)) {
       await checkUserExists(mobile);
     } else {
@@ -139,7 +63,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  const handleMobileSubmit = async (): Promise<void> => {
+  const handleMobileSubmit = async () => {
     if (!validateMobileNumber(mobileNumber)) {
       setError(t('auth.invalid_mobile'));
       return;
@@ -169,16 +93,9 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  const handleLogin = async (): Promise<void> => {
+  const handleLogin = async () => {
     if (pin.length !== 4) {
       setError(t('auth.pin_required'));
-      return;
-    }
-
-    // Check lockout
-    if (lockoutEndTime && Date.now() < lockoutEndTime) {
-      const remainingTime = Math.ceil((lockoutEndTime - Date.now()) / 1000 / 60);
-      setError(t('auth.account_locked', { minutes: remainingTime }));
       return;
     }
 
@@ -189,31 +106,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       const result = await login(mobileNumber, pin);
       
       if (result.success) {
-        // Clear retry count on success
-        setRetryCount(0);
-        setLockoutEndTime(null);
-        
-        // Cache successful authentication
-        localStorageService.setCacheWithTTL('user_auth_cache', {
-          mobile: mobileNumber,
-          lastLogin: Date.now()
-        }, 1440); // 24 hours
-        
         setStep('success');
         setTimeout(() => {
           onComplete();
         }, 2000);
       } else {
-        const newRetryCount = retryCount + 1;
-        setRetryCount(newRetryCount);
-        
-        if (newRetryCount >= 3) {
-          const lockoutTime = Date.now() + (30 * 60 * 1000); // 30 minutes
-          setLockoutEndTime(lockoutTime);
-          setError(t('auth.account_locked', { minutes: 30 }));
-        } else {
-          setError(result.error || t('auth.login_failed'));
-        }
+        setError(result.error || t('auth.login_failed'));
+        setRetryCount(prev => prev + 1);
         
         // Clear PIN on error for security
         setPin('');
@@ -227,7 +126,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  const handleRegister = async (): Promise<void> => {
+  const handleRegister = async () => {
     if (pin.length !== 4 || confirmPin.length !== 4) {
       setError(t('auth.pin_required'));
       return;
@@ -239,66 +138,10 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
 
     if (!isOnline) {
-      // Offline registration
-      try {
-        const tempId = `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const registrationData = {
-          tempId,
-          mobile: mobileNumber,
-          pin,
-          createdAt: new Date().toISOString(),
-          syncStatus: 'pending'
-        };
-        
-        // Store in localStorage
-        localStorageService.setSecure('offline_registration', registrationData);
-        
-        // Queue for sync
-        await offlineSyncManager.queueOperation({
-          type: 'insert',
-          table: 'user_profiles',
-          data: {
-            mobile_number: mobileNumber,
-            created_at: new Date().toISOString()
-          },
-          priority: 'high'
-        });
-        
-        await offlineSyncManager.queueOperation({
-          type: 'insert',
-          table: 'farmers',
-          data: {
-            mobile_number: mobileNumber,
-            pin,
-            profile_completion_percentage: 0,
-            created_at: new Date().toISOString()
-          },
-          priority: 'high'
-        });
-        
-        // Set features as locked
-        localStorageService.setCacheWithTTL('feature_access_status', {
-          weather: true,
-          aiChat: false,
-          myLand: false,
-          cropAdvisor: false,
-          organicInputs: false,
-          community: false
-        }, 1440);
-        
-        setStep('success');
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
-        
-      } catch (err) {
-        console.error('Offline registration error:', err);
-        setError(t('auth.registration_failed'));
-      }
+      setError(t('auth.registration_requires_internet'));
       return;
     }
 
-    // Online registration
     setLoading(true);
     setError(null);
 
@@ -306,16 +149,6 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       const result = await register(mobileNumber, pin);
       
       if (result.success) {
-        // Set initial feature access
-        localStorageService.setCacheWithTTL('feature_access_status', {
-          weather: true,
-          aiChat: false,
-          myLand: false,
-          cropAdvisor: false,
-          organicInputs: false,
-          community: false
-        }, 1440);
-        
         setStep('success');
         setTimeout(() => {
           onComplete();
@@ -336,17 +169,16 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     }
   };
 
-  const handleBack = (): void => {
+  const handleBack = () => {
     setStep('phone');
     setPin('');
     setConfirmPin('');
     setError(null);
     setUserStatus(null);
     setRetryCount(0);
-    setLockoutEndTime(null);
   };
 
-  const getCurrentStep = (): CurrentStep => {
+  const getCurrentStep = () => {
     if (step === 'pin-login') return 'login';
     if (step === 'pin-create') return 'signup';
     return 'phone';
@@ -422,25 +254,17 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const renderPinLoginStep = () => (
     <div className="space-y-4">
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center space-x-2 mb-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <p className="text-gray-600">
-            {t('auth.enter_pin_for')} <span className="font-semibold">+91 {mobileNumber}</span>
-          </p>
-        </div>
+        <p className="text-gray-600">
+          {t('auth.enter_pin_for')} <span className="font-semibold">+91 {mobileNumber}</span>
+        </p>
         {!isOnline && (
           <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
             {t('auth.offline_login_mode')}
           </div>
         )}
-        {retryCount > 0 && !lockoutEndTime && (
+        {retryCount > 0 && (
           <div className="text-xs text-red-600">
-            {t('auth.retry_attempt', { count: retryCount, max: 3 })}
-          </div>
-        )}
-        {lockoutEndTime && (
-          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border">
-            {t('auth.account_locked_message')}
+            {t('auth.retry_attempt', { count: retryCount })}
           </div>
         )}
       </div>
@@ -458,7 +282,6 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
             className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
             maxLength={4}
             autoFocus
-            disabled={loading || (lockoutEndTime && Date.now() < lockoutEndTime)}
           />
         </div>
 
@@ -472,7 +295,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         <div className="space-y-3">
           <Button 
             onClick={handleLogin}
-            disabled={pin.length !== 4 || loading || (lockoutEndTime && Date.now() < lockoutEndTime)}
+            disabled={pin.length !== 4 || loading}
             className="w-full h-12 text-base font-semibold rounded-xl"
             style={{ backgroundColor: branding.primaryColor, color: 'white' }}
           >
@@ -502,15 +325,12 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const renderPinCreateStep = () => (
     <div className="space-y-4">
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center space-x-2 mb-2">
-          <Shield className="w-5 h-5 text-primary" />
-          <p className="text-gray-600">
-            {t('auth.create_secure_pin')}
-          </p>
-        </div>
+        <p className="text-gray-600">
+          {t('auth.create_secure_pin')}
+        </p>
         {!isOnline && (
-          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
-            {t('auth.offline_registration_mode')}
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border">
+            {t('auth.registration_requires_internet')}
           </div>
         )}
       </div>
@@ -561,7 +381,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         <div className="space-y-3">
           <Button 
             onClick={handleRegister}
-            disabled={pin.length !== 4 || confirmPin.length !== 4 || loading}
+            disabled={pin.length !== 4 || confirmPin.length !== 4 || loading || !isOnline}
             className="w-full h-12 text-base font-semibold rounded-xl"
             style={{ backgroundColor: branding.primaryColor, color: 'white' }}
           >

@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-import { defaultTenantService } from '@/services/defaultTenantService';
+import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 interface AuthResponse {
   success: boolean;
@@ -27,49 +28,37 @@ class CustomAuthService {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('CustomAuthService: Registering farmer with mobile:', cleanMobile);
-
-      // Get default tenant ID before registration
-      const defaultTenantId = await defaultTenantService.getDefaultTenantId();
+      console.log('Registering farmer with mobile:', cleanMobile);
       
-      if (!defaultTenantId) {
-        console.error('No default tenant found - cannot register farmer');
-        return { 
-          success: false, 
-          error: 'System configuration error. Please try again later.' 
-        };
-      }
-
-      console.log('Using default tenant ID:', defaultTenantId);
-      
+      // Use the edge function to register the farmer
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: cleanMobile,
           pin,
-          tenant_id: defaultTenantId, // Pass tenant ID to edge function
-          farmer_data: farmerData
+          farmer_data: {
+            ...farmerData,
+            tenant_id: farmerData.tenant_id || DEFAULT_TENANT_ID
+          }
         }
       });
 
-      console.log('CustomAuthService: Registration response:', { data, error });
-
       if (error) {
-        console.error('CustomAuthService: Registration error:', error);
+        console.error('Registration error:', error);
         return { 
           success: false, 
           error: error.message || 'Registration failed' 
         };
       }
 
-      if (!data || !data.success) {
-        console.error('CustomAuthService: Registration failed:', data?.error);
+      if (!data.success) {
+        console.error('Registration failed:', data.error);
         return { 
           success: false, 
-          error: data?.error || 'Registration failed' 
+          error: data.error || 'Registration failed' 
         };
       }
 
-      console.log('CustomAuthService: Registration successful:', data);
+      console.log('Registration successful:', data);
 
       // Store authentication data
       this.currentFarmer = data.farmer;
@@ -88,7 +77,7 @@ class CustomAuthService {
         token: data.token
       };
     } catch (error) {
-      console.error('CustomAuthService: Registration process error:', error);
+      console.error('Registration process error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Registration failed' 

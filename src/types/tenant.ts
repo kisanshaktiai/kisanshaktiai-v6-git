@@ -24,7 +24,7 @@ export type UserRole =
 
 export type LanguageCode = 
   | 'en' | 'hi' | 'mr' | 'pa' | 'gu' 
-  | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn' | 'ur' | 'ne';
+  | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn';
 
 export interface Tenant {
   id: string;
