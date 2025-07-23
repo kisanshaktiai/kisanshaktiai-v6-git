@@ -8,8 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { MobileApp } from '@/components/mobile/MobileApp';
+import { SplashScreen } from '@/components/splash/SplashScreen';
 import { NotFound } from '@/components/ui/NotFound';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { setTenantId } from '@/store/slices/authSlice';
 import { TenantService } from '@/services/TenantService';
 import { useTenantContext } from '@/hooks/useTenantContext';
@@ -19,7 +20,7 @@ function App() {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, loading: loadingAuth } = useAuth();
+  const { farmer, userProfile, loading: loadingAuth, isAuthenticated } = useCustomAuth();
   const { onboardingCompleted } = useSelector((state: any) => state.auth);
   const { tenantData, loading: loadingTenant } = useTenantContext();
 
@@ -32,7 +33,6 @@ function App() {
     const initializeTenant = async () => {
       try {
         const tenantData = await TenantService.getInstance().getTenantData();
-        // Fix: access id via tenant property if it exists
         if (tenantData && tenantData.tenant && tenantData.tenant.id) {
           dispatch(setTenantId(tenantData.tenant.id));
         }
@@ -49,36 +49,21 @@ function App() {
     navigate('/mobile');
   };
 
-  if (loadingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <span className="loading loading-dots loading-lg"></span>
-      </div>
-    );
-  }
-  
+  // Check authentication and profile completion status
+  const isProfileComplete = farmer && userProfile && userProfile.full_name;
+
   return (
     <div className="App">
       <Routes>
-        <Route path="/" element={
-          isAuthenticated && onboardingCompleted ? (
-            <Navigate to="/mobile" replace />
-          ) : (
-            <Navigate to="/onboarding" replace />
-          )
-        } />
+        <Route path="/" element={<SplashScreen />} />
         
         <Route path="/onboarding" element={
-          isAuthenticated && onboardingCompleted ? (
-            <Navigate to="/mobile" replace />
-          ) : (
-            <OnboardingFlow onComplete={handleOnboardingComplete} />
-          )
+          <OnboardingFlow onComplete={handleOnboardingComplete} />
         } />
 
         {/* Protected routes */}
         <Route path="/mobile/*" element={
-          <ProtectedRoute isAuthenticated={isAuthenticated} onboardingCompleted={onboardingCompleted}>
+          <ProtectedRoute isAuthenticated={isAuthenticated} onboardingCompleted={isProfileComplete}>
             <MobileApp />
           </ProtectedRoute>
         } />

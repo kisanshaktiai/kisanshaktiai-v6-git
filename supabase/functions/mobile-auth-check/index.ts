@@ -1,9 +1,40 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function getDefaultTenant(supabaseAdmin: any) {
+  try {
+    console.log('Fetching default tenant from tenant-default endpoint');
+    
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/tenant-default`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch default tenant:', response.status, response.statusText);
+      return null;
+    }
+
+    const tenantData = await response.json();
+    console.log('Default tenant fetched successfully:', tenantData);
+    
+    return {
+      id: tenantData.id,
+      name: tenantData.name
+    };
+  } catch (error) {
+    console.error('Error fetching default tenant:', error);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -53,22 +84,14 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== CHECKING FOR EXISTING USER ===')
-    console.log('Phone number to search:', phone)
-
-    // Check in user_profiles table - FIXED: using mobile_number instead of phone
-    const { data: existingProfile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, mobile_number, full_name')
-      .eq('mobile_number', phone)  // ✅ FIXED: Changed from 'phone' to 'mobile_number'
-      .maybeSingle()
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Error checking for existing profile:', profileError)
+    // Get default tenant dynamically
+    const defaultTenant = await getDefaultTenant(supabaseAdmin);
+    
+    if (!defaultTenant || !defaultTenant.id) {
+      console.error('No default tenant available')
       return new Response(
         JSON.stringify({ 
-          error: 'Database error while checking user',
-          details: profileError.message 
+          error: 'System configuration error. Please contact support.' 
         }),
         { 
           status: 500, 
@@ -77,13 +100,41 @@ serve(async (req) => {
       )
     }
 
-    console.log('Profile check result:', {
-      found: !!existingProfile,
-      profileId: existingProfile?.id,
-      storedPhone: existingProfile?.mobile_number  // ✅ FIXED: Changed from phone to mobile_number
+    console.log('Using tenant:', defaultTenant)
+
+    console.log('=== CHECKING FOR EXISTING USER ===')
+    console.log('Phone number to search:', phone)
+
+    // Check in farmers table with dynamic tenant ID
+    const { data: existingFarmer, error: farmerError } = await supabaseAdmin
+      .from('farmers')
+      .select('id, mobile_number, tenant_id, farmer_code')
+      .eq('mobile_number', phone)
+      .eq('tenant_id', defaultTenant.id)
+      .maybeSingle()
+
+    if (farmerError && farmerError.code !== 'PGRST116') {
+      console.error('Error checking for existing farmer:', farmerError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Database error while checking user',
+          details: farmerError.message 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Farmer check result:', {
+      found: !!existingFarmer,
+      farmerId: existingFarmer?.id,
+      farmerCode: existingFarmer?.farmer_code,
+      tenantId: existingFarmer?.tenant_id
     })
 
-    const userExists = !!existingProfile
+    const userExists = !!existingFarmer
 
     // If this is just a check, return the result
     if (checkOnly) {
@@ -97,7 +148,11 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ userExists, profile: existingProfile }),
+      JSON.stringify({ 
+        userExists, 
+        farmer: existingFarmer,
+        tenantId: defaultTenant.id 
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

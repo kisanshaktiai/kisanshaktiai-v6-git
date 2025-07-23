@@ -15,24 +15,27 @@ interface OnboardingFlowProps {
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('hi');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { farmer, userProfile, loading } = useCustomAuth();
+  const { farmer, userProfile, loading, isAuthenticated } = useCustomAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('OnboardingFlow: Auth state changed:', { farmer: !!farmer, userProfile: !!userProfile, loading });
+    console.log('OnboardingFlow: Auth state changed:', { 
+      farmer: !!farmer, 
+      userProfile: !!userProfile, 
+      loading, 
+      isAuthenticated 
+    });
     
-    if (!loading && farmer) {
-      console.log('OnboardingFlow: User is authenticated, redirecting to dashboard');
-      setIsAuthenticated(true);
-      // Navigate to mobile app instead of calling onComplete
+    // If user is fully authenticated, redirect to mobile app
+    if (!loading && isAuthenticated && farmer) {
+      console.log('OnboardingFlow: User is authenticated, redirecting to mobile app');
       navigate('/mobile');
     }
-  }, [farmer, userProfile, loading, navigate]);
+  }, [farmer, userProfile, loading, isAuthenticated, navigate]);
 
   const steps = [
     'Welcome',
-    'Language',
+    'Language', 
     'Authentication',
     'Profile'
   ];
@@ -57,7 +60,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
 
   const handleAuthComplete = () => {
     console.log('OnboardingFlow: Auth completed');
-    // Check if profile is complete
+    // After successful authentication, check if profile is complete
     if (userProfile?.full_name) {
       console.log('OnboardingFlow: Profile complete, finishing onboarding');
       navigate('/mobile');
@@ -81,9 +84,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         </div>
       </div>
     );
-  };
+  }
 
-  if (isAuthenticated) {
+  // If user is authenticated and has complete profile, redirect to mobile
+  if (isAuthenticated && farmer && userProfile?.full_name) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -108,7 +112,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
       case 'Language':
         return (
           <LocationBasedLanguageScreen 
-            onNext={handleNext}
+            onNext={handleLanguageSelect}
           />
         );
       case 'Authentication':

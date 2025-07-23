@@ -156,7 +156,8 @@ class CustomAuthService {
 
       const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
         body: {
-          mobile_number: mobileNumber
+          phone: mobileNumber,
+          checkOnly: true
         }
       });
 
@@ -165,7 +166,7 @@ class CustomAuthService {
         return false;
       }
 
-      return data?.exists || false;
+      return data?.userExists || false;
 
     } catch (error) {
       console.error('CustomAuthService: Network error checking farmer:', error);
