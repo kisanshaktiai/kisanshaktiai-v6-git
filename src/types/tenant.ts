@@ -22,9 +22,10 @@ export type UserRole =
   | 'agent' 
   | 'farmer';
 
+// Updated to include all database language codes
 export type LanguageCode = 
   | 'en' | 'hi' | 'mr' | 'pa' | 'gu' 
-  | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn';
+  | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn' | 'ur' | 'ne';
 
 export interface Tenant {
   id: string;

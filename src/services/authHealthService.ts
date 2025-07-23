@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { sessionService } from './sessionService';
 
@@ -132,11 +133,11 @@ export class AuthHealthService {
     try {
       const cleanPhone = phone.replace(/\D/g, '');
 
-      // Check if user profile exists
+      // Check if user profile exists using mobile_number column
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('id, phone')
-        .eq('phone', cleanPhone)
+        .select('id, mobile_number')
+        .eq('mobile_number', cleanPhone)
         .maybeSingle();
 
       diagnosis.profileExists = !!profile;

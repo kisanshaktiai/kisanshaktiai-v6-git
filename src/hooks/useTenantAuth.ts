@@ -146,6 +146,8 @@ export const useTenantAuth = () => {
           ...profileData,
           // Map mobile_number to phone for compatibility
           phone: profileData.mobile_number || '',
+          // Ensure proper type casting for preferred_language
+          preferred_language: (profileData.preferred_language || 'hi') as UserProfile['preferred_language'],
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,
