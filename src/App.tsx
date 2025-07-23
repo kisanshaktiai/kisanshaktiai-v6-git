@@ -50,7 +50,7 @@ function App() {
   };
 
   // Check authentication and profile completion status
-  const isProfileComplete = farmer && userProfile && userProfile.full_name;
+  const isProfileComplete = !!(farmer && userProfile && userProfile.full_name);
 
   return (
     <div className="App">
