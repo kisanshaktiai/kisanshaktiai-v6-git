@@ -22,6 +22,10 @@ type AuthStep = 'phone' | 'pin-login' | 'pin-create' | 'success';
 type UserStatus = 'checking' | 'existing' | 'new' | null;
 type CurrentStep = 'phone' | 'login' | 'signup';
 
+// Define explicit types for database queries
+type UserProfile = { mobile_number: string };
+type Farmer = { mobile_number: string };
+
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const { branding } = useBranding();
@@ -79,14 +83,14 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Use raw SQL-like approach to avoid complex type inference
+      // Use explicit type definitions to avoid complex type inference
       let userProfileExists = false;
       let farmerExists = false;
       
-      // Check user profiles with very simple query
+      // Check user profiles with explicit typing
       try {
         const { data: userProfileData, error: userProfileError } = await supabase
-          .from('user_profiles')
+          .from<UserProfile>('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .limit(1);
@@ -99,10 +103,10 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         userProfileExists = false;
       }
       
-      // Check farmers with very simple query
+      // Check farmers with explicit typing
       try {
         const { data: farmerData, error: farmerError } = await supabase
-          .from('farmers')
+          .from<Farmer>('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .limit(1);
