@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface HealthCheckResult {
@@ -7,8 +6,16 @@ interface HealthCheckResult {
   details?: any;
 }
 
+interface DebugLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  context?: any;
+}
+
 class AuthHealthService {
   private static instance: AuthHealthService;
+  private debugLogs: DebugLog[] = [];
 
   static getInstance(): AuthHealthService {
     if (!AuthHealthService.instance) {
@@ -17,12 +24,70 @@ class AuthHealthService {
     return AuthHealthService.instance;
   }
 
+  private addDebugLog(level: 'info' | 'warn' | 'error', message: string, context?: any) {
+    this.debugLogs.push({
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      context
+    });
+    
+    // Keep only last 100 logs
+    if (this.debugLogs.length > 100) {
+      this.debugLogs = this.debugLogs.slice(-100);
+    }
+  }
+
+  async performHealthCheck(): Promise<HealthCheckResult> {
+    return await this.checkAuthHealth();
+  }
+
+  getDebugLogs(): DebugLog[] {
+    return [...this.debugLogs];
+  }
+
+  clearDebugLogs(): void {
+    this.debugLogs = [];
+  }
+
+  async diagnoseAuthIssue(mobileNumber: string): Promise<{
+    farmerExists: boolean;
+    profileExists: boolean;
+    recommendations: string[];
+  }> {
+    const farmerExists = await this.checkFarmerExists(mobileNumber);
+    const profileExists = await this.checkProfileExists(mobileNumber);
+    
+    const recommendations: string[] = [];
+    
+    if (!farmerExists) {
+      recommendations.push('Farmer record not found. User needs to register.');
+    }
+    
+    if (!profileExists) {
+      recommendations.push('Profile not found. Profile completion required.');
+    }
+    
+    if (farmerExists && profileExists) {
+      recommendations.push('Both farmer and profile exist. Check authentication flow.');
+    }
+    
+    return {
+      farmerExists,
+      profileExists,
+      recommendations
+    };
+  }
+
   async checkAuthHealth(): Promise<HealthCheckResult> {
     try {
+      this.addDebugLog('info', 'Starting auth health check');
+      
       // Check if we can get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
+        this.addDebugLog('error', 'Failed to get session', sessionError);
         return {
           status: 'unhealthy',
           message: 'Failed to get session',
@@ -37,6 +102,7 @@ class AuthHealthService {
         .limit(1);
 
       if (farmersError) {
+        this.addDebugLog('error', 'Failed to query farmers table', farmersError);
         return {
           status: 'unhealthy',
           message: 'Failed to query farmers table',
@@ -51,6 +117,7 @@ class AuthHealthService {
         .limit(1);
 
       if (profilesError) {
+        this.addDebugLog('error', 'Failed to query user_profiles table', profilesError);
         return {
           status: 'unhealthy',
           message: 'Failed to query user_profiles table',
@@ -58,6 +125,7 @@ class AuthHealthService {
         };
       }
 
+      this.addDebugLog('info', 'Auth health check completed successfully');
       return {
         status: 'healthy',
         message: 'Authentication system is healthy',
@@ -68,6 +136,7 @@ class AuthHealthService {
         }
       };
     } catch (error) {
+      this.addDebugLog('error', 'Auth health check failed', error);
       return {
         status: 'unhealthy',
         message: 'Authentication health check failed',
@@ -85,13 +154,13 @@ class AuthHealthService {
         .limit(1);
 
       if (error) {
-        console.error('Error checking farmer existence:', error);
+        this.addDebugLog('error', 'Error checking farmer existence', error);
         return false;
       }
 
       return data && data.length > 0;
     } catch (error) {
-      console.error('Error in checkFarmerExists:', error);
+      this.addDebugLog('error', 'Error in checkFarmerExists', error);
       return false;
     }
   }
@@ -105,13 +174,13 @@ class AuthHealthService {
         .limit(1);
 
       if (error) {
-        console.error('Error checking profile existence:', error);
+        this.addDebugLog('error', 'Error checking profile existence', error);
         return false;
       }
 
       return data && data.length > 0;
     } catch (error) {
-      console.error('Error in checkProfileExists:', error);
+      this.addDebugLog('error', 'Error in checkProfileExists', error);
       return false;
     }
   }

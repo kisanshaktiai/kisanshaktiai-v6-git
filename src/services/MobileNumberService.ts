@@ -3,12 +3,15 @@ import { customAuthService } from './customAuthService';
 
 export interface SIMInfo {
   slotIndex: number;
+  slot: number; // Add slot property for UI compatibility
   carrierName: string;
   countryCode: string;
   mobileCountryCode: string;
   mobileNetworkCode: string;
   phoneNumber?: string;
   isActive: boolean;
+  isDefault?: boolean; // Add isDefault property
+  displayName?: string; // Add displayName property
 }
 
 export class MobileNumberService {
@@ -43,12 +46,27 @@ export class MobileNumberService {
     return [
       {
         slotIndex: 0,
+        slot: 1,
         carrierName: 'Airtel',
         countryCode: 'IN',
         mobileCountryCode: '404',
         mobileNetworkCode: '45',
-        phoneNumber: undefined,
+        phoneNumber: '+919876543210',
         isActive: true,
+        isDefault: true,
+        displayName: 'Airtel - 9876543210'
+      },
+      {
+        slotIndex: 1,
+        slot: 2,
+        carrierName: 'Jio',
+        countryCode: 'IN',
+        mobileCountryCode: '404',
+        mobileNetworkCode: '07',
+        phoneNumber: '+917218973005',
+        isActive: true,
+        isDefault: false,
+        displayName: 'Jio - 7218973005'
       }
     ];
   }
