@@ -27,7 +27,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const { branding } = useBranding();
   const { login, register } = useCustomAuth();
   
-  // Simplified network state handling
+  // Simple network state handling without complex hooks
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   
   const [step, setStep] = useState<AuthStep>('phone');
