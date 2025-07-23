@@ -83,28 +83,28 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       let userProfileExists = false;
       let farmerExists = false;
       
+      // Check user profiles table
       try {
-        const userProfileQuery = supabase
+        const { data: userProfileData } = await supabase
           .from('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .maybeSingle();
         
-        const userProfileResult = await userProfileQuery;
-        userProfileExists = Boolean(userProfileResult.data);
+        userProfileExists = Boolean(userProfileData);
       } catch (err) {
         console.error('User profile query error:', err);
       }
       
+      // Check farmers table
       try {
-        const farmerQuery = supabase
+        const { data: farmerData } = await supabase
           .from('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .maybeSingle();
         
-        const farmerResult = await farmerQuery;
-        farmerExists = Boolean(farmerResult.data);
+        farmerExists = Boolean(farmerData);
       } catch (err) {
         console.error('Farmer query error:', err);
       }
@@ -341,14 +341,9 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   };
 
   const getCurrentStep = (): CurrentStep => {
-    switch (step) {
-      case 'pin-login':
-        return 'login';
-      case 'pin-create':
-        return 'signup';
-      default:
-        return 'phone';
-    }
+    if (step === 'pin-login') return 'login';
+    if (step === 'pin-create') return 'signup';
+    return 'phone';
   };
 
   const renderPhoneStep = () => (
