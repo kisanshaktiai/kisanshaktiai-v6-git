@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -80,20 +79,37 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Simplified database queries with explicit typing
-      const userProfileResult = await supabase
-        .from('user_profiles')
-        .select('mobile_number')
-        .eq('mobile_number', mobile)
-        .maybeSingle();
-        
-      const farmerResult = await supabase
-        .from('farmers')
-        .select('mobile_number')
-        .eq('mobile_number', mobile)
-        .maybeSingle();
+      // Simplified database queries with explicit typing to avoid deep type instantiation
+      let userProfileExists = false;
+      let farmerExists = false;
       
-      const exists = Boolean(userProfileResult.data || farmerResult.data);
+      try {
+        const userProfileQuery = supabase
+          .from('user_profiles')
+          .select('mobile_number')
+          .eq('mobile_number', mobile)
+          .maybeSingle();
+        
+        const userProfileResult = await userProfileQuery;
+        userProfileExists = Boolean(userProfileResult.data);
+      } catch (err) {
+        console.error('User profile query error:', err);
+      }
+      
+      try {
+        const farmerQuery = supabase
+          .from('farmers')
+          .select('mobile_number')
+          .eq('mobile_number', mobile)
+          .maybeSingle();
+        
+        const farmerResult = await farmerQuery;
+        farmerExists = Boolean(farmerResult.data);
+      } catch (err) {
+        console.error('Farmer query error:', err);
+      }
+      
+      const exists = userProfileExists || farmerExists;
       
       // Cache the result
       localStorageService.setCacheWithTTL(cacheKey, { exists }, 30); // 30 minutes
