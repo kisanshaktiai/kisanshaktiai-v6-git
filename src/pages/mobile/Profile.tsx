@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,89 +7,33 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { User, Settings, Globe, Bell, LogOut, Edit, Save, X } from 'lucide-react';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { LanguageService } from '@/services/LanguageService';
-import { customAuthService } from '@/services/customAuthService';
+import { User, Settings, Globe, Bell, Edit, Save, X } from 'lucide-react';
+import { useSimpleFarmer } from '@/hooks/useSimpleFarmer';
 import { toast } from 'sonner';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
-  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' }
 ] as const;
 
-type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]['code'];
-
 export const Profile: React.FC = () => {
-  const { t, i18n } = useTranslation();
-  const { farmer } = useCustomAuth();
+  const { farmer } = useSimpleFarmer();
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [editedProfile, setEditedProfile] = useState({
-    mobile_number: '',
+    mobile_number: farmer.mobile_number || '',
   });
 
-  useEffect(() => {
-    const currentLang = i18n.language as SupportedLanguage;
-    if (SUPPORTED_LANGUAGES.some(lang => lang.code === currentLang)) {
-      setSelectedLanguage(currentLang);
-    }
-  }, [i18n.language]);
-
-  useEffect(() => {
-    if (farmer) {
-      setEditedProfile({
-        mobile_number: farmer.mobile_number || '',
-      });
-    }
-  }, [farmer]);
-
-  const handleLanguageChange = async (languageCode: SupportedLanguage) => {
-    try {
-      setSelectedLanguage(languageCode);
-      await LanguageService.getInstance().changeLanguage(languageCode);
-      toast.success(t('profile.languageChanged'));
-    } catch (error) {
-      console.error('Error changing language:', error);
-      toast.error(t('profile.languageChangeError'));
-    }
+  const handleLanguageChange = async (languageCode: string) => {
+    setSelectedLanguage(languageCode);
+    toast.success('Language changed successfully');
   };
 
   const handleSaveProfile = () => {
-    // TODO: Implement profile update logic
     setIsEditing(false);
-    toast.success(t('profile.profileUpdated'));
+    toast.success('Profile updated successfully');
   };
-
-  const handleLogout = async () => {
-    try {
-      await customAuthService.signOut();
-      toast.success(t('profile.loggedOut'));
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error(t('profile.logoutError'));
-    }
-  };
-
-  if (!farmer) {
-    return (
-      <div className="p-4">
-        <div className="text-center text-gray-500">
-          {t('profile.loadingProfile')}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-4 space-y-6">
@@ -117,17 +61,17 @@ export const Profile: React.FC = () => {
         {isEditing && (
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="mobile">{t('profile.mobileNumber')}</Label>
+              <Label htmlFor="mobile">Mobile Number</Label>
               <Input
                 id="mobile"
                 value={editedProfile.mobile_number}
                 onChange={(e) => setEditedProfile(prev => ({ ...prev, mobile_number: e.target.value }))}
-                placeholder={t('profile.enterMobile')}
+                placeholder="Enter mobile number"
               />
             </div>
             <Button onClick={handleSaveProfile} className="w-full">
               <Save className="w-4 h-4 mr-2" />
-              {t('profile.saveChanges')}
+              Save Changes
             </Button>
           </CardContent>
         )}
@@ -138,7 +82,7 @@ export const Profile: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Settings className="w-5 h-5 mr-2" />
-            {t('profile.settings')}
+            Settings
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -146,7 +90,7 @@ export const Profile: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Globe className="w-4 h-4 text-gray-500" />
-              <span>{t('profile.language')}</span>
+              <span>Language</span>
             </div>
             <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
               <SelectTrigger className="w-32">
@@ -168,27 +112,13 @@ export const Profile: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Bell className="w-4 h-4 text-gray-500" />
-              <span>{t('profile.notifications')}</span>
+              <span>Notifications</span>
             </div>
             <Switch
               checked={notificationsEnabled}
               onCheckedChange={setNotificationsEnabled}
             />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Logout */}
-      <Card>
-        <CardContent className="pt-6">
-          <Button
-            variant="destructive"
-            onClick={handleLogout}
-            className="w-full"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            {t('profile.logout')}
-          </Button>
         </CardContent>
       </Card>
     </div>
