@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import { DEFAULT_TENANT_ID } from '@/config/constants';
@@ -30,15 +29,12 @@ class CustomAuthService {
       
       console.log('Registering farmer with mobile:', cleanMobile);
       
-      // Use the edge function to register the farmer
+      // Don't pass tenant_id - let the edge function handle it
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: cleanMobile,
           pin,
-          farmer_data: {
-            ...farmerData,
-            tenant_id: farmerData.tenant_id || DEFAULT_TENANT_ID
-          }
+          farmer_data: farmerData // Remove tenant_id from here
         }
       });
 

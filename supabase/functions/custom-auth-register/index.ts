@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Generate a UUID for the farmer
     const farmerId = crypto.randomUUID()
 
-    // Create farmer record directly (no auth user needed for this approach)
+    // Create farmer record without tenant_id (set to null)
     const { data: farmer, error: insertError } = await supabase
       .from('farmers')
       .insert([{
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
         mobile_number: cleanMobile,
         pin_hash: pinHash,
         farmer_code: farmerCode,
-        tenant_id: farmer_data.tenant_id || null,
+        tenant_id: null, // Set to null since we don't have a valid tenant
         app_install_date: new Date().toISOString().split('T')[0],
         login_attempts: 0,
         is_verified: false,
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
     
     const payload = {
       farmer_id: farmer.id,
-      tenant_id: farmer.tenant_id,
+      tenant_id: farmer.tenant_id, // Will be null
       mobile_number: farmer.mobile_number,
       farmer_code: farmer.farmer_code,
       iat: Math.floor(Date.now() / 1000),
