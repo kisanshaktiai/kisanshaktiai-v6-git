@@ -1,9 +1,35 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
+interface AuthHealthCheck {
+  checks: {
+    supabaseConnection: boolean;
+    farmerTableAccess: boolean;
+    profileTableAccess: boolean;
+    authServiceHealth: boolean;
+  };
+  errors: string[];
+  timestamp: string;
+}
+
+interface DiagnosisResult {
+  userExists: boolean;
+  authRecordExists: boolean;
+  farmerExists: boolean;
+  profileExists: boolean;
+  issues: string[];
+  recommendations: string[];
+}
+
 interface HealthCheckResult {
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  message: string;
-  details?: any;
+  checks: {
+    supabaseConnection: boolean;
+    farmerTableAccess: boolean;
+    profileTableAccess: boolean;
+    authServiceHealth: boolean;
+  };
+  errors: string[];
+  timestamp: string;
 }
 
 interface DebugLog {
@@ -24,7 +50,7 @@ class AuthHealthService {
     return AuthHealthService.instance;
   }
 
-  private addDebugLog(level: 'info' | 'warn' | 'error', message: string, context?: any) {
+  private addDebugLog(level: 'info' | 'warn' | 'error', message: string, context?: any): void {
     this.debugLogs.push({
       timestamp: new Date().toISOString(),
       level,
@@ -39,7 +65,114 @@ class AuthHealthService {
   }
 
   async performHealthCheck(): Promise<HealthCheckResult> {
-    return await this.checkAuthHealth();
+    const result: HealthCheckResult = {
+      checks: {
+        supabaseConnection: false,
+        farmerTableAccess: false,
+        profileTableAccess: false,
+        authServiceHealth: false
+      },
+      errors: [],
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      // Test Supabase connection
+      const { error: connectionError } = await supabase.from('farmers').select('count').limit(1);
+      result.checks.supabaseConnection = !connectionError;
+      if (connectionError) {
+        result.errors.push(`Supabase connection failed: ${connectionError.message}`);
+        this.addDebugLog('error', 'Supabase connection failed', connectionError);
+      }
+
+      // Test farmer table access
+      const { error: farmerError } = await supabase.from('farmers').select('id').limit(1);
+      result.checks.farmerTableAccess = !farmerError;
+      if (farmerError) {
+        result.errors.push(`Farmer table access failed: ${farmerError.message}`);
+        this.addDebugLog('error', 'Farmer table access failed', farmerError);
+      }
+
+      // Test profile table access
+      const { error: profileError } = await supabase.from('user_profiles').select('id').limit(1);
+      result.checks.profileTableAccess = !profileError;
+      if (profileError) {
+        result.errors.push(`Profile table access failed: ${profileError.message}`);
+        this.addDebugLog('error', 'Profile table access failed', profileError);
+      }
+
+      // Test auth service health
+      result.checks.authServiceHealth = result.checks.supabaseConnection && 
+                                       result.checks.farmerTableAccess && 
+                                       result.checks.profileTableAccess;
+
+      this.addDebugLog('info', 'Health check completed', result);
+    } catch (error) {
+      result.errors.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.addDebugLog('error', 'Health check failed', error);
+    }
+
+    return result;
+  }
+
+  async diagnoseAuthIssue(mobileNumber: string): Promise<DiagnosisResult> {
+    const result: DiagnosisResult = {
+      userExists: false,
+      authRecordExists: false,
+      farmerExists: false,
+      profileExists: false,
+      issues: [],
+      recommendations: []
+    };
+
+    try {
+      // Check if farmer exists
+      const { data: farmer, error: farmerError } = await supabase
+        .from('farmers')
+        .select('id, mobile_number')
+        .eq('mobile_number', mobileNumber)
+        .maybeSingle();
+
+      if (farmerError) {
+        result.issues.push(`Error checking farmer: ${farmerError.message}`);
+        this.addDebugLog('error', 'Error checking farmer', farmerError);
+      } else {
+        result.farmerExists = !!farmer;
+        result.userExists = !!farmer;
+      }
+
+      // Check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, mobile_number')
+        .eq('mobile_number', mobileNumber)
+        .maybeSingle();
+
+      if (profileError) {
+        result.issues.push(`Error checking profile: ${profileError.message}`);
+        this.addDebugLog('error', 'Error checking profile', profileError);
+      } else {
+        result.profileExists = !!profile;
+      }
+
+      // Generate recommendations
+      if (!result.farmerExists) {
+        result.recommendations.push('User needs to register as farmer first');
+      }
+      if (!result.profileExists) {
+        result.recommendations.push('User profile needs to be created');
+      }
+      if (result.farmerExists && result.profileExists) {
+        result.recommendations.push('User data exists - check authentication flow');
+      }
+
+      this.addDebugLog('info', 'Diagnosis completed', result);
+    } catch (error) {
+      result.issues.push(`Diagnosis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.addDebugLog('error', 'Diagnosis failed', error);
+    }
+
+    return result;
   }
 
   getDebugLogs(): DebugLog[] {
@@ -48,142 +181,9 @@ class AuthHealthService {
 
   clearDebugLogs(): void {
     this.debugLogs = [];
-  }
-
-  async diagnoseAuthIssue(mobileNumber: string): Promise<{
-    farmerExists: boolean;
-    profileExists: boolean;
-    recommendations: string[];
-  }> {
-    const farmerExists = await this.checkFarmerExists(mobileNumber);
-    const profileExists = await this.checkProfileExists(mobileNumber);
-    
-    const recommendations: string[] = [];
-    
-    if (!farmerExists) {
-      recommendations.push('Farmer record not found. User needs to register.');
-    }
-    
-    if (!profileExists) {
-      recommendations.push('Profile not found. Profile completion required.');
-    }
-    
-    if (farmerExists && profileExists) {
-      recommendations.push('Both farmer and profile exist. Check authentication flow.');
-    }
-    
-    return {
-      farmerExists,
-      profileExists,
-      recommendations
-    };
-  }
-
-  async checkAuthHealth(): Promise<HealthCheckResult> {
-    try {
-      this.addDebugLog('info', 'Starting auth health check');
-      
-      // Check if we can get the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        this.addDebugLog('error', 'Failed to get session', sessionError);
-        return {
-          status: 'unhealthy',
-          message: 'Failed to get session',
-          details: sessionError
-        };
-      }
-
-      // Check if we can query the farmers table
-      const { data: farmersData, error: farmersError } = await supabase
-        .from('farmers')
-        .select('id, mobile_number')
-        .limit(1);
-
-      if (farmersError) {
-        this.addDebugLog('error', 'Failed to query farmers table', farmersError);
-        return {
-          status: 'unhealthy',
-          message: 'Failed to query farmers table',
-          details: farmersError
-        };
-      }
-
-      // Check if we can query the user_profiles table
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('id, mobile_number')
-        .limit(1);
-
-      if (profilesError) {
-        this.addDebugLog('error', 'Failed to query user_profiles table', profilesError);
-        return {
-          status: 'unhealthy',
-          message: 'Failed to query user_profiles table',
-          details: profilesError
-        };
-      }
-
-      this.addDebugLog('info', 'Auth health check completed successfully');
-      return {
-        status: 'healthy',
-        message: 'Authentication system is healthy',
-        details: {
-          session: !!session,
-          farmersCount: farmersData?.length || 0,
-          profilesCount: profilesData?.length || 0
-        }
-      };
-    } catch (error) {
-      this.addDebugLog('error', 'Auth health check failed', error);
-      return {
-        status: 'unhealthy',
-        message: 'Authentication health check failed',
-        details: error
-      };
-    }
-  }
-
-  async checkFarmerExists(mobileNumber: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('id')
-        .eq('mobile_number', mobileNumber)
-        .limit(1);
-
-      if (error) {
-        this.addDebugLog('error', 'Error checking farmer existence', error);
-        return false;
-      }
-
-      return data && data.length > 0;
-    } catch (error) {
-      this.addDebugLog('error', 'Error in checkFarmerExists', error);
-      return false;
-    }
-  }
-
-  async checkProfileExists(mobileNumber: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('mobile_number', mobileNumber)
-        .limit(1);
-
-      if (error) {
-        this.addDebugLog('error', 'Error checking profile existence', error);
-        return false;
-      }
-
-      return data && data.length > 0;
-    } catch (error) {
-      this.addDebugLog('error', 'Error in checkProfileExists', error);
-      return false;
-    }
+    this.addDebugLog('info', 'Debug logs cleared');
   }
 }
 
 export const authHealthService = AuthHealthService.getInstance();
+export type { AuthHealthCheck, DiagnosisResult, HealthCheckResult, DebugLog };

@@ -37,7 +37,7 @@ export const useUserProfile = (userId?: string) => {
       // Type cast JSON fields properly and handle mobile_number field
       return {
         ...data,
-        mobile_number: data.mobile_number, // Use mobile_number instead of phone
+        mobile_number: data.mobile_number,
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -49,7 +49,11 @@ export const useUserProfile = (userId?: string) => {
         expertise_areas: Array.isArray(data.expertise_areas)
           ? data.expertise_areas
           : [],
-        metadata: safeJsonParse(data.metadata, {})
+        metadata: safeJsonParse(data.metadata, {}),
+        mobile_number_verified: data.mobile_number_verified || false,
+        email_verified: data.email_verified || false,
+        last_seen: data.last_seen || null,
+        timezone: data.timezone || null
       };
     },
     enabled: !!userId,
@@ -58,6 +62,12 @@ export const useUserProfile = (userId?: string) => {
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required');
+
+      // Ensure preferred_language is valid if provided
+      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
+      if (updates.preferred_language && !validLanguages.includes(updates.preferred_language)) {
+        updates.preferred_language = 'hi'; // Default to Hindi
+      }
 
       const { data, error } = await supabase
         .from('user_profiles')
@@ -76,9 +86,15 @@ export const useUserProfile = (userId?: string) => {
 
   const createMutation = useMutation({
     mutationFn: async (profileData: Partial<UserProfile> & { id: string; mobile_number: string }) => {
+      // Ensure preferred_language is valid if provided
+      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
+      if (profileData.preferred_language && !validLanguages.includes(profileData.preferred_language)) {
+        profileData.preferred_language = 'hi'; // Default to Hindi
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([profileData])
+        .insert(profileData)
         .select()
         .single();
 
