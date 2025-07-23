@@ -83,9 +83,13 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
     if (value.length >= 10) {
       const formatted = MobileNumberService.getInstance().formatMobileNumber(value);
       if (MobileNumberService.getInstance().validateMobileNumber(formatted)) {
-        // Check if user exists
-        const isRegistered = await MobileNumberService.getInstance().isRegisteredUser(formatted);
-        setIsExistingUser(isRegistered);
+        try {
+          // Check if user exists
+          const isRegistered = await MobileNumberService.getInstance().isRegisteredUser(formatted);
+          setIsExistingUser(isRegistered);
+        } catch (error) {
+          console.error('Error checking user registration:', error);
+        }
       }
     }
   };
@@ -107,30 +111,27 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
     setError(null);
 
     try {
-      // Use the basic authenticateUser method for compatibility
-      const authResult = await MobileNumberService.getInstance().authenticateUser(formatted);
+      // Save mobile number to local storage
+      await MobileNumberService.getInstance().saveMobileNumber(formatted);
       
-      if (authResult.success) {
-        dispatch(setAuthenticated({
-          userId: authResult.userId || 'temp_user',
-          phoneNumber: formatted
-        }));
+      // Set authenticated state
+      dispatch(setAuthenticated({
+        userId: 'temp_user',
+        phoneNumber: formatted
+      }));
 
-        // If existing user, complete onboarding
-        if (isExistingUser) {
-          dispatch(setOnboardingCompleted());
-          if (onComplete) {
-            onComplete();
-          }
-        } else {
-          // New user - continue to profile registration
-          onNext();
+      // If existing user, complete onboarding
+      if (isExistingUser) {
+        dispatch(setOnboardingCompleted());
+        if (onComplete) {
+          onComplete();
         }
       } else {
-        setError(t('auth.authentication_failed'));
+        // New user - continue to next step (profile registration)
+        onNext();
       }
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('Continue error:', error);
       setError(t('auth.something_went_wrong'));
     } finally {
       setLoading(false);

@@ -28,6 +28,8 @@ class CustomAuthService {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
+      console.log('Registering farmer with mobile:', cleanMobile);
+      
       // Use the edge function to register the farmer
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
@@ -35,7 +37,6 @@ class CustomAuthService {
           pin,
           farmer_data: {
             ...farmerData,
-            // Make sure tenant_id is set (default if not provided)
             tenant_id: farmerData.tenant_id || DEFAULT_TENANT_ID
           }
         }
@@ -50,11 +51,14 @@ class CustomAuthService {
       }
 
       if (!data.success) {
+        console.error('Registration failed:', data.error);
         return { 
           success: false, 
           error: data.error || 'Registration failed' 
         };
       }
+
+      console.log('Registration successful:', data);
 
       // Store authentication data
       this.currentFarmer = data.farmer;
@@ -65,30 +69,6 @@ class CustomAuthService {
         farmer: data.farmer,
         token: data.token
       }));
-
-      // Create user profile entry
-      try {
-        // Check if user profile exists first
-        const { data: existingProfile } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('phone', cleanMobile)
-          .maybeSingle();
-
-        if (!existingProfile) {
-          await supabase.from('user_profiles').insert({
-            id: data.farmer.id,
-            phone: cleanMobile,
-            phone_verified: true,
-            preferred_language: 'hi',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        }
-      } catch (profileError) {
-        console.error('Error creating user profile:', profileError);
-        // Don't fail registration if profile creation fails
-      }
 
       return { 
         success: true, 
@@ -109,6 +89,8 @@ class CustomAuthService {
     try {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
+      
+      console.log('Logging in farmer with mobile:', cleanMobile);
       
       // First check if the farmer exists
       const { data: existingFarmer } = await supabase
@@ -176,6 +158,8 @@ class CustomAuthService {
     try {
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
+      console.log('Checking existing farmer with mobile:', cleanMobile);
+      
       const { data, error } = await supabase
         .from('farmers')
         .select('id')
@@ -187,7 +171,9 @@ class CustomAuthService {
         return false;
       }
 
-      return !!data;
+      const exists = !!data;
+      console.log('Farmer exists:', exists);
+      return exists;
     } catch (error) {
       console.error('Error in checkExistingFarmer:', error);
       return false;

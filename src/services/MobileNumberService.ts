@@ -20,7 +20,6 @@ export class MobileNumberService {
   private simDetectionService: SIMDetectionService;
 
   private constructor() {
-    // Private constructor to enforce singleton
     this.simDetectionService = new SIMDetectionService();
   }
 
@@ -72,40 +71,38 @@ export class MobileNumberService {
     // Remove any non-digit characters
     const cleaned = number.replace(/\D/g, '');
     
-    // Add India country code if not present
+    // Return clean 10-digit number for India
     if (cleaned.startsWith('91') && cleaned.length === 12) {
-      return `+${cleaned}`;
+      return cleaned.substring(2);
     } else if (cleaned.length === 10) {
-      return `+91${cleaned}`;
+      return cleaned;
     }
     
-    // Handle other cases
-    return number.startsWith('+') ? number : `+${number}`;
+    return cleaned;
   }
 
   validateMobileNumber(number: string): boolean {
     const cleaned = number.replace(/\D/g, '');
     
-    // Check if it's a valid Indian mobile number
-    if (cleaned.startsWith('91') && cleaned.length === 12) {
-      return true;
-    } else if (cleaned.length === 10) {
-      return true;
-    }
-    
-    return false;
+    // Check if it's a valid Indian mobile number (10 digits)
+    return cleaned.length === 10 && /^[6-9]\d{9}$/.test(cleaned);
   }
 
   async isRegisteredUser(mobileNumber: string): Promise<boolean> {
-    const formattedNumber = this.formatMobileNumber(mobileNumber);
-    return customAuthService.checkExistingFarmer(formattedNumber);
+    try {
+      const formattedNumber = this.formatMobileNumber(mobileNumber);
+      console.log('Checking if user is registered:', formattedNumber);
+      const result = await customAuthService.checkExistingFarmer(formattedNumber);
+      console.log('User registration status:', result);
+      return result;
+    } catch (error) {
+      console.error('Error checking user registration:', error);
+      return false;
+    }
   }
 
   async authenticateUser(mobileNumber: string): Promise<AuthResult> {
     try {
-      // This is a simple method for basic authentication flow
-      // It doesn't actually authenticate the user but marks them as authenticated
-      // for flows where PIN verification isn't required
       const formattedNumber = this.formatMobileNumber(mobileNumber);
       await this.saveMobileNumber(formattedNumber);
       return { success: true, userId: 'temp_user_id' };
@@ -138,10 +135,14 @@ export class MobileNumberService {
       const formattedNumber = this.formatMobileNumber(mobileNumber);
       await this.saveMobileNumber(formattedNumber);
       
+      console.log('Registering user with data:', { mobileNumber: formattedNumber, userData });
+      
       // Use tenant_id from constants if not provided
       userData.tenant_id = userData.tenant_id || DEFAULT_TENANT_ID;
       
       const result = await customAuthService.register(formattedNumber, pin, userData);
+      
+      console.log('Registration result:', result);
       
       return {
         success: result.success,

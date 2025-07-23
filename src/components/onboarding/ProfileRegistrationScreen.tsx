@@ -1,14 +1,24 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { setProfile } from '@/store/slices/farmerSlice';
-import { LanguageService } from '@/services/LanguageService';
-import { User, Calendar, Briefcase, Loader, Languages } from 'lucide-react';
+import { MobileNumberService } from '@/services/MobileNumberService';
+import { useBranding } from '@/contexts/BrandingContext';
+import { RootState } from '@/store';
+import { 
+  User, 
+  Loader, 
+  AlertCircle, 
+  CheckCircle, 
+  MapPin 
+} from 'lucide-react';
 
 interface ProfileRegistrationScreenProps {
   onNext: () => void;
@@ -20,237 +30,354 @@ interface ProfileRegistrationScreenProps {
 
 export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps> = ({ 
   onNext, 
-  onPrev 
+  onPrev,
+  onComplete
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
-  
-  // Get selected language from localStorage (set during onboarding)
-  const savedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+  const { branding } = useBranding();
+  const { phoneNumber } = useSelector((state: RootState) => state.auth);
   
   const [formData, setFormData] = useState({
     fullName: '',
-    gender: '',
-    dateOfBirth: '',
-    primaryOccupation: '',
-    aadhaarNumber: '',
-    preferredLanguage: savedLanguage
+    pin: '',
+    confirmPin: '',
+    village: '',
+    district: '',
+    state: '',
+    farmingExperience: '',
+    landAcres: '',
+    primaryCrops: [] as string[],
+    hasIrrigation: false,
+    hasTractor: false,
+    hasStorage: false,
+    annualIncome: '',
+    preferredLanguage: 'hi'
   });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const languageService = LanguageService.getInstance();
-  const supportedLanguages = languageService.getSupportedLanguages();
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError(null);
+  };
 
-  useEffect(() => {
-    // Ensure the language preference matches what was selected during onboarding
-    if (savedLanguage && savedLanguage !== formData.preferredLanguage) {
-      setFormData(prev => ({
-        ...prev,
-        preferredLanguage: savedLanguage
-      }));
-    }
-  }, [savedLanguage]);
-
-  const handleInputChange = (field: string, value: string) => {
+  const handleCropToggle = (crop: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      primaryCrops: prev.primaryCrops.includes(crop)
+        ? prev.primaryCrops.filter(c => c !== crop)
+        : [...prev.primaryCrops, crop]
     }));
   };
 
-  const handleComplete = async () => {
-    if (!formData.fullName || !formData.gender || !formData.primaryOccupation) {
-      return;
+  const validateForm = () => {
+    if (!formData.fullName.trim()) {
+      setError(t('profile.full_name_required'));
+      return false;
     }
+    if (!formData.pin || formData.pin.length !== 4) {
+      setError(t('profile.pin_required'));
+      return false;
+    }
+    if (formData.pin !== formData.confirmPin) {
+      setError(t('profile.pin_mismatch'));
+      return false;
+    }
+    if (!formData.village.trim()) {
+      setError(t('profile.village_required'));
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
+    setError(null);
+
     try {
-      // Create profile object with language preference
-      const profile = {
-        id: `farmer_${Date.now()}`,
-        name: formData.fullName,
-        gender: formData.gender,
-        date_of_birth: formData.dateOfBirth || null,
-        primary_occupation: formData.primaryOccupation,
-        aadhaar_number: formData.aadhaarNumber || null,
-        phone_number: '', // Will be set from auth state
-        tenant_id: null,
-        location: null,
-        language_preference: formData.preferredLanguage,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const userData = {
+        full_name: formData.fullName,
+        village: formData.village,
+        district: formData.district,
+        state: formData.state,
+        farming_experience_years: formData.farmingExperience ? parseInt(formData.farmingExperience) : null,
+        total_land_acres: formData.landAcres ? parseFloat(formData.landAcres) : null,
+        primary_crops: formData.primaryCrops,
+        has_irrigation: formData.hasIrrigation,
+        has_tractor: formData.hasTractor,
+        has_storage: formData.hasStorage,
+        annual_income_range: formData.annualIncome,
+        preferred_language: formData.preferredLanguage
       };
 
-      dispatch(setProfile(profile as any));
-      dispatch(setOnboardingCompleted());
-      
-      // Ensure language preference is applied
-      if (formData.preferredLanguage !== savedLanguage) {
-        await languageService.changeLanguage(formData.preferredLanguage);
-        localStorage.setItem('selectedLanguage', formData.preferredLanguage);
-        localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      console.log('Submitting registration with data:', userData);
+
+      const result = await MobileNumberService.getInstance().registerUser(
+        phoneNumber || '',
+        formData.pin,
+        userData
+      );
+
+      console.log('Registration result:', result);
+
+      if (result.success) {
+        setSuccess(true);
+        dispatch(setOnboardingCompleted());
+        
+        // Wait a bit to show success message
+        setTimeout(() => {
+          if (onComplete) {
+            onComplete();
+          }
+        }, 1500);
+      } else {
+        setError(result.error || t('profile.registration_failed'));
       }
-      
-      // Navigate to dashboard
-      onNext();
     } catch (error) {
-      console.error('Profile setup error:', error);
+      console.error('Registration error:', error);
+      setError(t('profile.registration_failed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const isFormValid = formData.fullName && formData.gender && formData.primaryOccupation;
+  const crops = [
+    'wheat', 'rice', 'sugarcane', 'cotton', 'soybean', 'maize', 
+    'bajra', 'jowar', 'groundnut', 'mustard', 'onion', 'potato'
+  ];
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
+          <CardContent className="p-6 text-center">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto bg-green-100"
+            >
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              {t('profile.registration_successful')}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {t('profile.welcome_to_platform')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <User className="w-8 h-8 text-white" />
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <Card className="w-full max-w-md bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
+        <CardHeader className="pb-0 px-4 pt-4">
+          <div className="text-center">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
+              style={{ backgroundColor: `${branding?.primaryColor || '#8BC34A'}20` }}
+            >
+              <User 
+                className="w-8 h-8" 
+                style={{ color: branding?.primaryColor || '#8BC34A' }}
+              />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              {t('profile.complete_profile')}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {t('profile.help_us_know_you')}
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Complete Your Profile
-          </h1>
-          <p className="text-gray-600">
-            Help us personalize your experience
-          </p>
-        </div>
+        </CardHeader>
 
-        <div className="space-y-4">
-          {/* Full Name */}
+        <CardContent className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
-            </label>
+            <Label htmlFor="fullName">{t('profile.full_name')}</Label>
             <Input
-              type="text"
-              placeholder="Enter your full name"
+              id="fullName"
               value={formData.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
-              className="w-full"
+              placeholder={t('profile.enter_full_name')}
+              className="mt-1"
             />
           </div>
 
-          {/* Gender */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Gender *
-            </label>
-            <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="pin">{t('profile.create_pin')}</Label>
+              <Input
+                id="pin"
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={formData.pin}
+                onChange={(e) => handleInputChange('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="1234"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPin">{t('profile.confirm_pin')}</Label>
+              <Input
+                id="confirmPin"
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={formData.confirmPin}
+                onChange={(e) => handleInputChange('confirmPin', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="1234"
+                className="mt-1"
+              />
+            </div>
           </div>
 
-          {/* Date of Birth */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date of Birth
-            </label>
-            <Input
-              type="date"
-              value={formData.dateOfBirth}
-              onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-              className="w-full"
-            />
+            <Label htmlFor="village">{t('profile.village')}</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="village"
+                value={formData.village}
+                onChange={(e) => handleInputChange('village', e.target.value)}
+                placeholder={t('profile.enter_village')}
+                className="mt-1 pl-10"
+              />
+            </div>
           </div>
 
-          {/* Primary Occupation */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Primary Occupation *
-            </label>
-            <Select value={formData.primaryOccupation} onValueChange={(value) => handleInputChange('primaryOccupation', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select occupation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="farmer">Farmer</SelectItem>
-                <SelectItem value="dealer">Dealer</SelectItem>
-                <SelectItem value="agent">Agent</SelectItem>
-                <SelectItem value="extension_officer">Extension Officer</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="district">{t('profile.district')}</Label>
+              <Input
+                id="district"
+                value={formData.district}
+                onChange={(e) => handleInputChange('district', e.target.value)}
+                placeholder={t('profile.enter_district')}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">{t('profile.state')}</Label>
+              <Input
+                id="state"
+                value={formData.state}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                placeholder={t('profile.enter_state')}
+                className="mt-1"
+              />
+            </div>
           </div>
 
-          {/* Preferred Language */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Languages className="w-4 h-4 inline mr-1" />
-              Preferred Language
-            </label>
-            <Select 
-              value={formData.preferredLanguage} 
-              onValueChange={(value) => handleInputChange('preferredLanguage', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {supportedLanguages.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.nativeName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-500 mt-1">
-              This was selected during registration. You can change it anytime in settings.
-            </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="experience">{t('profile.farming_experience')}</Label>
+              <Select value={formData.farmingExperience} onValueChange={(value) => handleInputChange('farmingExperience', value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={t('profile.select_experience')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1-5">1-5 {t('profile.years')}</SelectItem>
+                  <SelectItem value="6-10">6-10 {t('profile.years')}</SelectItem>
+                  <SelectItem value="11-20">11-20 {t('profile.years')}</SelectItem>
+                  <SelectItem value="20+">20+ {t('profile.years')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="landAcres">{t('profile.land_acres')}</Label>
+              <Input
+                id="landAcres"
+                type="number"
+                value={formData.landAcres}
+                onChange={(e) => handleInputChange('landAcres', e.target.value)}
+                placeholder="0.5"
+                className="mt-1"
+              />
+            </div>
           </div>
 
-          {/* Aadhaar Number (Optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Aadhaar Number (Optional)
-            </label>
-            <Input
-              type="text"
-              placeholder="XXXX XXXX XXXX"
-              value={formData.aadhaarNumber}
-              onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
-              className="w-full"
-              maxLength={14}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              For government schemes and insurance
-            </p>
+            <Label>{t('profile.primary_crops')}</Label>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {crops.map((crop) => (
+                <div key={crop} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={crop}
+                    checked={formData.primaryCrops.includes(crop)}
+                    onCheckedChange={() => handleCropToggle(crop)}
+                  />
+                  <Label htmlFor={crop} className="text-sm">{t(`crops.${crop}`)}</Label>
+                </div>
+              ))}
+            </div>
           </div>
-          
+
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="irrigation"
+                checked={formData.hasIrrigation}
+                onCheckedChange={(checked) => handleInputChange('hasIrrigation', checked)}
+              />
+              <Label htmlFor="irrigation">{t('profile.has_irrigation')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="tractor"
+                checked={formData.hasTractor}
+                onCheckedChange={(checked) => handleInputChange('hasTractor', checked)}
+              />
+              <Label htmlFor="tractor">{t('profile.has_tractor')}</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="storage"
+                checked={formData.hasStorage}
+                onCheckedChange={(checked) => handleInputChange('hasStorage', checked)}
+              />
+              <Label htmlFor="storage">{t('profile.has_storage')}</Label>
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
           <Button 
-            onClick={handleComplete}
-            disabled={!isFormValid || loading}
-            className="w-full py-3 text-lg"
-            size="lg"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full h-12 text-base font-semibold rounded-xl"
+            style={{ backgroundColor: branding?.primaryColor || '#8BC34A', color: 'white' }}
           >
             {loading ? (
               <div className="flex items-center space-x-2">
                 <Loader className="w-4 h-4 animate-spin" />
-                <span>Creating Profile...</span>
+                <span>{t('profile.creating_profile')}</span>
               </div>
             ) : (
-              'Complete Setup'
+              t('profile.complete_registration')
             )}
           </Button>
-        </div>
 
-        <Button 
-          variant="ghost" 
-          onClick={onPrev}
-          className="w-full"
-          disabled={loading}
-        >
-          Back
-        </Button>
-      </div>
+          <Button 
+            variant="outline" 
+            onClick={onPrev}
+            className="w-full h-10 border-2 rounded-xl"
+            disabled={loading}
+          >
+            {t('common.back')}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
