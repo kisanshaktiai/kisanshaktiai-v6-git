@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { appInitService } from './services/appInitService';
 import HomePage from './pages/HomePage';
@@ -16,14 +16,12 @@ function App() {
 
   return (
     <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+      </Routes>
       <Toaster position="top-center" />
     </>
   );
