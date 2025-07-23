@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -80,13 +79,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Simplified database queries to avoid type inference issues
+      // Use type assertions to bypass complex type inference
       let userProfileExists = false;
       let farmerExists = false;
       
-      // Check user profiles with simple query
+      // Check user profiles with type assertion
       try {
-        const { data: userProfileData, error: userProfileError } = await supabase
+        const { data: userProfileData, error: userProfileError } = await (supabase as any)
           .from('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
@@ -100,9 +99,9 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         userProfileExists = false;
       }
       
-      // Check farmers with simple query
+      // Check farmers with type assertion
       try {
-        const { data: farmerData, error: farmerError } = await supabase
+        const { data: farmerData, error: farmerError } = await (supabase as any)
           .from('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
