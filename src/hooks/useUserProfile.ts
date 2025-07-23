@@ -51,11 +51,11 @@ export const useUserProfile = (userId?: string) => {
           ? data.expertise_areas
           : [],
         metadata: safeJsonParse(data.metadata, {}),
-        // Handle fields that may not exist in database schema
-        mobile_number_verified: data.mobile_number_verified || false,
+        // Handle fields that may not exist in database schema - use safe access
+        mobile_number_verified: (data as any).mobile_number_verified || false,
         email_verified: data.email_verified_at ? true : false,
-        last_seen: data.last_seen || null,
-        timezone: data.timezone || null,
+        last_seen: (data as any).last_seen || null,
+        timezone: (data as any).timezone || null,
         preferred_language: data.preferred_language || null
       };
     },
@@ -78,6 +78,9 @@ export const useUserProfile = (userId?: string) => {
       // Remove TypeScript-only fields that don't exist in database
       delete dbUpdate.id;
       delete dbUpdate.email_verified; // Map to email_verified_at if needed
+      delete dbUpdate.mobile_number_verified; // Remove if not in schema
+      delete dbUpdate.last_seen; // Remove if not in schema
+      delete dbUpdate.timezone; // Remove if not in schema
       
       const { data, error } = await supabase
         .from('user_profiles')
@@ -107,6 +110,9 @@ export const useUserProfile = (userId?: string) => {
       
       // Remove TypeScript-only fields that don't exist in database
       delete dbInsert.email_verified; // Map to email_verified_at if needed
+      delete dbInsert.mobile_number_verified; // Remove if not in schema
+      delete dbInsert.last_seen; // Remove if not in schema
+      delete dbInsert.timezone; // Remove if not in schema
 
       const { data, error } = await supabase
         .from('user_profiles')
