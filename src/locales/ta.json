@@ -1,144 +1,18 @@
 
 {
   "common": {
-    "welcome": "வரவேற்கிறோம்",
-    "continue": "தொடரவும்",
-    "cancel": "ரத்து செய்",
-    "save": "சேமி",
-    "loading": "ஏற்றப்படுகிறது...",
-    "error": "பிழை",
-    "success": "வெற்றி",
-    "offline": "ஆஃப்லைன்",
-    "online": "ஆன்லைன்",
-    "new": "புதிய",
-    "comingSoon": "விரைவில் வருகிறது",
-    "viewDetails": "விவரங்களைக் காண்க",
-    "checkPrices": "விலைகளைச் சரிபார்க்கவும்",
-    "addToSchedule": "அட்டவணையில் சேர்க்கவும்",
-    "bookTest": "சோதனை முன்பதிவு",
-    "shopNow": "இப்போது வாங்கவும்",
-    "viewAll": "அனைத்தையும் காண்க",
-    "viewCalendar": "நாட்காட்டியைக் காண்க",
-    "back": "பின்செல்",
-    "farmer": "விவசாயி",
-    "initializing": "துவக்கப்படுகிறது...",
-    "ready": "தயார்!",
-    "tryAgain": "மீண்டும் முயற்சிக்கவும்"
-  },
-  "onboarding": {
-    "welcome_title": "KisanShaktiAI க்கு வரவேற்கிறோம்",
-    "welcome_subtitle": "உங்கள் AI-இயங்கும் விவசாய உதவியாளர்",
-    "location_title": "உங்கள் இடம்",
-    "location_subtitle": "சிறந்த ஆலோசனைக்காக உங்கள் இடத்தை பகிரவும்",
-    "language_title": "மொழியை தேர்வு செய்யவும்",
-    "language_subtitle": "உங்கள் விருப்பமான மொழியை தேர்வு செய்யவும்",
-    "autoDetected": "தானாகவே அடையாளம் காணப்பட்டது"
-  },
-  "auth": {
-    "phone_number": "தொலைபேசி எண்",
-    "enter_phone": "உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்",
-    "login": "உள்நுழை",
-    "register": "பதிவு செய்"
-  },
-  "navigation": {
+    "loading": "ஏற்றுகிறது...",
     "home": "முகப்பு",
-    "my_lands": "என் நிலங்கள்",
-    "ai_chat": "AI அரட்டை",
-    "crop_schedule": "பயிர் அட்டவணை",
-    "market": "சந்தை",
-    "community": "சமூகம்",
+    "dashboard": "டாஷ்போர்டு",
     "profile": "சுயவிவரம்"
   },
-  "features": {
-    "aiPoweredAdvice": "AI-இயங்கும் ஆலோசனை",
-    "aiPoweredAdviceDesc": "தனிப்பட்ட விவசாய பரிந்துரைகளைப் பெறுங்கள்",
-    "communitySupport": "சமூக ஆதரவு",
-    "communitySupportDesc": "சக விவசாயிகளுடன் இணைக்கவும்"
+  "dashboard": {
+    "welcome": "கிசான் சக்தி AI க்கு வரவேற்கிறோம்"
   },
-  "home": {
-    "quickActions": "விரைவு செயல்கள்",
-    "todaysSummary": "இன்றைய சுருக்கம்",
-    "weather": "வானிலை",
-    "tasksPending": "நிலுவையில் உள்ள பணிகள்",
-    "aiMessages": "AI செய்திகள்",
-    "newMessages": "புதிய",
-    "getFarmingAdvice": "விவசாய ஆலோசனையைப் பெறுங்கள்",
-    "viewUpcomingTasks": "வரவிருக்கும் பணிகளைக் காண்க",
-    "checkLatestRates": "சமீபத்திய விலைகளைச் சரிபார்க்கவும்",
-    "manageYourFields": "உங்கள் வயல்களை நிர்வகிக்கவும்"
-  },
-  "market": {
-    "title": "சந்தை",
-    "subtitle": "சமீபத்திய பயிர் விலைகள் மற்றும் போக்குகள்",
-    "updatedAgo": "2 மணி நேரத்திற்கு முன் புதுப்பிக்கப்பட்டது",
-    "todaysPrices": "இன்றைய விலைகள்",
-    "previous": "முந்தைய",
-    "perQuintal": "ஒரு குவிண்டலுக்கு",
-    "perTon": "ஒரு டன்னுக்கு",
-    "marketTip": "சந்தை குறிப்பு",
-    "marketTipContent": "கோதுமை விலைகள் உயர்ந்து வருகின்றன. உங்களிடம் கூடுதல் இருப்பு இருந்தால் விற்பனையைக் கருத்தில் கொள்ளுங்கள்."
-  },
-  "schedule": {
-    "title": "பயிர் அட்டவணை",
-    "subtitle": "உங்கள் விவசாய பணிகளை நிர்வகிக்கவும்",
-    "pending": "நிலுவையில்",
-    "completed": "முடிந்தது",
-    "overdue": "காலக்கெடு முடிந்தது",
-    "upcomingTasks": "வரவிருக்கும் பணிகள்",
-    "crop": "பயிர்",
-    "field": "வயல்",
-    "dueDate": "முடிவு தேதி",
-    "waterWheatField": "கோதுமை வயலில் தண்ணீர் ஊற்றவும்",
-    "applyFertilizer": "உரம் போடவும்",
-    "harvestInspection": "அறுவடை ஆய்வு"
+  "chat": {
+    "title": "AI உதவியாளர்"
   },
   "community": {
-    "title": "சமூகம்",
-    "subtitle": "சக விவசாயிகளுடன் இணைக்கவும்",
-    "members": "உறுப்பினர்கள்",
-    "posts": "இடுகைகள்",
-    "today": "இன்று",
-    "recentDiscussions": "சமீபத்திய விவாதங்கள்",
-    "bestTimeWheatSowing": "பஞ்சாபில் கோதுமை விதைப்புக்கான சிறந்த நேரம்",
-    "bestTimeWheatSowingDesc": "அடுத்த மாதம் கோதுமை விதைக்க திட்டமிட்டுள்ளேன். இந்த பகுதியில் நேரத்துடன் உங்கள் அனுபவங்கள் என்ன?",
-    "organicPestControl": "இயற்கை பூச்சி கட்டுப்பாடு முறைகள்",
-    "organicPestControlDesc": "என் காய்கறி பயிர்களில் அஃபிட்களை கட்டுப்படுத்த இயற்கை வழிகளை தேடுகிறேன். ஏதேனும் பரிந்துரைகள்?",
-    "waterConservation": "நீர் சேமிப்பு நுட்பங்கள்",
-    "waterConservationDesc": "சொட்டு நீர்ப்பாசனத்துடன் என் அனுபவத்தை பகிர்ந்து கொள்கிறேன். இந்த பருவத்தில் நீர் பயன்பாட்டை 40% குறைத்துள்ளேன்.",
-    "hoursAgo": "மணி நேரங்களுக்கு முன்",
-    "dayAgo": "நாள் முன்",
-    "categories": {
-      "crops": "பயிர்கள்",
-      "organicFarming": "இயற்கை விவசாயம்",
-      "waterManagement": "நீர் மேலாண்மை"
-    }
-  },
-  "profile": {
-    "title": "சுயவிவரம்",
-    "verifiedAccount": "சரிபார்க்கப்பட்ட கணக்கு",
-    "locationNotSet": "இடம் அமைக்கப்படவில்லை",
-    "lands": "நிலங்கள்",
-    "aiChats": "AI அரட்டைகள்",
-    "daysActive": "செயலில் உள்ள நாட்கள்",
-    "accountSettings": "கணக்கு அமைப்புகள்",
-    "accountSettingsDesc": "உங்கள் கணக்கு விருப்பத்தேர்வுகளை நிர்வகிக்கவும்",
-    "notifications": "அறிவிப்புகள்",
-    "notificationsDesc": "அறிவிப்பு அமைப்புகளை உள்ளமைக்கவும்",
-    "privacySecurity": "தனியுரிமை மற்றும் பாதுகாப்பு",
-    "privacySecurityDesc": "உங்கள் தனியுரிமை அமைப்புகளை நிர்வகிக்கவும்",
-    "language": "மொழி",
-    "languageDesc": "ஆப் மொழியை மாற்றவும்",
-    "logout": "வெளியேறு"
-  },
-  "errors": {
-    "pageNotFound": "ஓ! பக்கம் காணப்படவில்லை",
-    "returnToHome": "முகப்புக்குத் திரும்பு"
-  },
-  "splash": {
-    "tagline": "விவசாயிகளுக்கான புத்திசாலி குரு",
-    "loadingServices": "சேவைகள் ஏற்றப்படுகின்றன...",
-    "detectingOrganization": "அமைப்பைக் கண்டறிகிறது...",
-    "preparingLocationServices": "இடச் சேவைகளைத் தயாரிக்கிறது...",
-    "version": "v6.0.0 • குத்தகைதாரர் தயார் • ஆஃப்லைன் திறன்"
+    "title": "விவசாயி சமூகம்"
   }
 }

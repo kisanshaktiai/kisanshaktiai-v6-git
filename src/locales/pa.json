@@ -1,144 +1,18 @@
 
 {
   "common": {
-    "welcome": "ਸੁਆਗਤ",
-    "continue": "ਜਾਰੀ ਰੱਖੋ",
-    "cancel": "ਰੱਦ ਕਰੋ",
-    "save": "ਸੇਵ ਕਰੋ",
     "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
-    "error": "ਗਲਤੀ",
-    "success": "ਸਫਲਤਾ",
-    "offline": "ਆਫਲਾਈਨ",
-    "online": "ਆਨਲਾਈਨ",
-    "new": "ਨਵਾਂ",
-    "comingSoon": "ਜਲਦੀ ਆ ਰਿਹਾ ਹੈ",
-    "viewDetails": "ਵਿਸਥਾਰ ਦੇਖੋ",
-    "checkPrices": "ਕੀਮਤਾਂ ਦੇਖੋ",
-    "addToSchedule": "ਸ਼ੈਡਿਊਲ ਵਿੱਚ ਜੋੜੋ",
-    "bookTest": "ਟੈਸਟ ਬੁੱਕ ਕਰੋ",
-    "shopNow": "ਹੁਣ ਖਰੀਦੋ",
-    "viewAll": "ਸਭ ਦੇਖੋ",
-    "viewCalendar": "ਕੈਲੰਡਰ ਦੇਖੋ",
-    "back": "ਵਾਪਸ",
-    "farmer": "ਕਿਸਾਨ",
-    "initializing": "ਸ਼ੁਰੂਆਤ ਹੋ ਰਹੀ ਹੈ...",
-    "ready": "ਤਿਆਰ!",
-    "tryAgain": "ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ"
-  },
-  "onboarding": {
-    "welcome_title": "KisanShaktiAI ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ",
-    "welcome_subtitle": "ਤੁਹਾਡਾ AI-ਸੰਚਾਲਿਤ ਖੇਤੀ ਸਹਾਇਕ",
-    "location_title": "ਤੁਹਾਡਾ ਸਥਾਨ",
-    "location_subtitle": "ਬਿਹਤਰ ਸਲਾਹ ਲਈ ਆਪਣਾ ਸਥਾਨ ਸਾਂਝਾ ਕਰੋ",
-    "language_title": "ਭਾਸ਼ਾ ਚੁਣੋ",
-    "language_subtitle": "ਆਪਣੀ ਪਸੰਦੀਦਾ ਭਾਸ਼ਾ ਦੀ ਚੋਣ ਕਰੋ",
-    "autoDetected": "ਆਪਣੇ ਆਪ ਪਛਾਣਿਆ ਗਿਆ"
-  },
-  "auth": {
-    "phone_number": "ਫੋਨ ਨੰਬਰ",
-    "enter_phone": "ਆਪਣਾ ਫੋਨ ਨੰਬਰ ਦਾਖਲ ਕਰੋ",
-    "login": "ਲਾਗਇਨ",
-    "register": "ਰਜਿਸਟਰ"
-  },
-  "navigation": {
     "home": "ਘਰ",
-    "my_lands": "ਮੇਰੀ ਜ਼ਮੀਨ",
-    "ai_chat": "AI ਚੈਟ",
-    "crop_schedule": "ਫਸਲ ਅਨੁਸੂਚੀ",
-    "market": "ਮਾਰਕੀਟ",
-    "community": "ਕਮਿਊਨਿਟੀ",
+    "dashboard": "ਡੈਸ਼ਬੋਰਡ",
     "profile": "ਪ੍ਰੋਫਾਈਲ"
   },
-  "features": {
-    "aiPoweredAdvice": "AI-ਸੰਚਾਲਿਤ ਸਲਾਹ",
-    "aiPoweredAdviceDesc": "ਵਿਅਕਤੀਗਤ ਖੇਤੀ ਸਿਫਾਰਿਸ਼ਾਂ ਪ੍ਰਾਪਤ ਕਰੋ",
-    "communitySupport": "ਕਮਿਊਨਿਟੀ ਸਹਾਇਤਾ",
-    "communitySupportDesc": "ਸਾਥੀ ਕਿਸਾਨਾਂ ਨਾਲ ਜੁੜੋ"
+  "dashboard": {
+    "welcome": "ਕਿਸਾਨ ਸ਼ਕਤੀ AI ਵਿੱਚ ਤੁਹਾਡਾ ਸਵਾਗਤ ਹੈ"
   },
-  "home": {
-    "quickActions": "ਤੇਜ਼ ਕਿਰਿਆਵਾਂ",
-    "todaysSummary": "ਅੱਜ ਦਾ ਸੰਖੇਪ",
-    "weather": "ਮੌਸਮ",
-    "tasksPending": "ਬਾਕੀ ਕੰਮ",
-    "aiMessages": "AI ਸੰਦੇਸ਼",
-    "newMessages": "ਨਵੇਂ",
-    "getFarmingAdvice": "ਖੇਤੀ ਸਲਾਹ ਲਓ",
-    "viewUpcomingTasks": "ਆਉਣ ਵਾਲੇ ਕੰਮ ਦੇਖੋ",
-    "checkLatestRates": "ਤਾਜ਼ੇ ਰੇਟ ਦੇਖੋ",
-    "manageYourFields": "ਆਪਣੇ ਖੇਤਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ"
-  },
-  "market": {
-    "title": "ਮਾਰਕੀਟ",
-    "subtitle": "ਤਾਜ਼ੀਆਂ ਫਸਲਾਂ ਦੀਆਂ ਕੀਮਤਾਂ ਅਤੇ ਰੁਝਾਨ",
-    "updatedAgo": "2 ਘੰਟੇ ਪਹਿਲਾਂ ਅਪਡੇਟ ਕੀਤਾ ਗਿਆ",
-    "todaysPrices": "ਅੱਜ ਦੀਆਂ ਕੀਮਤਾਂ",
-    "previous": "ਪਿਛਲੀ",
-    "perQuintal": "ਪ੍ਰਤੀ ਕੁਇੰਟਲ",
-    "perTon": "ਪ੍ਰਤੀ ਟਨ",
-    "marketTip": "ਮਾਰਕੀਟ ਸਲਾਹ",
-    "marketTipContent": "ਕਣਕ ਦੀਆਂ ਕੀਮਤਾਂ ਵੱਧ ਰਹੀਆਂ ਹਨ। ਜੇ ਤੁਹਾਡੇ ਕੋਲ ਵਾਧੂ ਸਟਾਕ ਹੈ ਤਾਂ ਵੇਚਣ ਬਾਰੇ ਸੋਚੋ।"
-  },
-  "schedule": {
-    "title": "ਫਸਲ ਅਨੁਸੂਚੀ",
-    "subtitle": "ਆਪਣੇ ਖੇਤੀ ਦੇ ਕੰਮਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
-    "pending": "ਬਾਕੀ",
-    "completed": "ਪੂਰਾ ਹੋਇਆ",
-    "overdue": "ਮਿਆਦ ਪੁੱਗੀ",
-    "upcomingTasks": "ਆਉਣ ਵਾਲੇ ਕੰਮ",
-    "crop": "ਫਸਲ",
-    "field": "ਖੇਤ",
-    "dueDate": "ਬਾਕੀ ਤਾਰੀਖ",
-    "waterWheatField": "ਕਣਕ ਦੇ ਖੇਤ ਨੂੰ ਪਾਣੀ ਦਿਓ",
-    "applyFertilizer": "ਖਾਦ ਪਾਓ",
-    "harvestInspection": "ਫਸਲ ਦੀ ਜਾਂਚ"
+  "chat": {
+    "title": "AI ਸਹਾਇਕ"
   },
   "community": {
-    "title": "ਕਮਿਊਨਿਟੀ",
-    "subtitle": "ਸਾਥੀ ਕਿਸਾਨਾਂ ਨਾਲ ਜੁੜੋ",
-    "members": "ਮੈਂਬਰ",
-    "posts": "ਪੋਸਟਾਂ",
-    "today": "ਅੱਜ",
-    "recentDiscussions": "ਹਾਲੀਆ ਚਰਚਾਵਾਂ",
-    "bestTimeWheatSowing": "ਪੰਜਾਬ ਵਿੱਚ ਕਣਕ ਬੀਜਣ ਦਾ ਵਧੀਆ ਸਮਾਂ",
-    "bestTimeWheatSowingDesc": "ਅਗਲੇ ਮਹੀਨੇ ਕਣਕ ਬੀਜਣ ਦੀ ਯੋਜਨਾ ਹੈ। ਇਸ ਖੇਤਰ ਵਿੱਚ ਸਮੇਂ ਦੇ ਨਾਲ ਤੁਹਾਡੇ ਕੀ ਤਜ਼ਰਬੇ ਹਨ?",
-    "organicPestControl": "ਜੈਵਿਕ ਕੀਟ ਨਿਯੰਤਰਣ ਤਰੀਕੇ",
-    "organicPestControlDesc": "ਮੇਰੀ ਸਬਜ਼ੀ ਦੀ ਫਸਲ ਉੱਤੇ ਐਫਿਡਜ਼ ਨੂੰ ਕਾਬੂ ਕਰਨ ਦੇ ਕੁਦਰਤੀ ਤਰੀਕੇ ਲੱਭ ਰਿਹਾ ਹਾਂ। ਕੋਈ ਸੁਝਾਅ?",
-    "waterConservation": "ਪਾਣੀ ਸੰਭਾਲ ਤਕਨੀਕਾਂ",
-    "waterConservationDesc": "ਡ੍ਰਿਪ ਸਿੰਚਾਈ ਨਾਲ ਆਪਣਾ ਤਜ਼ਰਬਾ ਸਾਂਝਾ ਕਰ ਰਿਹਾ ਹਾਂ। ਇਸ ਸੀਜ਼ਨ ਵਿੱਚ ਪਾਣੀ ਦੀ ਵਰਤੋਂ 40% ਘਟਾਈ।",
-    "hoursAgo": "ਘੰਟੇ ਪਹਿਲਾਂ",
-    "dayAgo": "ਦਿਨ ਪਹਿਲਾਂ",
-    "categories": {
-      "crops": "ਫਸਲਾਂ",
-      "organicFarming": "ਜੈਵਿਕ ਖੇਤੀ",
-      "waterManagement": "ਪਾਣੀ ਪ੍ਰਬੰਧਨ"
-    }
-  },
-  "profile": {
-    "title": "ਪ੍ਰੋਫਾਈਲ",
-    "verifiedAccount": "ਤਸਦੀਕਸ਼ੁਦਾ ਖਾਤਾ",
-    "locationNotSet": "ਸਥਾਨ ਸੈੱਟ ਨਹੀਂ ਹੈ",
-    "lands": "ਜ਼ਮੀਨਾਂ",
-    "aiChats": "AI ਚੈਟਸ",
-    "daysActive": "ਸਰਗਰਮ ਦਿਨ",
-    "accountSettings": "ਖਾਤਾ ਸੈਟਿੰਗਾਂ",
-    "accountSettingsDesc": "ਆਪਣੀ ਖਾਤਾ ਤਰਜੀਹਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
-    "notifications": "ਸੂਚਨਾਵਾਂ",
-    "notificationsDesc": "ਸੂਚਨਾ ਸੈਟਿੰਗਾਂ ਸੰਰਚਿਤ ਕਰੋ",
-    "privacySecurity": "ਗੁਪਤਤਾ ਅਤੇ ਸੁਰੱਖਿਆ",
-    "privacySecurityDesc": "ਆਪਣੀ ਗੁਪਤਤਾ ਸੈਟਿੰਗਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
-    "language": "ਭਾਸ਼ਾ",
-    "languageDesc": "ਐਪ ਭਾਸ਼ਾ ਬਦਲੋ",
-    "logout": "ਲਾਗਆਉਟ"
-  },
-  "errors": {
-    "pageNotFound": "ਓਹ! ਪੰਨਾ ਨਹੀਂ ਮਿਲਿਆ",
-    "returnToHome": "ਘਰ ਵਾਪਸ ਜਾਓ"
-  },
-  "splash": {
-    "tagline": "ਕਿਸਾਨਾਂ ਲਈ ਬੁੱਧੀਮਾਨ ਗੁਰੂ",
-    "loadingServices": "ਸੇਵਾਵਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ...",
-    "detectingOrganization": "ਸੰਸਥਾ ਦੀ ਪਛਾਣ ਕਰ ਰਹੇ ਹਾਂ...",
-    "preparingLocationServices": "ਸਥਾਨ ਸੇਵਾਵਾਂ ਤਿਆਰ ਕਰ ਰਹੇ ਹਾਂ...",
-    "version": "v6.0.0 • ਟੈਨੈਂਟ ਤਿਆਰ • ਆਫਲਾਈਨ ਸਮਰੱਥ"
+    "title": "ਕਿਸਾਨ ਭਾਈਚਾਰਾ"
   }
 }

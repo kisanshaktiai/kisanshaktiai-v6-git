@@ -1,144 +1,18 @@
 
 {
   "common": {
-    "welcome": "ಸ್ವಾಗತ",
-    "continue": "ಮುಂದುವರಿಸು",
-    "cancel": "ರದ್ದುಮಾಡು",
-    "save": "ಉಳಿಸು",
     "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
-    "error": "ದೋಷ",
-    "success": "ಯಶಸ್ಸು",
-    "offline": "ಆಫ್‌ಲೈನ್",
-    "online": "ಆನ್‌ಲೈನ್",
-    "new": "ಹೊಸ",
-    "comingSoon": "ಶೀಘ್ರದಲ್ಲೇ ಬರುತ್ತಿದೆ",
-    "viewDetails": "ವಿವರಗಳನ್ನು ನೋಡಿ",
-    "checkPrices": "ಬೆಲೆಗಳನ್ನು ಪರಿಶೀಲಿಸಿ",
-    "addToSchedule": "ವೇಳಾಪಟ್ಟಿಗೆ ಸೇರಿಸಿ",
-    "bookTest": "ಪರೀಕ್ಷೆಯನ್ನು ಬುಕ್ ಮಾಡಿ",
-    "shopNow": "ಈಗ ಖರೀದಿಸಿ",
-    "viewAll": "ಎಲ್ಲವನ್ನೂ ನೋಡಿ",
-    "viewCalendar": "ಕ್ಯಾಲೆಂಡರ್ ನೋಡಿ",
-    "back": "ಹಿಂದೆ",
-    "farmer": "ರೈತ",
-    "initializing": "ಪ್ರಾರಂಭಿಸುತ್ತಿದೆ...",
-    "ready": "ಸಿದ್ಧ!",
-    "tryAgain": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ"
-  },
-  "onboarding": {
-    "welcome_title": "KisanShaktiAI ಗೆ ಸ್ವಾಗತ",
-    "welcome_subtitle": "ನಿಮ್ಮ AI-ಚಾಲಿತ ಕೃಷಿ ಸಹಾಯಕ",
-    "location_title": "ನಿಮ್ಮ ಸ್ಥಳ",
-    "location_subtitle": "ಉತ್ತಮ ಸಲಹೆಗಾಗಿ ನಿಮ್ಮ ಸ್ಥಳವನ್ನು ಹಂಚಿಕೊಳ್ಳಿ",
-    "language_title": "ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ",
-    "language_subtitle": "ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ",
-    "autoDetected": "ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪತ್ತೆಯಾಗಿದೆ"
-  },
-  "auth": {
-    "phone_number": "ಫೋನ್ ಸಂಖ್ಯೆ",
-    "enter_phone": "ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ",
-    "login": "ಲಾಗಿನ್",
-    "register": "ನೋಂದಾಯಿಸಿ"
-  },
-  "navigation": {
-    "home": "ಮುಖ್ಯಪುಟ",
-    "my_lands": "ನನ್ನ ಭೂಮಿ",
-    "ai_chat": "AI ಚಾಟ್",
-    "crop_schedule": "ಬೆಳೆ ವೇಳಾಪಟ್ಟಿ",
-    "market": "ಮಾರುಕಟ್ಟೆ",
-    "community": "ಸಮುದಾಯ",
+    "home": "ಮನೆ",
+    "dashboard": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
     "profile": "ಪ್ರೊಫೈಲ್"
   },
-  "features": {
-    "aiPoweredAdvice": "AI-ಚಾಲಿತ ಸಲಹೆ",
-    "aiPoweredAdviceDesc": "ವ್ಯಕ್ತಿಗತ ಕೃಷಿ ಶಿಫಾರಸುಗಳನ್ನು ಪಡೆಯಿರಿ",
-    "communitySupport": "ಸಮುದಾಯ ಬೆಂಬಲ",
-    "communitySupportDesc": "ಸಹ ರೈತರೊಂದಿಗೆ ಸಂಪರ್ಕ ಸಾಧಿಸಿ"
+  "dashboard": {
+    "welcome": "ಕಿಸಾನ್ ಶಕ್ತಿ AI ಗೆ ಸ್ವಾಗತ"
   },
-  "home": {
-    "quickActions": "ತ್ವರಿತ ಕ್ರಿಯೆಗಳು",
-    "todaysSummary": "ಇಂದಿನ ಸಾರಾಂಶ",
-    "weather": "ಹವಾಮಾನ",
-    "tasksPending": "ಬಾಕಿ ಕಾರ್ಯಗಳು",
-    "aiMessages": "AI ಸಂದೇಶಗಳು",
-    "newMessages": "ಹೊಸ",
-    "getFarmingAdvice": "ಕೃಷಿ ಸಲಹೆ ಪಡೆಯಿರಿ",
-    "viewUpcomingTasks": "ಮುಂಬರುವ ಕಾರ್ಯಗಳನ್ನು ನೋಡಿ",
-    "checkLatestRates": "ಇತ್ತೀಚಿನ ದರಗಳನ್ನು ಪರಿಶೀಲಿಸಿ",
-    "manageYourFields": "ನಿಮ್ಮ ಹೊಲಗಳನ್ನು ನಿರ್ವಹಿಸಿ"
-  },
-  "market": {
-    "title": "ಮಾರುಕಟ್ಟೆ",
-    "subtitle": "ಇತ್ತೀಚಿನ ಬೆಳೆ ಬೆಲೆಗಳು ಮತ್ತು ಪ್ರವೃತ್ತಿಗಳು",
-    "updatedAgo": "2 ಗಂಟೆಗಳ ಹಿಂದೆ ನವೀಕರಿಸಲಾಗಿದೆ",
-    "todaysPrices": "ಇಂದಿನ ಬೆಲೆಗಳು",
-    "previous": "ಹಿಂದಿನ",
-    "perQuintal": "ಪ್ರತಿ ಕ್ವಿಂಟಲ್‌ಗೆ",
-    "perTon": "ಪ್ರತಿ ಟನ್‌ಗೆ",
-    "marketTip": "ಮಾರುಕಟ್ಟೆ ಸಲಹೆ",
-    "marketTipContent": "ಗೋಧಿ ಬೆಲೆಗಳು ಏರುತ್ತಿವೆ. ನಿಮ್ಮ ಬಳಿ ಹೆಚ್ಚುವರಿ ಸ್ಟಾಕ್ ಇದ್ದರೆ ಮಾರಾಟವನ್ನು ಪರಿಗಣಿಸಿ."
-  },
-  "schedule": {
-    "title": "ಬೆಳೆ ವೇಳಾಪಟ್ಟಿ",
-    "subtitle": "ನಿಮ್ಮ ಕೃಷಿ ಕಾರ್ಯಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
-    "pending": "ಬಾಕಿ",
-    "completed": "ಪೂರ್ಣಗೊಂಡಿದೆ",
-    "overdue": "ಅವಧಿ ಮುಗಿದಿದೆ",
-    "upcomingTasks": "ಮುಂಬರುವ ಕಾರ್ಯಗಳು",
-    "crop": "ಬೆಳೆ",
-    "field": "ಹೊಲ",
-    "dueDate": "ಅವಧಿ ದಿನಾಂಕ",
-    "waterWheatField": "ಗೋಧಿ ಹೊಲಕ್ಕೆ ನೀರುಹಾಕಿ",
-    "applyFertilizer": "ಗೊಬ್ಬರ ಹಾಕಿ",
-    "harvestInspection": "ಬೆಳೆ ತಪಾಸಣೆ"
+  "chat": {
+    "title": "AI ಸಹಾಯಕ"
   },
   "community": {
-    "title": "ಸಮುದಾಯ",
-    "subtitle": "ಸಹ ರೈತರೊಂದಿಗೆ ಸಂಪರ್ಕ ಸಾಧಿಸಿ",
-    "members": "ಸದಸ್ಯರು",
-    "posts": "ಪೋಸ್ಟ್‌ಗಳು",
-    "today": "ಇಂದು",
-    "recentDiscussions": "ಇತ್ತೀಚಿನ ಚರ್ಚೆಗಳು",
-    "bestTimeWheatSowing": "ಪಂಜಾಬ್‌ನಲ್ಲಿ ಗೋಧಿ ಬಿತ್ತನೆಗೆ ಅತ್ಯುತ್ತಮ ಸಮಯ",
-    "bestTimeWheatSowingDesc": "ಮುಂದಿನ ತಿಂಗಳು ಗೋಧಿ ಬಿತ್ತಲು ಯೋಜಿಸುತ್ತಿದ್ದೇನೆ. ಈ ಪ್ರದೇಶದಲ್ಲಿ ಸಮಯದ ಜೊತೆಗೆ ನಿಮ್ಮ ಅನುಭವಗಳೇನು?",
-    "organicPestControl": "ಸಾವಯವ ಕೀಟ ನಿಯಂತ್ರಣ ವಿಧಾನಗಳು",
-    "organicPestControlDesc": "ನನ್ನ ತರಕಾರಿ ಬೆಳೆಗಳಲ್ಲಿ ಎಫಿಡ್‌ಗಳನ್ನು ನಿಯಂತ್ರಿಸಲು ನೈಸರ್ಗಿಕ ಮಾರ್ಗಗಳನ್ನು ಹುಡುಕುತ್ತಿದ್ದೇನೆ. ಯಾವುದೇ ಸಲಹೆಗಳು?",
-    "waterConservation": "ನೀರು ಸಂರಕ್ಷಣೆ ತಂತ್ರಗಳು",
-    "waterConservationDesc": "ಡ್ರಿಪ್ ನೀರಾವರಿಯೊಂದಿಗೆ ನನ್ನ ಅನುಭವವನ್ನು ಹಂಚಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ. ಈ ಋತುವಿನಲ್ಲಿ ನೀರಿನ ಬಳಕೆಯನ್ನು 40% ಕಡಿಮೆಗೊಳಿಸಿದ್ದೇನೆ.",
-    "hoursAgo": "ಗಂಟೆಗಳ ಹಿಂದೆ",
-    "dayAgo": "ದಿನದ ಹಿಂದೆ",
-    "categories": {
-      "crops": "ಬೆಳೆಗಳು",
-      "organicFarming": "ಸಾವಯವ ಕೃಷಿ",
-      "waterManagement": "ನೀರು ನಿರ್ವಹಣೆ"
-    }
-  },
-  "profile": {
-    "title": "ಪ್ರೊಫೈಲ್",
-    "verifiedAccount": "ಪರಿಶೀಲಿಸಲಾದ ಖಾತೆ",
-    "locationNotSet": "ಸ್ಥಳವನ್ನು ಹೊಂದಿಸಲಾಗಿಲ್ಲ",
-    "lands": "ಭೂಮಿಗಳು",
-    "aiChats": "AI ಚಾಟ್‌ಗಳು",
-    "daysActive": "ಸಕ್ರಿಯ ದಿನಗಳು",
-    "accountSettings": "ಖಾತೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
-    "accountSettingsDesc": "ನಿಮ್ಮ ಖಾತೆ ಆದ್ಯತೆಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
-    "notifications": "ಅಧಿಸೂಚನೆಗಳು",
-    "notificationsDesc": "ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಕಾನ್ಫಿಗರ್ ಮಾಡಿ",
-    "privacySecurity": "ಗೌಪ್ಯತೆ ಮತ್ತು ಭದ್ರತೆ",
-    "privacySecurityDesc": "ನಿಮ್ಮ ಗೌಪ್ಯತೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
-    "language": "ಭಾಷೆ",
-    "languageDesc": "ಅಪ್ಲಿಕೇಶನ್ ಭಾಷೆಯನ್ನು ಬದಲಾಯಿಸಿ",
-    "logout": "ಲಾಗ್‌ಔಟ್"
-  },
-  "errors": {
-    "pageNotFound": "ಓಹ್! ಪುಟ ಕಂಡುಬಂದಿಲ್ಲ",
-    "returnToHome": "ಮುಖ್ಯಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ"
-  },
-  "splash": {
-    "tagline": "ರೈತರಿಗಾಗಿ ಬುದ್ಧಿವಂತ ಗುರು",
-    "loadingServices": "ಸೇವೆಗಳು ಲೋಡ್ ಆಗುತ್ತಿವೆ...",
-    "detectingOrganization": "ಸಂಸ್ಥೆಯನ್ನು ಪತ್ತೆಹಚ್ಚುತ್ತಿದೆ...",
-    "preparingLocationServices": "ಸ್ಥಳ ಸೇವೆಗಳನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತಿದೆ...",
-    "version": "v6.0.0 • ಬಾಡಿಗೆದಾರ ಸಿದ್ಧ • ಆಫ್‌ಲೈನ್ ಸಾಮರ್ಥ್ಯ"
+    "title": "ರೈತ ಸಮುದಾಯ"
   }
 }

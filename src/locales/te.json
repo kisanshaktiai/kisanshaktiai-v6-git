@@ -1,144 +1,18 @@
 
 {
   "common": {
-    "welcome": "స్వాగతం",
-    "continue": "కొనసాగించు",
-    "cancel": "రద్దు చేయి",
-    "save": "సేవ్ చేయి",
     "loading": "లోడ్ అవుతోంది...",
-    "error": "లోపం",
-    "success": "విజయం",
-    "offline": "ఆఫ్‌లైన్",
-    "online": "ఆన్‌లైన్",
-    "new": "కొత్త",
-    "comingSoon": "త్వరలో వస్తోంది",
-    "viewDetails": "వివరాలు చూడండి",
-    "checkPrices": "ధరలు చూడండి",
-    "addToSchedule": "షెడ్యూల్‌లో జోడించండి",
-    "bookTest": "టెస్ట్ బుక్ చేయండి",
-    "shopNow": "ఇప్పుడు కొనండి",
-    "viewAll": "అన్నీ చూడండి",
-    "viewCalendar": "క్యాలెండర్ చూడండి",
-    "back": "వెనుక",
-    "farmer": "రైతు",
-    "initializing": "ప్రారంభిస్తోంది...",
-    "ready": "సిద్ధం!",
-    "tryAgain": "మళ్లీ ప్రయత్నించండి"
-  },
-  "onboarding": {
-    "welcome_title": "KisanShaktiAI కి స్వాగతం",
-    "welcome_subtitle": "మీ AI-శక్తితో కూడిన వ్యవసాయ సహాయకుడు",
-    "location_title": "మీ స్థానం",
-    "location_subtitle": "మంచి సలహా కోసం మీ స్థానాన్ని భాగస్వామ్యం చేయండి",
-    "language_title": "భాష ఎంచుకోండి",
-    "language_subtitle": "మీకు నచ్చిన భాషను ఎంచుకోండి",
-    "autoDetected": "స్వయంచాలకంగా గుర్తించబడింది"
-  },
-  "auth": {
-    "phone_number": "ఫోన్ నంబర్",
-    "enter_phone": "మీ ఫోన్ నంబర్ నమోదు చేయండి",
-    "login": "లాగిన్",
-    "register": "రిజిస్టర్"
-  },
-  "navigation": {
     "home": "హోమ్",
-    "my_lands": "నా భూములు",
-    "ai_chat": "AI చాట్",
-    "crop_schedule": "పంట షెడ్యూల్",
-    "market": "మార్కెట్",
-    "community": "కమ్యూనిటీ",
+    "dashboard": "డ్యాష్‌బోర్డ్",
     "profile": "ప్రొఫైల్"
   },
-  "features": {
-    "aiPoweredAdvice": "AI-శక్తితో కూడిన సలహా",
-    "aiPoweredAdviceDesc": "వ్యక్తిగత వ్యవసాయ సిఫార్సులు పొందండి",
-    "communitySupport": "కమ్యూనిటీ మద్దతు",
-    "communitySupportDesc": "తోటి రైతులతో కనెక్ట్ అవ్వండి"
+  "dashboard": {
+    "welcome": "కిసాన్ శక్తి AI కి స్వాగతం"
   },
-  "home": {
-    "quickActions": "త్వరిత చర్యలు",
-    "todaysSummary": "నేటి సారాంశం",
-    "weather": "వాతావరణం",
-    "tasksPending": "పెండింగ్ టాస్క్‌లు",
-    "aiMessages": "AI సందేశాలు",
-    "newMessages": "కొత్త",
-    "getFarmingAdvice": "వ్యవసాయ సలహా పొందండి",
-    "viewUpcomingTasks": "రాబోయే టాస్క్‌లు చూడండి",
-    "checkLatestRates": "తాజా రేట్లు చూడండి",
-    "manageYourFields": "మీ పొలాలను నిర్వహించండి"
-  },
-  "market": {
-    "title": "మార్కెట్",
-    "subtitle": "తాజా పంట ధరలు మరియు ట్రెండ్‌లు",
-    "updatedAgo": "2 గంటల క్రితం అప్‌డేట్ చేయబడింది",
-    "todaysPrices": "నేటి ధరలు",
-    "previous": "మునుపటి",
-    "perQuintal": "ప్రతి క్వింటల్‌కు",
-    "perTon": "ప్రతి టన్‌కు",
-    "marketTip": "మార్కెట్ చిట్కా",
-    "marketTipContent": "గోధుమ ధరలు పెరుగుతున్నాయి. మీకు అదనపు స్టాక్ ఉంటే అమ్మడాన్ని పరిగణించండి."
-  },
-  "schedule": {
-    "title": "పంట షెడ్యూల్",
-    "subtitle": "మీ వ్యవసాయ పనులను నిర్వహించండి",
-    "pending": "పెండింగ్",
-    "completed": "పూర్తైంది",
-    "overdue": "గడువు ముగిసింది",
-    "upcomingTasks": "రాబోయే పనులు",
-    "crop": "పంట",
-    "field": "పొలం",
-    "dueDate": "గడువు తేదీ",
-    "waterWheatField": "గోధుమ పొలంలో నీరు పోయండి",
-    "applyFertilizer": "ఎరువులు వేయండి",
-    "harvestInspection": "పంట తనిఖీ"
+  "chat": {
+    "title": "AI సహాయకుడు"
   },
   "community": {
-    "title": "కమ్యూనిటీ",
-    "subtitle": "తోటి రైతులతో కనెక్ట్ అవ్వండి",
-    "members": "సభ్యులు",
-    "posts": "పోస్ట్‌లు",
-    "today": "ఈరోజు",
-    "recentDiscussions": "ఇటీవలి చర్చలు",
-    "bestTimeWheatSowing": "పంజాబ్‌లో గోధుమ విత్తనాలకు మంచి సమయం",
-    "bestTimeWheatSowingDesc": "వచ్చే నెలలో గోధుమలు విత్తాలని ప్లాన్ చేస్తున్నాను. ఈ ప్రాంతంలో సమయంతో మీ అనుభవాలు ఏమిటి?",
-    "organicPestControl": "సేంద్రీయ కీటక నియంత్రణ పద్ధతులు",
-    "organicPestControlDesc": "నా కూరగాయల పంటలపై అఫిడ్‌లను నియంత్రించడానికి సహజ మార్గాలను వెతుకుతున్నాను. ఏవైనా సూచనలు?",
-    "waterConservation": "నీటి పరిరక్షణ పద్ధతులు",
-    "waterConservationDesc": "డ్రిప్ ఇరిగేషన్‌తో నా అనుభవాన్ని పంచుకుంటున్నాను. ఈ సీజన్‌లో నీటి వినియోగాన్ని 40% తగ్గించాను.",
-    "hoursAgo": "గంటల క్రితం",
-    "dayAgo": "రోజు క్రితం",
-    "categories": {
-      "crops": "పంటలు",
-      "organicFarming": "సేంద్రీయ వ్యవసాయం",
-      "waterManagement": "నీటి నిర్వహణ"
-    }
-  },
-  "profile": {
-    "title": "ప్రొఫైల్",
-    "verifiedAccount": "ధృవీకరించబడిన ఖాతా",
-    "locationNotSet": "స్థానం సెట్ చేయలేదు",
-    "lands": "భూములు",
-    "aiChats": "AI చాట్‌లు",
-    "daysActive": "చురుకైన రోజులు",
-    "accountSettings": "ఖాతా సెట్టింగ్‌లు",
-    "accountSettingsDesc": "మీ ఖాతా ప్రాధాన్యతలను నిర్వహించండి",
-    "notifications": "నోటిఫికేషన్‌లు",
-    "notificationsDesc": "నోటిఫికేషన్ సెట్టింగ్‌లను కాన్ఫిగర్ చేయండి",
-    "privacySecurity": "గోప్యత మరియు భద్రత",
-    "privacySecurityDesc": "మీ గోప్యత సెట్టింగ్‌లను నిర్వహించండి",
-    "language": "భాష",
-    "languageDesc": "యాప్ భాషను మార్చండి",
-    "logout": "లాగ్‌అవుట్"
-  },
-  "errors": {
-    "pageNotFound": "అయ్యో! పేజీ కనుగొనబడలేదు",
-    "returnToHome": "హోమ్‌కు తిరిగి వెళ్లండి"
-  },
-  "splash": {
-    "tagline": "రైతుల కోసం తెలివైన గురువు",
-    "loadingServices": "సేవలు లోడ్ అవుతున్నాయి...",
-    "detectingOrganization": "సంస్థను గుర్తిస్తోంది...",
-    "preparingLocationServices": "స్థాన సేవలను సిద్ధం చేస్తోంది...",
-    "version": "v6.0.0 • టెనెంట్ రెడీ • ఆఫ్‌లైన్ సామర్థ్యం"
+    "title": "రైతు సమాజం"
   }
 }

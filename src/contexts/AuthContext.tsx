@@ -1,13 +1,28 @@
 
 import { createContext, useContext } from 'react';
-import { AuthContextType } from '@/types/auth';
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface MinimalAuthContextType {
+  user: null;
+  session: null;
+  profile: null;
+  loading: false;
+  isAuthenticated: false;
+}
+
+const defaultContext: MinimalAuthContextType = {
+  user: null,
+  session: null,
+  profile: null,
+  loading: false,
+  isAuthenticated: false,
+};
+
+export const AuthContext = createContext<MinimalAuthContextType>(defaultContext);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return defaultContext;
   }
   return context;
 };

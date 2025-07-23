@@ -1,144 +1,18 @@
 
 {
   "common": {
-    "welcome": "स्वागत",
-    "continue": "पुढे",
-    "cancel": "रद्द करा",
-    "save": "जतन करा",
     "loading": "लोड होत आहे...",
-    "error": "त्रुटी",
-    "success": "यश",
-    "offline": "ऑफलाइन",
-    "online": "ऑनलाइन",
-    "new": "नवीन",
-    "comingSoon": "लवकरच येत आहे",
-    "viewDetails": "तपशील पहा",
-    "checkPrices": "किंमती तपासा",
-    "addToSchedule": "वेळापत्रकात जोडा",
-    "bookTest": "चाचणी बुक करा",
-    "shopNow": "आता खरेदी करा",
-    "viewAll": "सर्व पहा",
-    "viewCalendar": "दिनदर्शिका पहा",
-    "back": "मागे",
-    "farmer": "शेतकरी",
-    "initializing": "सुरुवात होत आहे...",
-    "ready": "तयार!",
-    "tryAgain": "पुन्हा प्रयत्न करा"
-  },
-  "onboarding": {
-    "welcome_title": "KisanShaktiAI मध्ये आपले स्वागत आहे",
-    "welcome_subtitle": "आपला AI-चालित शेती सहाय्यक",
-    "location_title": "आपले स्थान",
-    "location_subtitle": "चांगल्या सल्ल्यासाठी आपले स्थान सामायिक करा",
-    "language_title": "भाषा निवडा",
-    "language_subtitle": "आपली पसंतीची भाषा निवडा",
-    "autoDetected": "आपोआप ओळखले"
-  },
-  "auth": {
-    "phone_number": "फोन नंबर",
-    "enter_phone": "आपला फोन नंबर टाका",
-    "login": "लॉगिन",
-    "register": "नोंदणी"
-  },
-  "navigation": {
-    "home": "मुख्यपृष्ठ",
-    "my_lands": "माझी जमीन",
-    "ai_chat": "AI चॅट",
-    "crop_schedule": "पिक वेळापत्रक",
-    "market": "बाजार",
-    "community": "समुदाय",
+    "home": "होम",
+    "dashboard": "डॅशबोर्ड",
     "profile": "प्रोफाइल"
   },
-  "features": {
-    "aiPoweredAdvice": "AI-चालित सल्ला",
-    "aiPoweredAdviceDesc": "वैयक्तिक शेती शिफारसी मिळवा",
-    "communitySupport": "समुदाय समर्थन",
-    "communitySupportDesc": "सहकारी शेतकऱ्यांशी जोडा"
+  "dashboard": {
+    "welcome": "किसान शक्ती AI मध्ये आपले स्वागत"
   },
-  "home": {
-    "quickActions": "त्वरित क्रिया",
-    "todaysSummary": "आजचा सारांश",
-    "weather": "हवामान",
-    "tasksPending": "प्रलंबित कार्ये",
-    "aiMessages": "AI संदेश",
-    "newMessages": "नवीन",
-    "getFarmingAdvice": "शेती सल्ला मिळवा",
-    "viewUpcomingTasks": "आगामी कार्ये पहा",
-    "checkLatestRates": "नवीनतम दर तपासा",
-    "manageYourFields": "आपल्या शेतांचे व्यवस्थापन करा"
-  },
-  "market": {
-    "title": "बाजार",
-    "subtitle": "नवीनतम पीक दर आणि ट्रेंड",
-    "updatedAgo": "२ तासांपूर्वी अपडेट केले",
-    "todaysPrices": "आजचे दर",
-    "previous": "मागील",
-    "perQuintal": "प्रति क्विंटल",
-    "perTon": "प्रति टन",
-    "marketTip": "बाजार सल्ला",
-    "marketTipContent": "गव्हाचे दर वाढत आहेत. जर आपल्याकडे अतिरिक्त साठा असेल तर विक्री करण्याचा विचार करा."
-  },
-  "schedule": {
-    "title": "पीक वेळापत्रक",
-    "subtitle": "आपल्या शेती कार्यांचे व्यवस्थापन करा",
-    "pending": "प्रलंबित",
-    "completed": "पूर्ण",
-    "overdue": "मुदत संपली",
-    "upcomingTasks": "आगामी कार्ये",
-    "crop": "पीक",
-    "field": "शेत",
-    "dueDate": "देय तारीख",
-    "waterWheatField": "गव्हाच्या शेतात पाणी द्या",
-    "applyFertilizer": "खत टाका",
-    "harvestInspection": "कापणीची तपासणी"
+  "chat": {
+    "title": "AI सहाय्यक"
   },
   "community": {
-    "title": "समुदाय",
-    "subtitle": "सहकारी शेतकऱ्यांशी जोडा",
-    "members": "सदस्य",
-    "posts": "पोस्ट",
-    "today": "आज",
-    "recentDiscussions": "अलीकडील चर्चा",
-    "bestTimeWheatSowing": "पंजाबमध्ये गव्हाची पेरणी करण्याची सर्वोत्तम वेळ",
-    "bestTimeWheatSowingDesc": "पुढील महिन्यात गहू पेरण्याची योजना आहे. या प्रदेशात वेळेसोबत तुमचे काय अनुभव आहेत?",
-    "organicPestControl": "सेंद्रिय कीड नियंत्रण पद्धती",
-    "organicPestControlDesc": "माझ्या भाजीपाला पिकावरील ऍफिड्स नियंत्रित करण्याचे नैसर्गिक मार्ग शोधत आहे. काही सूचना?",
-    "waterConservation": "पाणी संधारण तंत्र",
-    "waterConservationDesc": "ठिबक सिंचनाचा माझा अनुभव सामायिक करत आहे. या हंगामात पाण्याचा वापर ४०% कमी केला.",
-    "hoursAgo": "तासांपूर्वी",
-    "dayAgo": "दिवसापूर्वी",
-    "categories": {
-      "crops": "पिके",
-      "organicFarming": "सेंद्रिय शेती",
-      "waterManagement": "पाणी व्यवस्थापन"
-    }
-  },
-  "profile": {
-    "title": "प्रोफाइल",
-    "verifiedAccount": "सत्यापित खाते",
-    "locationNotSet": "स्थान सेट नाही",
-    "lands": "जमिनी",
-    "aiChats": "AI चॅट्स",
-    "daysActive": "सक्रिय दिवस",
-    "accountSettings": "खाते सेटिंग्ज",
-    "accountSettingsDesc": "आपल्या खात्याच्या प्राधान्यांचे व्यवस्थापन करा",
-    "notifications": "सूचना",
-    "notificationsDesc": "सूचना सेटिंग्ज कॉन्फिगर करा",
-    "privacySecurity": "गोपनीयता आणि सुरक्षा",
-    "privacySecurityDesc": "आपल्या गोपनीयता सेटिंग्जचे व्यवस्थापन करा",
-    "language": "भाषा",
-    "languageDesc": "अॅप भाषा बदला",
-    "logout": "लॉगआउट"
-  },
-  "errors": {
-    "pageNotFound": "अरे! पान सापडले नाही",
-    "returnToHome": "मुख्यपृष्ठावर परत या"
-  },
-  "splash": {
-    "tagline": "शेतकऱ्यांसाठी हुशार गुरू",
-    "loadingServices": "सेवा लोड होत आहेत...",
-    "detectingOrganization": "संस्था ओळखत आहे...",
-    "preparingLocationServices": "स्थान सेवा तयार करत आहे...",
-    "version": "v6.0.0 • टेनंट तयार • ऑफलाइन सक्षम"
+    "title": "शेतकरी समुदाय"
   }
 }
