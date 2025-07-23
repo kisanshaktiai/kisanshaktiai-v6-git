@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 interface AuthResponse {
   success: boolean;
@@ -27,34 +26,35 @@ class CustomAuthService {
       // Clean mobile number (remove any non-digits)
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('Registering farmer with mobile:', cleanMobile);
+      console.log('CustomAuthService: Registering farmer with mobile:', cleanMobile);
       
-      // Don't pass tenant_id - let the edge function handle it
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: cleanMobile,
           pin,
-          farmer_data: farmerData // Remove tenant_id from here
+          farmer_data: farmerData
         }
       });
 
+      console.log('CustomAuthService: Registration response:', { data, error });
+
       if (error) {
-        console.error('Registration error:', error);
+        console.error('CustomAuthService: Registration error:', error);
         return { 
           success: false, 
           error: error.message || 'Registration failed' 
         };
       }
 
-      if (!data.success) {
-        console.error('Registration failed:', data.error);
+      if (!data || !data.success) {
+        console.error('CustomAuthService: Registration failed:', data?.error);
         return { 
           success: false, 
-          error: data.error || 'Registration failed' 
+          error: data?.error || 'Registration failed' 
         };
       }
 
-      console.log('Registration successful:', data);
+      console.log('CustomAuthService: Registration successful:', data);
 
       // Store authentication data
       this.currentFarmer = data.farmer;
@@ -73,7 +73,7 @@ class CustomAuthService {
         token: data.token
       };
     } catch (error) {
-      console.error('Registration process error:', error);
+      console.error('CustomAuthService: Registration process error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Registration failed' 
