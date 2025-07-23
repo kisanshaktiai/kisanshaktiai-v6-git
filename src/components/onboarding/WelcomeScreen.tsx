@@ -12,8 +12,19 @@ interface WelcomeScreenProps {
   onComplete?: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
+  onNext, 
+  onComplete 
+}) => {
   const { t } = useTranslation();
+
+  const handleContinue = () => {
+    if (onComplete) {
+      onComplete();
+    } else {
+      onNext();
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
@@ -52,11 +63,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNext }) => {
       </div>
 
       <Button 
-        onClick={onNext} 
+        onClick={handleContinue} 
         className="w-full py-3 text-lg"
         size="lg"
       >
-        {t('common.continue')}
+        {onComplete ? t('common.complete') : t('common.continue')}
       </Button>
     </div>
   );

@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import EnhancedLanguageScreen from './EnhancedLanguageScreen';
 import { MobileNumberScreen } from './MobileNumberScreen';
-import PinSetupScreen from './PinSetupScreen';
-import FarmerDetailsScreen from './FarmerDetailsScreen';
+import { PinSetupScreen } from './PinSetupScreen';
+import { FarmerDetailsScreen } from './FarmerDetailsScreen';
 import { WelcomeScreen } from './WelcomeScreen';
 import { customAuthService } from '@/services/customAuthService';
 
@@ -77,25 +77,37 @@ const OnboardingFlow: React.FC = () => {
     }
   };
 
+  const handleNext = () => {
+    setCurrentStep(currentStep + 1);
+  };
+
   const steps = [
     <EnhancedLanguageScreen onNext={handleLanguageSelect} />,
     <MobileNumberScreen 
       onNext={handleMobileSubmit} 
-      onBack={handleBack}
-      initialValue={formData.mobile}
+      onPrev={handleBack}
+      isFirstStep={false}
+      isLastStep={false}
     />,
     <PinSetupScreen 
       onNext={handlePinSetup} 
-      onBack={handleBack}
+      onPrev={handleBack}
+      isFirstStep={false}
+      isLastStep={false}
     />,
     <FarmerDetailsScreen 
       onNext={handleFarmerDetails} 
-      onBack={handleBack}
+      onPrev={handleBack}
+      isFirstStep={false}
+      isLastStep={false}
       language={formData.language}
     />,
     <WelcomeScreen 
+      onNext={handleNext}
+      onPrev={handleBack}
+      isFirstStep={false}
+      isLastStep={true}
       onComplete={handleRegistration}
-      farmerName={formData.farmerDetails.full_name || 'Farmer'}
     />
   ];
 
