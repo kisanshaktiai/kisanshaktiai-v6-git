@@ -1,461 +1,322 @@
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { CheckCircle, AlertCircle, Loader, WifiOff, Wifi } from 'lucide-react';
-import { useBranding } from '@/contexts/BrandingContext';
-import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { AuthHeader } from './AuthHeader';
-import { AuthButton } from './AuthButton';
-import { PhoneInput } from './PhoneInput';
-import { FeaturesInfo } from './FeaturesInfo';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { ArrowLeft, Smartphone, Shield, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { MobileNumberService } from '@/services/MobileNumberService';
+import { toast } from 'sonner';
 
 interface EnhancedPhoneAuthScreenProps {
-  onComplete: () => void;
+  onBack: () => void;
+  onSuccess: () => void;
 }
 
-type AuthStep = 'phone' | 'pin-login' | 'pin-create' | 'success';
-type UserStatus = 'checking' | 'existing' | 'new' | null;
+type AuthStep = 'phone' | 'pin_new' | 'pin_existing';
 
-export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
-  const { t } = useTranslation();
-  const { branding } = useBranding();
-  const { login, register, checkExistingFarmer, isOnline } = useCustomAuth();
-  
-  const [step, setStep] = useState<AuthStep>('phone');
+export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({
+  onBack,
+  onSuccess
+}) => {
+  const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [mobileNumber, setMobileNumber] = useState('');
   const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
-  const [userStatus, setUserStatus] = useState<UserStatus>(null);
+  const [isExistingUser, setIsExistingUser] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [checkingUser, setCheckingUser] = useState(false);
+  
+  const { login, register, checkExistingFarmer, isOnline } = useCustomAuth();
+  const mobileService = MobileNumberService.getInstance();
 
-  const validateMobileNumber = (mobile: string): boolean => {
-    const mobileRegex = /^[6-9]\d{9}$/;
-    return mobileRegex.test(mobile);
+  useEffect(() => {
+    // Try to auto-detect mobile number
+    const detectMobile = async () => {
+      try {
+        const detectedNumber = await mobileService.getMobileNumber();
+        if (detectedNumber && mobileService.validateMobileNumber(detectedNumber)) {
+          setMobileNumber(detectedNumber);
+          console.log('Auto-detected mobile number:', detectedNumber);
+        }
+      } catch (error) {
+        console.log('Could not auto-detect mobile number:', error);
+      }
+    };
+    detectMobile();
+  }, []);
+
+  const handleMobileNumberChange = (value: string) => {
+    // Only allow digits and limit to 10 characters
+    const cleaned = value.replace(/\D/g, '').slice(0, 10);
+    setMobileNumber(cleaned);
   };
 
-  const checkUserExists = async (mobile: string) => {
-    try {
-      setUserStatus('checking');
-      setError(null);
-      
-      const exists = await checkExistingFarmer(mobile);
-      setUserStatus(exists ? 'existing' : 'new');
-      
-      return exists;
-    } catch (err) {
-      console.error('Error checking user:', err);
-      setError(isOnline ? t('auth.error_checking_user') : t('auth.offline_check_user'));
-      setUserStatus(null);
-      return false;
-    }
-  };
-
-  const handleAutoCheck = async (mobile: string) => {
-    if (validateMobileNumber(mobile)) {
-      await checkUserExists(mobile);
-    } else {
-      setUserStatus(null);
-    }
-  };
-
-  const handleMobileSubmit = async () => {
-    if (!validateMobileNumber(mobileNumber)) {
-      setError(t('auth.invalid_mobile'));
+  const handleContinueWithMobile = async () => {
+    if (!isOnline) {
+      toast.error('You need to be online to continue. Please check your internet connection.');
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    if (!mobileService.validateMobileNumber(mobileNumber)) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
 
+    setCheckingUser(true);
+    
     try {
-      const userExists = await checkUserExists(mobileNumber);
+      console.log('Checking if user exists for mobile:', mobileNumber);
+      const userExists = await checkExistingFarmer(mobileNumber);
+      console.log('User exists check result:', userExists);
+      
+      setIsExistingUser(userExists);
+      
+      // Save mobile number to service
+      await mobileService.saveMobileNumber(mobileNumber);
       
       if (userExists) {
-        setStep('pin-login');
+        setCurrentStep('pin_existing');
+        toast.success('Account found! Please enter your PIN to login.');
       } else {
-        if (!isOnline) {
-          setError(t('auth.registration_requires_internet'));
-          setLoading(false);
-          return;
-        }
-        setStep('pin-create');
+        setCurrentStep('pin_new');
+        toast.success('Create a new account by setting up your PIN.');
       }
-    } catch (err) {
-      console.error('Mobile submission error:', err);
-      setError(t('auth.something_went_wrong'));
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      toast.error('Failed to verify mobile number. Please try again.');
     } finally {
-      setLoading(false);
+      setCheckingUser(false);
     }
   };
 
-  const handleLogin = async () => {
+  const handlePinSubmit = async () => {
     if (pin.length !== 4) {
-      setError(t('auth.pin_required'));
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await login(mobileNumber, pin);
-      
-      if (result.success) {
-        setStep('success');
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
-      } else {
-        setError(result.error || t('auth.login_failed'));
-        setRetryCount(prev => prev + 1);
-        
-        // Clear PIN on error for security
-        setPin('');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(t('auth.login_failed'));
-      setPin('');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async () => {
-    if (pin.length !== 4 || confirmPin.length !== 4) {
-      setError(t('auth.pin_required'));
-      return;
-    }
-
-    if (pin !== confirmPin) {
-      setError(t('auth.pins_dont_match'));
+      toast.error('PIN must be exactly 4 digits');
       return;
     }
 
     if (!isOnline) {
-      setError(t('auth.registration_requires_internet'));
+      toast.error('You need to be online to continue. Please check your internet connection.');
       return;
     }
 
     setLoading(true);
-    setError(null);
 
     try {
-      const result = await register(mobileNumber, pin, {
-        mobile_number: mobileNumber,
-        preferred_language: 'hi'
-      });
+      console.log('Submitting PIN for:', { mobileNumber, isExistingUser, pinLength: pin.length });
       
-      if (result.success) {
-        setStep('success');
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
+      let result;
+      if (isExistingUser) {
+        // Login existing user
+        result = await login(mobileNumber, pin);
+        console.log('Login result:', result);
       } else {
-        setError(result.error || t('auth.registration_failed'));
-        // Clear PINs on error
-        setPin('');
-        setConfirmPin('');
+        // Register new user
+        result = await register(mobileNumber, pin, {
+          preferred_language: 'hi',
+          full_name: `User_${mobileNumber.slice(-4)}`
+        });
+        console.log('Registration result:', result);
       }
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError(t('auth.registration_failed'));
-      setPin('');
-      setConfirmPin('');
+
+      if (result.success) {
+        toast.success(isExistingUser ? 'Login successful!' : 'Account created successfully!');
+        onSuccess();
+      } else {
+        console.error('Auth failed:', result.error);
+        toast.error(result.error || 'Authentication failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during PIN submission:', error);
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBack = () => {
-    setStep('phone');
-    setPin('');
-    setConfirmPin('');
-    setError(null);
-    setUserStatus(null);
-    setRetryCount(0);
-  };
-
-  const getCurrentStep = () => {
-    if (step === 'pin-login') return 'login';
-    if (step === 'pin-create') return 'signup';
-    return 'phone';
-  };
-
   const renderPhoneStep = () => (
-    <div className="space-y-4">
-      {/* Connection Status Indicator */}
-      <div className={`flex items-center justify-center space-x-2 text-xs p-2 rounded-lg ${
-        isOnline 
-          ? 'bg-green-50 text-green-800 border border-green-200' 
-          : 'bg-red-50 text-red-800 border border-red-200'
-      }`}>
-        {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-        <span>{isOnline ? t('common.online') : t('common.offline')}</span>
-      </div>
-
-      <PhoneInput
-        phone={mobileNumber}
-        onPhoneChange={setMobileNumber}
-        loading={loading}
-        checkingUser={userStatus === 'checking'}
-        userCheckComplete={userStatus !== null && userStatus !== 'checking'}
-        isNewUser={userStatus === 'new'}
-        onAutoCheck={handleAutoCheck}
-      />
-
-      {userStatus && userStatus !== 'checking' && (
-        <div className={`text-sm text-center p-3 rounded-lg border-2 ${
-          userStatus === 'existing' 
-            ? 'bg-blue-50 text-blue-800 border-blue-200' 
-            : 'bg-green-50 text-green-800 border-green-200'
-        }`}>
-          <div className="flex items-center justify-center gap-2">
-            {userStatus === 'existing' ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                {t('auth.welcome_back_account_found')}
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                {t('auth.new_number_detected')}
-                {!isOnline && (
-                  <div className="text-xs text-orange-600 mt-1">
-                    {t('auth.registration_requires_internet')}
-                  </div>
-                )}
-              </>
-            )}
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center space-y-2">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+          <Smartphone className="w-8 h-8 text-green-600" />
+        </div>
+        <CardTitle className="text-2xl font-bold text-gray-900">
+          Enter Mobile Number
+        </CardTitle>
+        <p className="text-gray-600">
+          We'll check if you have an existing account or help you create a new one
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="mobile" className="text-sm font-medium text-gray-700">
+            Mobile Number
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+              +91
+            </span>
+            <Input
+              id="mobile"
+              type="tel"
+              value={mobileNumber}
+              onChange={(e) => handleMobileNumberChange(e.target.value)}
+              placeholder="Enter 10-digit number"
+              className="pl-12 text-lg tracking-wider"
+              maxLength={10}
+            />
           </div>
+          {mobileNumber.length > 0 && (
+            <div className="flex items-center text-sm">
+              {mobileService.validateMobileNumber(mobileNumber) ? (
+                <div className="flex items-center text-green-600">
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Valid mobile number
+                </div>
+              ) : (
+                <div className="flex items-center text-red-600">
+                  <XCircle className="w-4 h-4 mr-1" />
+                  Please enter a valid 10-digit number
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      {error && (
-        <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </div>
-      )}
+        <Button 
+          onClick={handleContinueWithMobile}
+          disabled={!mobileService.validateMobileNumber(mobileNumber) || checkingUser || !isOnline}
+          className="w-full"
+          size="lg"
+        >
+          {checkingUser ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Checking...
+            </>
+          ) : (
+            'Continue'
+          )}
+        </Button>
 
-      <AuthButton
-        loading={loading}
-        phone={mobileNumber}
-        checkingUser={userStatus === 'checking'}
-        userCheckComplete={userStatus !== null && userStatus !== 'checking'}
-        isNewUser={userStatus === 'new'}
-        onContinue={handleMobileSubmit}
-      />
-    </div>
+        {!isOnline && (
+          <div className="text-center text-sm text-red-600">
+            You're offline. Please check your internet connection.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 
-  const renderPinLoginStep = () => (
-    <div className="space-y-4">
-      <div className="text-center space-y-2">
-        <p className="text-gray-600">
-          {t('auth.enter_pin_for')} <span className="font-semibold">+91 {mobileNumber}</span>
-        </p>
-        {!isOnline && (
-          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
-            {t('auth.offline_login_mode')}
-          </div>
-        )}
-        {retryCount > 0 && (
-          <div className="text-xs text-red-600">
-            {t('auth.retry_attempt', { count: retryCount })}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 block text-center">
-            {t('auth.enter_pin')}
-          </label>
-          <Input
-            type="password"
-            placeholder="••••"
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
-            maxLength={4}
-            autoFocus
-          />
+  const renderPinStep = () => (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center space-y-2">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+          <Shield className="w-8 h-8 text-blue-600" />
         </div>
-
-        {error && (
-          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {error}
+        <CardTitle className="text-2xl font-bold text-gray-900">
+          {isExistingUser ? 'Enter Your PIN' : 'Create Your PIN'}
+        </CardTitle>
+        <p className="text-gray-600">
+          {isExistingUser 
+            ? `Enter your 4-digit PIN for ${mobileNumber}`
+            : `Create a secure 4-digit PIN for ${mobileNumber}`
+          }
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div className="text-center">
+            <label htmlFor="pin" className="text-sm font-medium text-gray-700 block mb-2">
+              4-Digit PIN
+            </label>
+            <InputOTP 
+              value={pin} 
+              onChange={setPin} 
+              maxLength={4}
+              pattern="^[0-9]+$"
+            >
+              <InputOTPGroup className="gap-3">
+                <InputOTPSlot index={0} className="w-12 h-12 text-lg font-bold" />
+                <InputOTPSlot index={1} className="w-12 h-12 text-lg font-bold" />
+                <InputOTPSlot index={2} className="w-12 h-12 text-lg font-bold" />
+                <InputOTPSlot index={3} className="w-12 h-12 text-lg font-bold" />
+              </InputOTPGroup>
+            </InputOTP>
           </div>
-        )}
+
+          {!isExistingUser && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>Important:</strong> Remember your PIN. You'll need it to access your account.
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="space-y-3">
           <Button 
-            onClick={handleLogin}
-            disabled={pin.length !== 4 || loading}
-            className="w-full h-12 text-base font-semibold rounded-xl"
-            style={{ backgroundColor: branding.primaryColor, color: 'white' }}
+            onClick={handlePinSubmit}
+            disabled={pin.length !== 4 || loading || !isOnline}
+            className="w-full"
+            size="lg"
           >
             {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>{t('auth.signing_in')}</span>
-              </div>
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {isExistingUser ? 'Signing In...' : 'Creating Account...'}
+              </>
             ) : (
-              t('auth.sign_in_continue')
+              isExistingUser ? 'Sign In' : 'Create Account'
             )}
           </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={loading}
-            className="w-full h-10 border-2 rounded-xl"
-          >
-            {t('common.back')}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 
-  const renderPinCreateStep = () => (
-    <div className="space-y-4">
-      <div className="text-center space-y-2">
-        <p className="text-gray-600">
-          {t('auth.create_secure_pin')}
-        </p>
-        {!isOnline && (
-          <div className="text-xs text-red-600 bg-red-50 p-2 rounded border">
-            {t('auth.registration_requires_internet')}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 block">
-            {t('auth.create_pin')}
-          </label>
-          <Input
-            type="password"
-            placeholder="••••"
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
-            maxLength={4}
-            autoFocus
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 block">
-            {t('auth.confirm_pin')}
-          </label>
-          <Input
-            type="password"
-            placeholder="••••"
-            value={confirmPin}
-            onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="h-12 text-2xl font-bold text-center tracking-[0.5em] placeholder:tracking-normal border-2 rounded-xl"
-            maxLength={4}
-          />
-        </div>
-
-        {pin && confirmPin && pin !== confirmPin && (
-          <div className="text-xs text-orange-600 text-center">
-            {t('auth.pins_dont_match')}
-          </div>
-        )}
-
-        {error && (
-          <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-3">
           <Button 
-            onClick={handleRegister}
-            disabled={pin.length !== 4 || confirmPin.length !== 4 || loading || !isOnline}
-            className="w-full h-12 text-base font-semibold rounded-xl"
-            style={{ backgroundColor: branding.primaryColor, color: 'white' }}
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>{t('auth.creating_account')}</span>
-              </div>
-            ) : (
-              t('auth.create_account_continue')
-            )}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handleBack}
+            variant="outline" 
+            onClick={() => setCurrentStep('phone')}
+            className="w-full"
             disabled={loading}
-            className="w-full h-10 border-2 rounded-xl"
           >
-            {t('common.back')}
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Change Mobile Number
           </Button>
         </div>
-      </div>
-    </div>
-  );
 
-  const renderSuccessStep = () => (
-    <div className="space-y-4">
-      <div className="text-center space-y-4">
-        <div className="relative">
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
-            style={{ backgroundColor: `${branding.primaryColor}15`, border: `2px solid ${branding.primaryColor}` }}
-          >
-            <CheckCircle className="w-10 h-10 text-green-600 animate-bounce" />
+        {!isOnline && (
+          <div className="text-center text-sm text-red-600">
+            You're offline. Please check your internet connection.
           </div>
-          <div className="absolute inset-0 w-20 h-20 rounded-full mx-auto animate-ping" 
-               style={{ backgroundColor: `${branding.primaryColor}20` }}></div>
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {userStatus === 'new' ? t('auth.account_created') : t('auth.welcome_back')}
-          </h2>
-          <p className="text-gray-600">
-            {t('auth.redirecting_to_app')}
-          </p>
-        </div>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-1">
-      <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
-        <CardHeader className="pb-0 px-3 pt-3">
-          <AuthHeader 
-            userCheckComplete={userStatus !== null && userStatus !== 'checking'}
-            isNewUser={userStatus === 'new'}
-            currentStep={getCurrentStep()}
-          />
-        </CardHeader>
-        
-        <CardContent className="px-3 pb-3">
-          {step === 'phone' && renderPhoneStep()}
-          {step === 'pin-login' && renderPinLoginStep()}
-          {step === 'pin-create' && renderPinCreateStep()}
-          {step === 'success' && renderSuccessStep()}
-          
-          {step === 'phone' && <FeaturesInfo />}
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Back button */}
+        <Button 
+          variant="ghost" 
+          onClick={onBack}
+          className="mb-4"
+          disabled={loading || checkingUser}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+
+        {/* Progress indicator */}
+        <div className="flex items-center justify-center space-x-2 mb-6">
+          <div className={`w-3 h-3 rounded-full ${currentStep === 'phone' ? 'bg-green-600' : 'bg-green-200'}`} />
+          <div className="w-8 h-0.5 bg-gray-200" />
+          <div className={`w-3 h-3 rounded-full ${currentStep !== 'phone' ? 'bg-green-600' : 'bg-gray-200'}`} />
+        </div>
+
+        {/* Render current step */}
+        {currentStep === 'phone' && renderPhoneStep()}
+        {(currentStep === 'pin_new' || currentStep === 'pin_existing') && renderPinStep()}
+      </div>
     </div>
   );
 };

@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
     let { data: userProfile, error: profileSelectError } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('id', farmer.id)
+      .eq('farmer_id', farmer.id)
       .maybeSingle()
 
     if (profileSelectError) {
@@ -192,12 +192,13 @@ Deno.serve(async (req) => {
       
       // Create missing user profile
       const userProfileData = {
-        id: farmer.id,
+        id: farmer.id, // Use same ID as farmer
         mobile_number: cleanMobile,
         phone_verified: true,
         preferred_language: 'hi',
         full_name: farmer.farmer_code,
         farmer_id: farmer.id,
+        tenant_id: farmer.tenant_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -273,7 +274,8 @@ Deno.serve(async (req) => {
           id: userProfile.id,
           mobile_number: userProfile.mobile_number,
           preferred_language: userProfile.preferred_language,
-          full_name: userProfile.full_name
+          full_name: userProfile.full_name,
+          farmer_id: userProfile.farmer_id
         } : null
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

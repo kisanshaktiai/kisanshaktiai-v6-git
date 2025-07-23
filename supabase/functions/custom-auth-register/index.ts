@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     // Use provided tenant_id or the resolved one
     const finalTenantId = farmer_data.tenant_id || defaultTenant.id
 
-    // Check if farmer already exists with this mobile number
+    // Check if farmer already exists with this mobile number and tenant
     console.log('Checking for existing farmer...')
     const { data: existingFarmer, error: existingError } = await supabase
       .from('farmers')
@@ -167,142 +167,157 @@ Deno.serve(async (req) => {
       pinHashLength: pinHash.length
     })
 
-    // Prepare farmer data with all required fields
-    const farmerInsertData = {
-      id: farmerId,
-      mobile_number: cleanMobile,
-      pin_hash: pinHash,
-      farmer_code: farmerCode,
-      tenant_id: finalTenantId,
-      app_install_date: new Date().toISOString().split('T')[0],
-      login_attempts: 0,
-      is_verified: false,
-      farming_experience_years: farmer_data.farming_experience_years || null,
-      farm_type: farmer_data.farm_type || null,
-      total_land_acres: farmer_data.total_land_acres || null,
-      primary_crops: farmer_data.primary_crops || null,
-      annual_income_range: farmer_data.annual_income_range || null,
-      has_loan: farmer_data.has_loan || false,
-      loan_amount: farmer_data.loan_amount || null,
-      has_tractor: farmer_data.has_tractor || false,
-      has_irrigation: farmer_data.has_irrigation || false,
-      irrigation_type: farmer_data.irrigation_type || null,
-      has_storage: farmer_data.has_storage || false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
+    // Begin transaction for atomic operations
+    try {
+      // Prepare farmer data with all required fields
+      const farmerInsertData = {
+        id: farmerId,
+        mobile_number: cleanMobile,
+        pin_hash: pinHash,
+        farmer_code: farmerCode,
+        tenant_id: finalTenantId,
+        app_install_date: new Date().toISOString().split('T')[0],
+        login_attempts: 0,
+        is_verified: false,
+        farming_experience_years: farmer_data.farming_experience_years || null,
+        farm_type: farmer_data.farm_type || null,
+        total_land_acres: farmer_data.total_land_acres || null,
+        primary_crops: farmer_data.primary_crops || null,
+        annual_income_range: farmer_data.annual_income_range || null,
+        has_loan: farmer_data.has_loan || false,
+        loan_amount: farmer_data.loan_amount || null,
+        has_tractor: farmer_data.has_tractor || false,
+        has_irrigation: farmer_data.has_irrigation || false,
+        irrigation_type: farmer_data.irrigation_type || null,
+        has_storage: farmer_data.has_storage || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
 
-    console.log('Inserting farmer data...')
+      console.log('Inserting farmer data...')
 
-    // Create farmer record
-    const { data: farmerData, error: farmerError } = await supabase
-      .from('farmers')
-      .insert([farmerInsertData])
-      .select()
-      .single()
-
-    if (farmerError) {
-      console.error('Farmer creation error:', farmerError)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Registration failed: ' + (farmerError.message || 'Unknown error') 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('Farmer created successfully:', farmerData)
-
-    // Prepare user profile data
-    const userProfileData = {
-      id: farmerId,
-      mobile_number: cleanMobile,
-      phone_verified: true,
-      preferred_language: farmer_data.preferred_language || 'hi',
-      full_name: farmer_data.full_name || farmerCode,
-      farmer_id: farmerId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    console.log('Creating user profile...')
-
-    // Create user profile
-    const { data: profileData, error: profileError } = await supabase
-      .from('user_profiles')
-      .insert(userProfileData)
-      .select()
-      .single()
-
-    if (profileError) {
-      console.error('Profile creation error:', profileError)
-      
-      // Critical: Clean up the farmer record if profile creation fails
-      console.log('Cleaning up farmer record due to profile creation failure...')
-      await supabase
+      // Create farmer record first
+      const { data: farmerData, error: farmerError } = await supabase
         .from('farmers')
-        .delete()
-        .eq('id', farmerId)
+        .insert([farmerInsertData])
+        .select()
+        .single()
+
+      if (farmerError) {
+        console.error('Farmer creation error:', farmerError)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Registration failed: ' + (farmerError.message || 'Unknown error') 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      console.log('Farmer created successfully:', farmerData)
+
+      // Now create user profile with the same ID as farmer
+      const userProfileData = {
+        id: farmerId, // Use same ID as farmer
+        mobile_number: cleanMobile,
+        phone_verified: true,
+        preferred_language: farmer_data.preferred_language || 'hi',
+        full_name: farmer_data.full_name || farmerCode,
+        farmer_id: farmerId, // Reference to farmer
+        tenant_id: finalTenantId, // Add tenant_id for consistency
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      console.log('Creating user profile...')
+
+      // Create user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .insert(userProfileData)
+        .select()
+        .single()
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError)
+        
+        // Critical: Clean up the farmer record if profile creation fails
+        console.log('Cleaning up farmer record due to profile creation failure...')
+        await supabase
+          .from('farmers')
+          .delete()
+          .eq('id', farmerId)
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Registration failed: Unable to create user profile' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      console.log('User profile created successfully:', profileData)
+
+      // Generate JWT token
+      const jwt = await import('https://deno.land/x/djwt@v3.0.1/mod.ts')
       
+      const payload = {
+        farmer_id: farmerData.id,
+        tenant_id: farmerData.tenant_id,
+        mobile_number: farmerData.mobile_number,
+        farmer_code: farmerData.farmer_code,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+      }
+
+      const token = await jwt.create(
+        { alg: 'HS256', typ: 'JWT' },
+        payload,
+        jwtSecret
+      )
+
+      console.log('=== REGISTRATION SUCCESS ===')
+      console.log('Registration completed successfully:', {
+        farmerId: farmerData.id,
+        farmerCode: farmerData.farmer_code,
+        mobile: farmerData.mobile_number,
+        tenantId: farmerData.tenant_id,
+        profileId: profileData.id,
+        timestamp: new Date().toISOString()
+      })
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          token,
+          farmer: {
+            id: farmerData.id,
+            farmer_code: farmerData.farmer_code,
+            mobile_number: farmerData.mobile_number,
+            tenant_id: farmerData.tenant_id
+          },
+          user_profile: {
+            id: profileData.id,
+            mobile_number: profileData.mobile_number,
+            preferred_language: profileData.preferred_language,
+            full_name: profileData.full_name,
+            farmer_id: profileData.farmer_id
+          }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+
+    } catch (transactionError) {
+      console.error('Transaction error:', transactionError)
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Registration failed: Unable to create user profile' 
+          error: 'Registration transaction failed: ' + (transactionError.message || 'Unknown error') 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    console.log('User profile created successfully:', profileData)
-
-    // Generate JWT token
-    const jwt = await import('https://deno.land/x/djwt@v3.0.1/mod.ts')
-    
-    const payload = {
-      farmer_id: farmerData.id,
-      tenant_id: farmerData.tenant_id,
-      mobile_number: farmerData.mobile_number,
-      farmer_code: farmerData.farmer_code,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    }
-
-    const token = await jwt.create(
-      { alg: 'HS256', typ: 'JWT' },
-      payload,
-      jwtSecret
-    )
-
-    console.log('=== REGISTRATION SUCCESS ===')
-    console.log('Registration completed successfully:', {
-      farmerId: farmerData.id,
-      farmerCode: farmerData.farmer_code,
-      mobile: farmerData.mobile_number,
-      tenantId: farmerData.tenant_id,
-      profileId: profileData.id,
-      timestamp: new Date().toISOString()
-    })
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        token,
-        farmer: {
-          id: farmerData.id,
-          farmer_code: farmerData.farmer_code,
-          mobile_number: farmerData.mobile_number,
-          tenant_id: farmerData.tenant_id
-        },
-        user_profile: {
-          id: profileData.id,
-          mobile_number: profileData.mobile_number,
-          preferred_language: profileData.preferred_language,
-          full_name: profileData.full_name
-        }
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
 
   } catch (error) {
     console.error('=== REGISTRATION ERROR ===')
