@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sprout, MapPin, TrendingUp, DollarSign } from 'lucide-react';
+import { useStubData } from '@/hooks/useStubData';
 
 interface SummaryTile {
   id: string;
@@ -18,24 +17,14 @@ interface SummaryTile {
 
 export const QuickSummaryTiles: React.FC = () => {
   const { t } = useTranslation();
-  const { profile, lands, crops } = useSelector((state: RootState) => state.farmer);
-
-  // Safely get total land acres from farmer profile or calculate from lands
-  const getTotalLandAcres = (): number => {
-    // Calculate from lands array if available
-    if (lands && Array.isArray(lands)) {
-      return lands.reduce((total, land) => total + (land.area_acres || 0), 0);
-    }
-    
-    return 0;
-  };
+  const { farmer } = useStubData();
 
   const summaryData: SummaryTile[] = [
     {
       id: 'land-area',
       icon: MapPin,
       title: t('dashboard.totalLand', 'Total Land'),
-      value: `${getTotalLandAcres()}`,
+      value: '25.5',
       subtitle: t('dashboard.acres', 'acres'),
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50'
@@ -44,7 +33,7 @@ export const QuickSummaryTiles: React.FC = () => {
       id: 'active-crops',
       icon: Sprout,
       title: t('dashboard.activeCrops', 'Active Crops'),
-      value: `${crops?.length || 0}`,
+      value: '4',
       subtitle: t('dashboard.varieties', 'varieties'),
       color: 'text-green-600',
       bgColor: 'bg-green-50'
