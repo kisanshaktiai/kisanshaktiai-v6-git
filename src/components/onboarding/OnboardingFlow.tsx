@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import EnhancedLanguageScreen from './EnhancedLanguageScreen';
 import { MobileNumberScreen } from './MobileNumberScreen';
-import { PinSetupScreen } from './PinSetupScreen';
-import { FarmerDetailsScreen } from './FarmerDetailsScreen';
+import PinSetupScreen from './PinSetupScreen';
+import FarmerDetailsScreen from './FarmerDetailsScreen';
 import { WelcomeScreen } from './WelcomeScreen';
 import { customAuthService } from '@/services/customAuthService';
 

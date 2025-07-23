@@ -6,10 +6,12 @@ import { ArrowLeft, Lock } from 'lucide-react';
 
 interface PinSetupScreenProps {
   onNext: (pin: string) => void;
-  onBack: () => void;
+  onPrev: () => void;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
-const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ onNext, onBack }) => {
+const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ onNext, onPrev }) => {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
@@ -84,7 +86,7 @@ const PinSetupScreen: React.FC<PinSetupScreenProps> = ({ onNext, onBack }) => {
             <Button type="submit" className="w-full">
               Continue
             </Button>
-            <Button type="button" variant="ghost" onClick={onBack} className="w-full">
+            <Button type="button" variant="ghost" onClick={onPrev} className="w-full">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>

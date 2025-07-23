@@ -6,11 +6,13 @@ import { ArrowLeft, User } from 'lucide-react';
 
 interface FarmerDetailsScreenProps {
   onNext: (details: any) => void;
-  onBack: () => void;
+  onPrev: () => void;
+  isFirstStep: boolean;
+  isLastStep: boolean;
   language: string;
 }
 
-const FarmerDetailsScreen: React.FC<FarmerDetailsScreenProps> = ({ onNext, onBack, language }) => {
+const FarmerDetailsScreen: React.FC<FarmerDetailsScreenProps> = ({ onNext, onPrev, language }) => {
   const [details, setDetails] = useState({
     full_name: '',
     village: '',
@@ -114,7 +116,7 @@ const FarmerDetailsScreen: React.FC<FarmerDetailsScreenProps> = ({ onNext, onBac
             <Button type="submit" className="w-full">
               Continue
             </Button>
-            <Button type="button" variant="ghost" onClick={onBack} className="w-full">
+            <Button type="button" variant="ghost" onClick={onPrev} className="w-full">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
