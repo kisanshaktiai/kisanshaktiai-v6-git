@@ -1,23 +1,51 @@
-
-import { User, Session } from '@supabase/supabase-js';
-
 export interface Profile {
   id: string;
-  mobile_number: string; // Changed from phone to mobile_number
-  phone_verified: boolean;
-  full_name: string | null;
-  display_name: string | null;
-  farmer_id?: string | null;
-  preferred_language: string | null;
-  is_profile_complete: boolean;
-  tenant_id: string | null;
-  created_at: string;
-  updated_at: string;
+  phone?: string;
+  phone_verified?: boolean;
+  full_name?: string;
+  display_name?: string;
+  date_of_birth?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  address_line1?: string;
+  address_line2?: string;
+  village?: string;
+  taluka?: string;
+  district?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  avatar_url?: string;
+  bio?: string;
+  aadhaar_number?: string;
+  farmer_id?: string;
+  shc_id?: string;
+  coordinates?: any;
+  last_active_at?: string;
+  device_tokens?: string[];
+  notification_preferences?: {
+    sms: boolean;
+    push: boolean;
+    email: boolean;
+    whatsapp: boolean;
+    calls: boolean;
+  };
+  metadata?: any;
+  expertise_areas?: string[];
+  preferred_language?: 'en' | 'hi' | 'mr' | 'pa' | 'gu' | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Farmer {
+  id: string;
+  farmer_code?: string;
+  mobile_number?: string;
+  tenant_id?: string;
 }
 
 export interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  session: any | null;
   profile: Profile | null;
   loading: boolean;
   isAuthenticated: boolean;
@@ -25,20 +53,6 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   checkUserExists: (phone: string) => Promise<boolean>;
-  farmer?: any;
-  currentAssociation?: any;
-}
-
-export interface FarmerAssociation {
-  id: string;
-  farmer_id: string;
-  tenant_id: string;
-  role: string;
-  is_active: boolean;
-  joined_at: string;
-  tenant?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
+  farmer: Farmer | null;
+  currentAssociation: any | null;
 }

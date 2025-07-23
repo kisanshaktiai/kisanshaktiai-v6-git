@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthContextType } from '@/types/auth';
 import { AuthContext } from '@/contexts/AuthContext';
 import { LanguageService } from '@/services/LanguageService';
+import { sessionService } from '@/services/sessionService';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -12,29 +13,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { farmer, profile: farmerProfile, isAuthenticated: customAuthAuthenticated, checkExistingUser } = useCustomAuth();
+  const { farmer, isAuthenticated: customAuthAuthenticated, checkExistingFarmer } = useCustomAuth();
 
-  // Convert farmer and profile to auth format when available
+  // Convert farmer to profile format when available
   useEffect(() => {
-    if (farmer && farmerProfile && customAuthAuthenticated) {
-      const authProfile: Profile = {
+    if (farmer && customAuthAuthenticated) {
+      const farmerProfile: Profile = {
         id: farmer.id,
-        mobile_number: farmer.mobile_number,
+        phone: farmer.mobile_number,
         phone_verified: true,
-        full_name: farmerProfile.full_name || farmer.farmer_code,
-        display_name: farmerProfile.full_name || farmer.farmer_code,
+        full_name: farmer.farmer_code,
+        display_name: farmer.farmer_code,
         farmer_id: farmer.id,
-        preferred_language: farmerProfile.preferred_language || 'hi',
-        is_profile_complete: farmerProfile.is_profile_complete || false,
-        tenant_id: farmer.tenant_id,
+        preferred_language: 'hi',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      setProfile(authProfile);
+      setProfile(farmerProfile);
     } else {
       setProfile(null);
     }
-  }, [farmer, farmerProfile, customAuthAuthenticated]);
+  }, [farmer, customAuthAuthenticated]);
 
   const signInWithPhone = async (phone: string) => {
     try {
@@ -42,9 +41,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       
       // Check if user exists first
-      const userCheck = await checkExistingUser(phone);
+      const userExists = await checkExistingFarmer(phone);
       
-      if (!userCheck.exists) {
+      if (!userExists) {
+        // This is handled by the UI flow now
         throw new Error('User not found. Please create an account first.');
       }
       
@@ -95,8 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkUserExists = async (phone: string) => {
     try {
-      const result = await checkExistingUser(phone);
-      return result.exists;
+      return await checkExistingFarmer(phone);
     } catch (error) {
       console.error('Error checking user exists:', error);
       return false;

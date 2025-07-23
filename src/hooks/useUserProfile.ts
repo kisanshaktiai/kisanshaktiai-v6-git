@@ -34,11 +34,9 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly and handle all fields
+      // Type cast JSON fields properly
       return {
         ...data,
-        mobile_number: data.mobile_number,
-        gender: (data.gender as 'male' | 'female' | 'other') || null,
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -50,13 +48,7 @@ export const useUserProfile = (userId?: string) => {
         expertise_areas: Array.isArray(data.expertise_areas)
           ? data.expertise_areas
           : [],
-        metadata: safeJsonParse(data.metadata, {}),
-        // Handle fields that may not exist in database schema - use safe access
-        mobile_number_verified: (data as any).mobile_number_verified || false,
-        email_verified: data.email_verified_at ? true : false,
-        last_seen: (data as any).last_seen || null,
-        timezone: (data as any).timezone || null,
-        preferred_language: data.preferred_language || null
+        metadata: safeJsonParse(data.metadata, {})
       };
     },
     enabled: !!userId,
@@ -66,25 +58,9 @@ export const useUserProfile = (userId?: string) => {
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required');
 
-      // Ensure preferred_language is valid if provided
-      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
-      if (updates.preferred_language && !validLanguages.includes(updates.preferred_language)) {
-        updates.preferred_language = 'hi'; // Default to Hindi
-      }
-
-      // Prepare database update object
-      const dbUpdate: any = { ...updates };
-      
-      // Remove TypeScript-only fields that don't exist in database
-      delete dbUpdate.id;
-      delete dbUpdate.email_verified; // Map to email_verified_at if needed
-      delete dbUpdate.mobile_number_verified; // Remove if not in schema
-      delete dbUpdate.last_seen; // Remove if not in schema
-      delete dbUpdate.timezone; // Remove if not in schema
-      
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(dbUpdate)
+        .update(updates)
         .eq('id', userId)
         .select()
         .single();
@@ -98,25 +74,10 @@ export const useUserProfile = (userId?: string) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (profileData: Partial<UserProfile> & { id: string; mobile_number: string }) => {
-      // Ensure preferred_language is valid if provided
-      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
-      if (profileData.preferred_language && !validLanguages.includes(profileData.preferred_language)) {
-        profileData.preferred_language = 'hi'; // Default to Hindi
-      }
-
-      // Prepare database insert object
-      const dbInsert: any = { ...profileData };
-      
-      // Remove TypeScript-only fields that don't exist in database
-      delete dbInsert.email_verified; // Map to email_verified_at if needed
-      delete dbInsert.mobile_number_verified; // Remove if not in schema
-      delete dbInsert.last_seen; // Remove if not in schema
-      delete dbInsert.timezone; // Remove if not in schema
-
+    mutationFn: async (profileData: Partial<UserProfile> & { id: string; phone: string }) => {
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert(dbInsert)
+        .insert([profileData])
         .select()
         .single();
 
