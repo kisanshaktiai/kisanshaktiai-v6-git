@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -21,10 +22,6 @@ interface EnhancedPhoneAuthScreenProps {
 type AuthStep = 'phone' | 'pin-login' | 'pin-create' | 'success';
 type UserStatus = 'checking' | 'existing' | 'new' | null;
 type CurrentStep = 'phone' | 'login' | 'signup';
-
-// Define explicit types for database queries
-type UserProfile = { mobile_number: string };
-type Farmer = { mobile_number: string };
 
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
@@ -83,14 +80,14 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Use explicit type definitions to avoid complex type inference
+      // Simplified database queries to avoid type inference issues
       let userProfileExists = false;
       let farmerExists = false;
       
-      // Check user profiles with explicit typing
+      // Check user profiles with simple query
       try {
         const { data: userProfileData, error: userProfileError } = await supabase
-          .from<UserProfile>('user_profiles')
+          .from('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .limit(1);
@@ -103,10 +100,10 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         userProfileExists = false;
       }
       
-      // Check farmers with explicit typing
+      // Check farmers with simple query
       try {
         const { data: farmerData, error: farmerError } = await supabase
-          .from<Farmer>('farmers')
+          .from('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .limit(1);
