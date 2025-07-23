@@ -9,6 +9,32 @@ export class LocationService {
     return LocationService.instance;
   }
 
+  async requestPermissions(): Promise<boolean> {
+    try {
+      if (!navigator.geolocation) {
+        return false;
+      }
+
+      // Check if permission is already granted
+      if (navigator.permissions) {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        return permission.state === 'granted';
+      }
+
+      // For browsers that don't support permissions API, try to get location
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => resolve(true),
+          () => resolve(false),
+          { timeout: 5000 }
+        );
+      });
+    } catch (error) {
+      console.warn('Permission request failed:', error);
+      return false;
+    }
+  }
+
   async getCurrentLocation(): Promise<{ latitude: number; longitude: number }> {
     try {
       if (!navigator.geolocation) {
@@ -42,14 +68,23 @@ export class LocationService {
     }
   }
 
-  async reverseGeocode(latitude: number, longitude: number): Promise<{ state: string; district: string }> {
+  async reverseGeocode(latitude: number, longitude: number): Promise<{ state: string; district: string; address: string }> {
     try {
       // This is a simplified implementation
       // In a real app, you'd use a proper geocoding service
-      return { state: 'Delhi', district: 'New Delhi' };
+      const address = 'New Delhi, Delhi, India';
+      return { 
+        state: 'Delhi', 
+        district: 'New Delhi',
+        address: address
+      };
     } catch (error) {
       console.warn('Reverse geocoding failed:', error);
-      return { state: 'Unknown', district: 'Unknown' };
+      return { 
+        state: 'Unknown', 
+        district: 'Unknown',
+        address: 'Unknown Location'
+      };
     }
   }
 }
