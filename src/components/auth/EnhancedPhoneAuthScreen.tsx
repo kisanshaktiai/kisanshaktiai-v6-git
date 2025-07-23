@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -68,7 +69,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       const cacheKey = `user_check_${mobile}`;
       const cached = localStorageService.getCacheIfValid(cacheKey);
       if (cached) {
-        const exists: boolean = cached.exists;
+        const exists = Boolean(cached.exists);
         setUserStatus(exists ? 'existing' : 'new');
         return exists;
       }
@@ -79,13 +80,20 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Check both tables simultaneously
-      const userProfileQuery = supabase.from('user_profiles').select('mobile_number').eq('mobile_number', mobile).maybeSingle();
-      const farmerQuery = supabase.from('farmers').select('mobile_number').eq('mobile_number', mobile).maybeSingle();
+      // Simplified database queries with explicit typing
+      const userProfileResult = await supabase
+        .from('user_profiles')
+        .select('mobile_number')
+        .eq('mobile_number', mobile)
+        .maybeSingle();
+        
+      const farmerResult = await supabase
+        .from('farmers')
+        .select('mobile_number')
+        .eq('mobile_number', mobile)
+        .maybeSingle();
       
-      const [userProfileResult, farmerResult] = await Promise.all([userProfileQuery, farmerQuery]);
-      
-      const exists: boolean = !!(userProfileResult.data || farmerResult.data);
+      const exists = Boolean(userProfileResult.data || farmerResult.data);
       
       // Cache the result
       localStorageService.setCacheWithTTL(cacheKey, { exists }, 30); // 30 minutes
@@ -119,7 +127,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     setError(null);
 
     try {
-      const userExists: boolean = await checkUserExists(mobileNumber);
+      const userExists = await checkUserExists(mobileNumber);
       
       if (userExists) {
         setStep('pin-login');
@@ -147,7 +155,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
 
     // Check lockout
     if (lockoutEndTime && Date.now() < lockoutEndTime) {
-      const remainingTime: number = Math.ceil((lockoutEndTime - Date.now()) / 1000 / 60);
+      const remainingTime = Math.ceil((lockoutEndTime - Date.now()) / 1000 / 60);
       setError(t('auth.account_locked', { minutes: remainingTime }));
       return;
     }
@@ -174,11 +182,11 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
           onComplete();
         }, 2000);
       } else {
-        const newRetryCount: number = retryCount + 1;
+        const newRetryCount = retryCount + 1;
         setRetryCount(newRetryCount);
         
         if (newRetryCount >= 3) {
-          const lockoutTime: number = Date.now() + (30 * 60 * 1000); // 30 minutes
+          const lockoutTime = Date.now() + (30 * 60 * 1000); // 30 minutes
           setLockoutEndTime(lockoutTime);
           setError(t('auth.account_locked', { minutes: 30 }));
         } else {
@@ -211,7 +219,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     if (!isOnline) {
       // Offline registration
       try {
-        const tempId: string = `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const tempId = `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const registrationData = {
           tempId,
           mobile: mobileNumber,
@@ -317,9 +325,14 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   };
 
   const getCurrentStep = (): CurrentStep => {
-    if (step === 'pin-login') return 'login';
-    if (step === 'pin-create') return 'signup';
-    return 'phone';
+    switch (step) {
+      case 'pin-login':
+        return 'login';
+      case 'pin-create':
+        return 'signup';
+      default:
+        return 'phone';
+    }
   };
 
   const renderPhoneStep = () => (
