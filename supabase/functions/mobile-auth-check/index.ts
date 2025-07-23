@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
@@ -57,11 +56,11 @@ serve(async (req) => {
     console.log('=== CHECKING FOR EXISTING USER ===')
     console.log('Phone number to search:', phone)
 
-    // Check in user_profiles table
+    // Check in user_profiles table - FIXED: using mobile_number instead of phone
     const { data: existingProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
-      .select('id, phone, full_name')
-      .eq('phone', phone)
+      .select('id, mobile_number, full_name')
+      .eq('mobile_number', phone)  // ✅ FIXED: Changed from 'phone' to 'mobile_number'
       .maybeSingle()
 
     if (profileError && profileError.code !== 'PGRST116') {
@@ -81,7 +80,7 @@ serve(async (req) => {
     console.log('Profile check result:', {
       found: !!existingProfile,
       profileId: existingProfile?.id,
-      storedPhone: existingProfile?.phone
+      storedPhone: existingProfile?.mobile_number  // ✅ FIXED: Changed from phone to mobile_number
     })
 
     const userExists = !!existingProfile
