@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/services/storage/secureStorage';
+import { defaultTenantService } from '@/services/defaultTenantService';
 
 interface AuthResponse {
   success: boolean;
@@ -27,11 +28,25 @@ class CustomAuthService {
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
       console.log('CustomAuthService: Registering farmer with mobile:', cleanMobile);
+
+      // Get default tenant ID before registration
+      const defaultTenantId = await defaultTenantService.getDefaultTenantId();
+      
+      if (!defaultTenantId) {
+        console.error('No default tenant found - cannot register farmer');
+        return { 
+          success: false, 
+          error: 'System configuration error. Please try again later.' 
+        };
+      }
+
+      console.log('Using default tenant ID:', defaultTenantId);
       
       const { data, error } = await supabase.functions.invoke('custom-auth-register', {
         body: {
           mobile_number: cleanMobile,
           pin,
+          tenant_id: defaultTenantId, // Pass tenant ID to edge function
           farmer_data: farmerData
         }
       });

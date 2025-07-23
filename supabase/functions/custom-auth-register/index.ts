@@ -12,9 +12,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { mobile_number, pin, farmer_data = {} } = await req.json()
+    const { mobile_number, pin, tenant_id, farmer_data = {} } = await req.json()
 
-    console.log('Registration request received:', { mobile_number, pin_length: pin?.length })
+    console.log('Registration request received:', { 
+      mobile_number, 
+      pin_length: pin?.length, 
+      tenant_id,
+      farmer_data_keys: Object.keys(farmer_data)
+    })
 
     if (!mobile_number || !pin) {
       return new Response(
@@ -52,10 +57,45 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // If tenant_id is provided, validate it exists and is active
+    let validatedTenantId = tenant_id;
+    if (tenant_id) {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, status')
+        .eq('id', tenant_id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (tenantError) {
+        console.error('Error validating tenant:', tenantError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Invalid tenant configuration' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!tenant) {
+        console.error('Tenant not found or inactive:', tenant_id);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Tenant not found or inactive' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Validated tenant:', tenant);
+    }
+
     // Check if farmer already exists with this mobile number
     const { data: existingFarmer } = await supabase
       .from('farmers')
-      .select('id, mobile_number')
+      .select('id, mobile_number, tenant_id')
       .eq('mobile_number', cleanMobile)
       .maybeSingle()
 
@@ -88,33 +128,40 @@ Deno.serve(async (req) => {
     // Generate a UUID for the farmer
     const farmerId = crypto.randomUUID()
 
-    console.log('Creating farmer:', { farmerId, farmerCode, cleanMobile })
+    console.log('Creating farmer:', { 
+      farmerId, 
+      farmerCode, 
+      cleanMobile, 
+      tenant_id: validatedTenantId 
+    })
 
-    // Create farmer record - tenant_id will be null for now
+    // Create farmer record with tenant_id
+    const farmerRecord = {
+      id: farmerId,
+      mobile_number: cleanMobile,
+      pin_hash: pinHash,
+      farmer_code: farmerCode,
+      tenant_id: validatedTenantId, // Use validated tenant_id
+      app_install_date: new Date().toISOString().split('T')[0],
+      login_attempts: 0,
+      is_verified: false,
+      farming_experience_years: farmer_data.farming_experience_years || null,
+      farm_type: farmer_data.farm_type || null,
+      total_land_acres: farmer_data.total_land_acres || null,
+      primary_crops: farmer_data.primary_crops || null,
+      annual_income_range: farmer_data.annual_income_range || null,
+      has_loan: farmer_data.has_loan || false,
+      loan_amount: farmer_data.loan_amount || null,
+      has_tractor: farmer_data.has_tractor || false,
+      has_irrigation: farmer_data.has_irrigation || false,
+      irrigation_type: farmer_data.irrigation_type || null,
+      has_storage: farmer_data.has_storage || false,
+      ...farmer_data
+    }
+
     const { data: farmer, error: insertError } = await supabase
       .from('farmers')
-      .insert([{
-        id: farmerId,
-        mobile_number: cleanMobile,
-        pin_hash: pinHash,
-        farmer_code: farmerCode,
-        tenant_id: null, // Explicitly set to null
-        app_install_date: new Date().toISOString().split('T')[0],
-        login_attempts: 0,
-        is_verified: false,
-        farming_experience_years: farmer_data.farming_experience_years || null,
-        farm_type: farmer_data.farm_type || null,
-        total_land_acres: farmer_data.total_land_acres || null,
-        primary_crops: farmer_data.primary_crops || null,
-        annual_income_range: farmer_data.annual_income_range || null,
-        has_loan: farmer_data.has_loan || false,
-        loan_amount: farmer_data.loan_amount || null,
-        has_tractor: farmer_data.has_tractor || false,
-        has_irrigation: farmer_data.has_irrigation || false,
-        irrigation_type: farmer_data.irrigation_type || null,
-        has_storage: farmer_data.has_storage || false,
-        ...farmer_data
-      }])
+      .insert([farmerRecord])
       .select()
       .single()
 
@@ -182,7 +229,7 @@ Deno.serve(async (req) => {
     
     const payload = {
       farmer_id: farmer.id,
-      tenant_id: farmer.tenant_id, // Will be null
+      tenant_id: farmer.tenant_id,
       mobile_number: farmer.mobile_number,
       farmer_code: farmer.farmer_code,
       iat: Math.floor(Date.now() / 1000),
@@ -195,7 +242,7 @@ Deno.serve(async (req) => {
       jwtSecret
     )
 
-    console.log('Registration successful, returning farmer data')
+    console.log('Registration successful, returning farmer data with tenant_id:', farmer.tenant_id)
 
     return new Response(
       JSON.stringify({ 
