@@ -1,298 +1,308 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { setLanguage } from '@/store/slices/farmerSlice';
-import { LanguageService } from '@/services/LanguageService';
-import { LocationService } from '@/services/LocationService';
-import { Globe, MapPin, Check, Loader, ChevronRight } from 'lucide-react';
-import { RootState } from '@/store';
+import { Check, MapPin, Loader, Globe, WifiOff } from 'lucide-react';
+import { useBranding } from '@/contexts/BrandingContext';
+import { localStorageService } from '@/services/storage/localStorageService';
+import { useNetworkState } from '@/hooks/useNetworkState';
+import { offlineSyncManager } from '@/services/sync/offlineSyncManager';
 
 interface EnhancedLanguageScreenProps {
   onNext: () => void;
-  onSkip?: () => void;
 }
 
-interface LanguageOption {
+interface Language {
   code: string;
   name: string;
   nativeName: string;
   flag: string;
-  regions: string[];
+  isRegional?: boolean;
 }
 
-export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
-  onNext, 
-  onSkip 
-}) => {
+// State to language mapping for Indian states
+const stateLanguageMap: Record<string, string[]> = {
+  'Maharashtra': ['mr', 'hi', 'en'],
+  'Karnataka': ['kn', 'en', 'hi'],
+  'Tamil Nadu': ['ta', 'en', 'hi'],
+  'Gujarat': ['gu', 'hi', 'en'],
+  'Punjab': ['pa', 'hi', 'en'],
+  'West Bengal': ['bn', 'hi', 'en'],
+  'Andhra Pradesh': ['te', 'hi', 'en'],
+  'Telangana': ['te', 'hi', 'en'],
+  'Kerala': ['ml', 'hi', 'en'],
+  'Odisha': ['or', 'hi', 'en'],
+  'Uttar Pradesh': ['hi', 'ur', 'en'],
+  'Bihar': ['hi', 'ur', 'en'],
+  'Rajasthan': ['hi', 'ur', 'en'],
+  'Madhya Pradesh': ['hi', 'en'],
+  'Haryana': ['hi', 'pa', 'en'],
+  'Jharkhand': ['hi', 'en'],
+  'Chhattisgarh': ['hi', 'en'],
+  'Assam': ['hi', 'en'],
+  'Himachal Pradesh': ['hi', 'en'],
+  'Uttarakhand': ['hi', 'en']
+};
+
+const allLanguages: Language[] = [
+  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', flag: '🇮🇳' },
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', flag: '🇮🇳' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اُردُو', flag: '🇮🇳' }
+];
+
+export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ onNext }) => {
   const { t, i18n } = useTranslation();
-  const dispatch = useDispatch();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
-  
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [autoDetecting, setAutoDetecting] = useState(true);
-  const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
-  const [recommendedLanguages, setRecommendedLanguages] = useState<string[]>([]);
-  
-  const primaryColor = tenantBranding?.primary_color || '#10B981';
-  const appName = tenantBranding?.app_name || 'KisanShakti AI';
-
-  const languages: LanguageOption[] = [
-    { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', flag: '🇮🇳', regions: ['UP', 'MP', 'RJ', 'HR', 'DL', 'UK', 'HP', 'JH', 'CG', 'BR'] },
-    { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', regions: ['PAN'] },
-    { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳', regions: ['MH', 'GOA'] },
-    { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', regions: ['PB', 'HR', 'DL'] },
-    { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳', regions: ['AP', 'TS'] },
-    { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', regions: ['TN', 'PY'] },
-    { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳', regions: ['GJ', 'DD', 'DNH'] },
-    { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳', regions: ['KA'] },
-  ];
-
-  // State code to language mapping
-  const stateLanguageMap: Record<string, string[]> = {
-    'Maharashtra': ['mr', 'hi', 'en'],
-    'Gujarat': ['gu', 'hi', 'en'],
-    'Punjab': ['pa', 'hi', 'en'],
-    'Tamil Nadu': ['ta', 'en', 'hi'],
-    'Karnataka': ['kn', 'en', 'hi'],
-    'Andhra Pradesh': ['te', 'en', 'hi'],
-    'Telangana': ['te', 'en', 'hi'],
-    'Uttar Pradesh': ['hi', 'en'],
-    'Madhya Pradesh': ['hi', 'en'],
-    'Rajasthan': ['hi', 'en'],
-    'Haryana': ['hi', 'pa', 'en'],
-    'Delhi': ['hi', 'pa', 'en'],
-  };
+  const { branding } = useBranding();
+  const { isOnline } = useNetworkState();
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('hi');
+  const [location, setLocation] = useState<string>('');
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [orderedLanguages, setOrderedLanguages] = useState<Language[]>(allLanguages);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    detectLocationAndLanguage();
+    requestLocationAndOrderLanguages();
   }, []);
 
-  const detectLocationAndLanguage = async () => {
+  const requestLocationAndOrderLanguages = async () => {
+    setLocationLoading(true);
+    
     try {
-      setAutoDetecting(true);
-      
-      // Try to get location
-      const hasPermission = await LocationService.getInstance().requestPermissions();
-      
-      if (hasPermission) {
-        const coords = await LocationService.getInstance().getCurrentLocation();
-        const address = await LocationService.getInstance().reverseGeocode(
-          coords.latitude,
-          coords.longitude
+      if ('geolocation' in navigator) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 10000,
+            enableHighAccuracy: false
+          });
+        });
+        
+        // Get location name from coordinates (using reverse geocoding)
+        const locationName = await getLocationFromCoordinates(
+          position.coords.latitude, 
+          position.coords.longitude
         );
         
-        setDetectedLocation(`${address.district}, ${address.state}`);
-        
-        // Get recommended languages based on state
-        const stateLangs = stateLanguageMap[address.state] || ['hi', 'en'];
-        setRecommendedLanguages(stateLangs);
-        
-        // Auto-select the primary language for the region
-        const primaryLang = stateLangs[0];
-        setSelectedLanguage(primaryLang);
-        
-        // Apply the language
-        await LanguageService.getInstance().changeLanguage(primaryLang);
-        dispatch(setLanguage(primaryLang));
-        
-        console.log('Location-based language detected:', primaryLang, 'for', address.state);
+        setLocation(locationName);
+        orderLanguagesByLocation(locationName);
       } else {
-        // Fallback to browser language detection
-        const browserLang = navigator.language || navigator.languages?.[0] || 'en';
-        const langCode = browserLang.split('-')[0];
-        
-        const supportedLang = languages.find(lang => lang.code === langCode);
-        const fallbackLang = supportedLang ? langCode : 'hi';
-        
-        setSelectedLanguage(fallbackLang);
-        setRecommendedLanguages([fallbackLang, 'en']);
-        
-        await LanguageService.getInstance().changeLanguage(fallbackLang);
-        dispatch(setLanguage(fallbackLang));
+        // Fallback: use default language order
+        orderLanguagesByLocation('');
       }
     } catch (error) {
-      console.error('Language detection error:', error);
-      // Default fallback
-      setSelectedLanguage('hi');
-      setRecommendedLanguages(['hi', 'en']);
-      await LanguageService.getInstance().changeLanguage('hi');
-      dispatch(setLanguage('hi'));
+      console.log('Location access denied or failed:', error);
+      // Use default language order
+      orderLanguagesByLocation('');
     } finally {
-      setAutoDetecting(false);
+      setLocationLoading(false);
+    }
+  };
+
+  const getLocationFromCoordinates = async (lat: number, lon: number): Promise<string> => {
+    if (!isOnline) return '';
+    
+    try {
+      // Use a free geocoding service or your preferred API
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+      );
+      const data = await response.json();
+      return data.principalSubdivision || data.locality || '';
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+      return '';
+    }
+  };
+
+  const orderLanguagesByLocation = (detectedLocation: string) => {
+    let preferredOrder: string[] = ['hi', 'en']; // Default order
+    
+    // Find matching state and get preferred language order
+    const matchingState = Object.keys(stateLanguageMap).find(state => 
+      detectedLocation.toLowerCase().includes(state.toLowerCase())
+    );
+    
+    if (matchingState) {
+      preferredOrder = stateLanguageMap[matchingState];
+    }
+    
+    // Reorder languages based on preference
+    const orderedLanguages = [...allLanguages];
+    orderedLanguages.sort((a, b) => {
+      const aIndex = preferredOrder.indexOf(a.code);
+      const bIndex = preferredOrder.indexOf(b.code);
+      
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex;
+      }
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+      return 0;
+    });
+    
+    // Mark regional languages
+    orderedLanguages.forEach(lang => {
+      lang.isRegional = preferredOrder.slice(0, 2).includes(lang.code);
+    });
+    
+    setOrderedLanguages(orderedLanguages);
+    
+    // Set the first preferred language as default
+    if (preferredOrder.length > 0) {
+      setSelectedLanguage(preferredOrder[0]);
     }
   };
 
   const handleLanguageSelect = async (languageCode: string) => {
+    setSelectedLanguage(languageCode);
+    setSaving(true);
+    
     try {
-      setSelectedLanguage(languageCode);
-      await LanguageService.getInstance().changeLanguage(languageCode);
-      dispatch(setLanguage(languageCode));
+      // Apply language immediately
+      await i18n.changeLanguage(languageCode);
+      
+      // Cache language preference immediately
+      localStorageService.setCacheWithTTL('user_language_preference', languageCode, 43200); // 30 days
+      
+      // Queue for database sync when user is authenticated
+      if (isOnline) {
+        await offlineSyncManager.queueOperation({
+          type: 'update',
+          table: 'user_profiles',
+          data: {
+            language_preference: languageCode,
+            updated_at: new Date().toISOString()
+          },
+          priority: 'high'
+        });
+      }
+      
+      // Visual feedback
+      setTimeout(() => {
+        setSaving(false);
+      }, 500);
+      
     } catch (error) {
-      console.error('Language change error:', error);
+      console.error('Error saving language preference:', error);
+      setSaving(false);
     }
   };
 
   const handleContinue = () => {
-    if (selectedLanguage) {
-      onNext();
-    }
+    // Language is already saved, just continue
+    onNext();
   };
 
-  if (autoDetecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
-            <MapPin className="w-10 h-10" style={{ color: primaryColor }} />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('onboarding.detecting_language')}
-          </h1>
-          <p className="text-gray-600 text-base">
-            {t('onboarding.location_language_subtitle')}
-          </p>
-          <div className="flex items-center justify-center space-x-2">
-            <Loader className="w-5 h-5 animate-spin" style={{ color: primaryColor }} />
-            <span className="text-sm text-gray-500">{t('common.please_wait')}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const recommendedLangs = languages.filter(lang => recommendedLanguages.includes(lang.code));
-  const otherLangs = languages.filter(lang => !recommendedLanguages.includes(lang.code));
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-3">
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
-            <Globe className="w-10 h-10" style={{ color: primaryColor }} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-2xl border-0 rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 text-center py-8">
+          {/* Offline Indicator */}
+          {!isOnline && (
+            <div className="absolute top-4 right-4 bg-red-50 border border-red-200 rounded-full p-2">
+              <WifiOff className="w-4 h-4 text-red-600" />
+            </div>
+          )}
+          
+          <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+            <Globe className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('onboarding.choose_language')}
-          </h1>
-          <p className="text-gray-600 text-base">
-            {t('onboarding.language_description')}
+          
+          <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
+            {t('onboarding.select_language')}
+          </CardTitle>
+          
+          <p className="text-gray-600 text-sm">
+            {t('onboarding.language_subtitle')}
           </p>
-          {detectedLocation && (
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 bg-gray-100 rounded-lg p-2">
+          
+          {/* Location Info */}
+          {locationLoading ? (
+            <div className="flex items-center justify-center space-x-2 mt-4 text-sm text-gray-500">
+              <Loader className="w-4 h-4 animate-spin" />
+              <span>{t('onboarding.detecting_location')}</span>
+            </div>
+          ) : location ? (
+            <div className="flex items-center justify-center space-x-2 mt-4 text-sm text-gray-600">
               <MapPin className="w-4 h-4" />
-              <span>{t('onboarding.detected_location')}: {detectedLocation}</span>
+              <span>{location}</span>
             </div>
-          )}
-        </div>
-
-        <div className="space-y-4 max-h-80 overflow-y-auto">
-          {/* Recommended Languages */}
-          {recommendedLangs.length > 0 && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-500 px-2">
-                {t('onboarding.recommended_for_you')}
-              </div>
-              {recommendedLangs.map((language) => (
-                <Button
-                  key={language.code}
-                  variant={selectedLanguage === language.code ? "default" : "outline"}
-                  onClick={() => handleLanguageSelect(language.code)}
-                  className={`w-full p-4 h-auto justify-between group hover:scale-[1.02] transition-all ${
-                    selectedLanguage === language.code 
-                      ? 'ring-2 shadow-lg' 
-                      : 'hover:border-gray-300'
-                  }`}
-                  style={selectedLanguage === language.code ? {
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor
-                  } : {}}
-                >
+          ) : null}
+        </CardHeader>
+        
+        <CardContent className="p-6">
+          <div className="space-y-3 mb-6">
+            {orderedLanguages.map((language) => (
+              <button
+                key={language.code}
+                onClick={() => handleLanguageSelect(language.code)}
+                disabled={saving}
+                className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed ${
+                  selectedLanguage === language.code
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <span className="text-2xl">{language.flag}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{language.nativeName}</div>
-                      <div className="text-sm opacity-75">{language.name}</div>
+                    <div>
+                      <div className="font-semibold text-gray-900 flex items-center space-x-2">
+                        <span>{language.nativeName}</span>
+                        {language.isRegional && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            {t('onboarding.regional')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600">{language.name}</div>
                     </div>
                   </div>
-                  {selectedLanguage === language.code ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {/* Other Languages */}
-          {otherLangs.length > 0 && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-500 px-2">
-                {t('onboarding.other_languages')}
-              </div>
-              {otherLangs.map((language) => (
-                <Button
-                  key={language.code}
-                  variant={selectedLanguage === language.code ? "default" : "outline"}
-                  onClick={() => handleLanguageSelect(language.code)}
-                  className={`w-full p-4 h-auto justify-between group hover:scale-[1.02] transition-all ${
-                    selectedLanguage === language.code 
-                      ? 'ring-2 shadow-lg' 
-                      : 'hover:border-gray-300'
-                  }`}
-                  style={selectedLanguage === language.code ? {
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor
-                  } : {}}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{language.flag}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{language.nativeName}</div>
-                      <div className="text-sm opacity-75">{language.name}</div>
+                  
+                  {selectedLanguage === language.code && (
+                    <div className="flex items-center space-x-2">
+                      {saving ? (
+                        <Loader className="w-5 h-5 animate-spin text-primary" />
+                      ) : (
+                        <Check className="w-5 h-5 text-primary" />
+                      )}
                     </div>
-                  </div>
-                  {selectedLanguage === language.code ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
                   )}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-3 pt-4">
-          <Button 
+                </div>
+              </button>
+            ))}
+          </div>
+          
+          <Button
             onClick={handleContinue}
-            disabled={!selectedLanguage}
-            className="w-full h-14 text-lg font-semibold rounded-xl"
-            style={{ backgroundColor: primaryColor }}
+            disabled={saving}
+            className="w-full h-12 text-base font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+            style={{ backgroundColor: branding.primaryColor }}
           >
-            <div className="flex items-center space-x-2">
-              <span>{t('common.continue')}</span>
-              <ChevronRight className="w-5 h-5" />
-            </div>
+            {saving ? (
+              <div className="flex items-center space-x-2">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>{t('common.saving')}</span>
+              </div>
+            ) : (
+              t('common.continue')
+            )}
           </Button>
-
-          {onSkip && (
-            <Button 
-              variant="ghost" 
-              onClick={onSkip}
-              className="w-full text-gray-600"
-            >
-              {t('onboarding.skip_for_now')}
-            </Button>
-          )}
-        </div>
-      </div>
+          
+          <p className="text-xs text-center text-gray-500 mt-4">
+            {t('onboarding.language_change_later')}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
