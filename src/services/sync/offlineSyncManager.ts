@@ -73,25 +73,24 @@ export class OfflineSyncManager {
   private async executeOperation(operation: SyncOperation): Promise<void> {
     const { type, table, data } = operation;
 
+    // Use type assertion to handle dynamic table names
+    const tableRef = supabase.from(table as any);
+
     switch (type) {
       case 'insert':
-        const { error: insertError } = await supabase
-          .from(table)
-          .insert(data);
+        const { error: insertError } = await tableRef.insert(data);
         if (insertError) throw insertError;
         break;
 
       case 'update':
-        const { error: updateError } = await supabase
-          .from(table)
+        const { error: updateError } = await tableRef
           .update(data)
           .eq('id', data.id);
         if (updateError) throw updateError;
         break;
 
       case 'delete':
-        const { error: deleteError } = await supabase
-          .from(table)
+        const { error: deleteError } = await tableRef
           .delete()
           .eq('id', data.id);
         if (deleteError) throw deleteError;

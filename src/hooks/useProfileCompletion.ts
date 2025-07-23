@@ -103,6 +103,12 @@ export const useProfileCompletion = () => {
     }
   };
 
+  const isProfileComplete = completionPercentage >= 100;
+
+  const refreshProfileStatus = () => {
+    refresh();
+  };
+
   return {
     completionPercentage,
     unlockedFeatures,
@@ -111,6 +117,8 @@ export const useProfileCompletion = () => {
     getNextStepsForCompletion,
     isFeatureUnlocked,
     getFeatureUnlockThreshold,
-    refresh
+    refresh,
+    isProfileComplete,
+    refreshProfileStatus
   };
 };

@@ -26,7 +26,7 @@ type UserStatus = 'checking' | 'existing' | 'new' | null;
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const { branding } = useBranding();
-  const { login, register, checkExistingFarmer } = useCustomAuth();
+  const { login, register } = useCustomAuth();
   const { isOnline } = useNetworkState();
   
   const [step, setStep] = useState<AuthStep>('phone');

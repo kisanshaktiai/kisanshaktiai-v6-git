@@ -11,6 +11,11 @@ interface Session {
   lastActivity: number;
 }
 
+interface SessionValidation {
+  isValid: boolean;
+  error?: string;
+}
+
 export class SessionService {
   private static instance: SessionService;
   private session: Session | null = null;
@@ -94,6 +99,22 @@ export class SessionService {
       console.error('Error refreshing session:', error);
       return false;
     }
+  }
+
+  validateSessionData(sessionData: any): SessionValidation {
+    if (!sessionData) {
+      return { isValid: false, error: 'No session data provided' };
+    }
+
+    if (!sessionData.user || !sessionData.token) {
+      return { isValid: false, error: 'Invalid session structure' };
+    }
+
+    if (Date.now() > sessionData.expiresAt) {
+      return { isValid: false, error: 'Session expired' };
+    }
+
+    return { isValid: true };
   }
 
   updateActivity(): void {
