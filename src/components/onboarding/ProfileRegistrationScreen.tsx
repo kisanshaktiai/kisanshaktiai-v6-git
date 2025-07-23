@@ -1,383 +1,333 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { MobileNumberService } from '@/services/MobileNumberService';
-import { useBranding } from '@/contexts/BrandingContext';
-import { RootState } from '@/store';
-import { 
-  User, 
-  Loader, 
-  AlertCircle, 
-  CheckCircle, 
-  MapPin 
-} from 'lucide-react';
+import { User, ArrowRight, Loader2 } from 'lucide-react';
+import { mobileNumberService } from '@/services/MobileNumberService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileRegistrationScreenProps {
-  onNext: () => void;
+  mobileNumber: string;
+  pin: string;
+  onNext: (userData: any) => void;
   onPrev: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-  onComplete?: () => void;
 }
 
 export const ProfileRegistrationScreen: React.FC<ProfileRegistrationScreenProps> = ({ 
+  mobileNumber, 
+  pin, 
   onNext, 
-  onPrev,
-  onComplete
+  onPrev 
 }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { branding } = useBranding();
-  const { phoneNumber } = useSelector((state: RootState) => state.auth);
-  
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
-    pin: '',
-    confirmPin: '',
+    full_name: '',
     village: '',
     district: '',
     state: '',
-    farmingExperience: '',
-    landAcres: '',
-    primaryCrops: [] as string[],
-    hasIrrigation: false,
-    hasTractor: false,
-    hasStorage: false,
-    annualIncome: '',
-    preferredLanguage: 'hi'
+    farming_experience_years: '',
+    total_land_acres: '',
+    farm_type: '',
+    primary_crops: [] as string[],
+    annual_income_range: '',
+    has_irrigation: false,
+    has_tractor: false,
+    has_storage: false,
+    irrigation_type: '',
+    preferred_language: 'hi'
   });
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setError(null);
-  };
-
-  const handleCropToggle = (crop: string) => {
     setFormData(prev => ({
       ...prev,
-      primaryCrops: prev.primaryCrops.includes(crop)
-        ? prev.primaryCrops.filter(c => c !== crop)
-        : [...prev.primaryCrops, crop]
+      [field]: value
     }));
   };
 
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      setError(t('profile.full_name_required'));
-      return false;
-    }
-    if (!formData.pin || formData.pin.length !== 4) {
-      setError(t('profile.pin_required'));
-      return false;
-    }
-    if (formData.pin !== formData.confirmPin) {
-      setError(t('profile.pin_mismatch'));
-      return false;
-    }
-    if (!formData.village.trim()) {
-      setError(t('profile.village_required'));
-      return false;
-    }
-    return true;
+  const handleCropChange = (crop: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      primary_crops: checked 
+        ? [...prev.primary_crops, crop]
+        : prev.primary_crops.filter(c => c !== crop)
+    }));
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!formData.full_name.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your full name",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
-    setError(null);
-
     try {
-      const userData = {
-        full_name: formData.fullName,
-        village: formData.village,
-        district: formData.district,
-        state: formData.state,
-        farming_experience_years: formData.farmingExperience ? parseInt(formData.farmingExperience) : null,
-        total_land_acres: formData.landAcres ? parseFloat(formData.landAcres) : null,
-        primary_crops: formData.primaryCrops,
-        has_irrigation: formData.hasIrrigation,
-        has_tractor: formData.hasTractor,
-        has_storage: formData.hasStorage,
-        annual_income_range: formData.annualIncome,
-        preferred_language: formData.preferredLanguage
+      const registrationData = {
+        ...formData,
+        farming_experience_years: formData.farming_experience_years ? parseInt(formData.farming_experience_years) : null,
+        total_land_acres: formData.total_land_acres ? parseFloat(formData.total_land_acres) : null,
+        irrigation_type: formData.has_irrigation ? formData.irrigation_type : null,
+        mobile_number: mobileNumber
       };
 
-      console.log('Submitting registration with data:', userData);
-
-      const result = await MobileNumberService.getInstance().registerUser(
-        phoneNumber || '',
-        formData.pin,
-        userData
-      );
-
-      console.log('Registration result:', result);
-
+      const result = await mobileNumberService.registerNewUser(mobileNumber, pin, registrationData);
+      
       if (result.success) {
-        setSuccess(true);
-        dispatch(setOnboardingCompleted());
-        
-        // Wait a bit to show success message
-        setTimeout(() => {
-          if (onComplete) {
-            onComplete();
-          }
-        }, 1500);
+        toast({
+          title: "Registration successful!",
+          description: "Welcome to KisanShakti AI",
+        });
+        onNext(result);
       } else {
-        setError(result.error || t('profile.registration_failed'));
+        toast({
+          title: "Registration failed",
+          description: result.error || "Please try again",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setError(t('profile.registration_failed'));
+      toast({
+        title: "Error",
+        description: "Registration failed. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const crops = [
-    'wheat', 'rice', 'sugarcane', 'cotton', 'soybean', 'maize', 
-    'bajra', 'jowar', 'groundnut', 'mustard', 'onion', 'potato'
+  const cropOptions = [
+    { value: 'wheat', label: 'Wheat' },
+    { value: 'rice', label: 'Rice' },
+    { value: 'cotton', label: 'Cotton' },
+    { value: 'sugarcane', label: 'Sugarcane' },
+    { value: 'tomato', label: 'Tomato' },
+    { value: 'onion', label: 'Onion' },
+    { value: 'potato', label: 'Potato' },
+    { value: 'maize', label: 'Maize' },
+    { value: 'soybean', label: 'Soybean' },
+    { value: 'groundnut', label: 'Groundnut' }
   ];
 
-  if (success) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Card className="w-full max-w-sm bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
-          <CardContent className="p-6 text-center">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto bg-green-100"
-            >
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              {t('profile.registration_successful')}
-            </h1>
-            <p className="text-sm text-gray-600">
-              {t('profile.welcome_to_platform')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md bg-white shadow-2xl border-0 rounded-2xl overflow-hidden">
-        <CardHeader className="pb-0 px-4 pt-4">
-          <div className="text-center">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
-              style={{ backgroundColor: `${branding?.primaryColor || '#8BC34A'}20` }}
-            >
-              <User 
-                className="w-8 h-8" 
-                style={{ color: branding?.primaryColor || '#8BC34A' }}
-              />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              {t('profile.complete_profile')}
-            </h1>
-            <p className="text-sm text-gray-600">
-              {t('profile.help_us_know_you')}
-            </p>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4 mx-auto">
+            <User className="w-8 h-8 text-white" />
           </div>
-        </CardHeader>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Complete Your Profile
+          </h1>
+          <p className="text-gray-600">
+            Help us personalize your farming experience
+          </p>
+        </div>
 
-        <CardContent className="px-4 pb-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          <div>
-            <Label htmlFor="fullName">{t('profile.full_name')}</Label>
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Full Name *</Label>
             <Input
-              id="fullName"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange('fullName', e.target.value)}
-              placeholder={t('profile.enter_full_name')}
-              className="mt-1"
+              id="full_name"
+              value={formData.full_name}
+              onChange={(e) => handleInputChange('full_name', e.target.value)}
+              placeholder="Enter your full name"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="pin">{t('profile.create_pin')}</Label>
-              <Input
-                id="pin"
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                value={formData.pin}
-                onChange={(e) => handleInputChange('pin', e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="1234"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="confirmPin">{t('profile.confirm_pin')}</Label>
-              <Input
-                id="confirmPin"
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                value={formData.confirmPin}
-                onChange={(e) => handleInputChange('confirmPin', e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="1234"
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="village">{t('profile.village')}</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="village">Village</Label>
               <Input
                 id="village"
                 value={formData.village}
                 onChange={(e) => handleInputChange('village', e.target.value)}
-                placeholder={t('profile.enter_village')}
-                className="mt-1 pl-10"
+                placeholder="Village"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="district">{t('profile.district')}</Label>
+            <div className="space-y-2">
+              <Label htmlFor="district">District</Label>
               <Input
                 id="district"
                 value={formData.district}
                 onChange={(e) => handleInputChange('district', e.target.value)}
-                placeholder={t('profile.enter_district')}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">{t('profile.state')}</Label>
-              <Input
-                id="state"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                placeholder={t('profile.enter_state')}
-                className="mt-1"
+                placeholder="District"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="experience">{t('profile.farming_experience')}</Label>
-              <Select value={formData.farmingExperience} onValueChange={(value) => handleInputChange('farmingExperience', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t('profile.select_experience')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-5">1-5 {t('profile.years')}</SelectItem>
-                  <SelectItem value="6-10">6-10 {t('profile.years')}</SelectItem>
-                  <SelectItem value="11-20">11-20 {t('profile.years')}</SelectItem>
-                  <SelectItem value="20+">20+ {t('profile.years')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="landAcres">{t('profile.land_acres')}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="state">State</Label>
+            <Input
+              id="state"
+              value={formData.state}
+              onChange={(e) => handleInputChange('state', e.target.value)}
+              placeholder="State"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="farming_experience">Experience (years)</Label>
               <Input
-                id="landAcres"
+                id="farming_experience"
                 type="number"
-                value={formData.landAcres}
-                onChange={(e) => handleInputChange('landAcres', e.target.value)}
-                placeholder="0.5"
-                className="mt-1"
+                value={formData.farming_experience_years}
+                onChange={(e) => handleInputChange('farming_experience_years', e.target.value)}
+                placeholder="Years"
+                min="0"
+                max="100"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="total_land">Total Land (acres)</Label>
+              <Input
+                id="total_land"
+                type="number"
+                value={formData.total_land_acres}
+                onChange={(e) => handleInputChange('total_land_acres', e.target.value)}
+                placeholder="Acres"
+                min="0"
+                step="0.1"
               />
             </div>
           </div>
 
-          <div>
-            <Label>{t('profile.primary_crops')}</Label>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {crops.map((crop) => (
-                <div key={crop} className="flex items-center space-x-2">
+          <div className="space-y-2">
+            <Label htmlFor="farm_type">Farm Type</Label>
+            <Select value={formData.farm_type} onValueChange={(value) => handleInputChange('farm_type', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select farm type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="organic">Organic</SelectItem>
+                <SelectItem value="conventional">Conventional</SelectItem>
+                <SelectItem value="mixed">Mixed</SelectItem>
+                <SelectItem value="commercial">Commercial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Primary Crops</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {cropOptions.map((crop) => (
+                <div key={crop.value} className="flex items-center space-x-2">
                   <Checkbox
-                    id={crop}
-                    checked={formData.primaryCrops.includes(crop)}
-                    onCheckedChange={() => handleCropToggle(crop)}
+                    id={crop.value}
+                    checked={formData.primary_crops.includes(crop.value)}
+                    onCheckedChange={(checked) => handleCropChange(crop.value, checked as boolean)}
                   />
-                  <Label htmlFor={crop} className="text-sm">{t(`crops.${crop}`)}</Label>
+                  <Label htmlFor={crop.value} className="text-sm">
+                    {crop.label}
+                  </Label>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="irrigation"
-                checked={formData.hasIrrigation}
-                onCheckedChange={(checked) => handleInputChange('hasIrrigation', checked)}
-              />
-              <Label htmlFor="irrigation">{t('profile.has_irrigation')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="tractor"
-                checked={formData.hasTractor}
-                onCheckedChange={(checked) => handleInputChange('hasTractor', checked)}
-              />
-              <Label htmlFor="tractor">{t('profile.has_tractor')}</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="storage"
-                checked={formData.hasStorage}
-                onCheckedChange={(checked) => handleInputChange('hasStorage', checked)}
-              />
-              <Label htmlFor="storage">{t('profile.has_storage')}</Label>
-            </div>
+            <Label htmlFor="annual_income">Annual Income Range</Label>
+            <Select value={formData.annual_income_range} onValueChange={(value) => handleInputChange('annual_income_range', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select income range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="below-1-lakh">Below ₹1 Lakh</SelectItem>
+                <SelectItem value="1-2-lakhs">₹1-2 Lakhs</SelectItem>
+                <SelectItem value="2-5-lakhs">₹2-5 Lakhs</SelectItem>
+                <SelectItem value="5-10-lakhs">₹5-10 Lakhs</SelectItem>
+                <SelectItem value="above-10-lakhs">Above ₹10 Lakhs</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {error && (
-            <div className="text-sm text-red-600 text-center p-3 bg-red-50 rounded-lg border border-red-200 flex items-center justify-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
+          <div className="space-y-2">
+            <Label>Farm Resources</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_irrigation"
+                  checked={formData.has_irrigation}
+                  onCheckedChange={(checked) => handleInputChange('has_irrigation', checked)}
+                />
+                <Label htmlFor="has_irrigation">Has Irrigation</Label>
+              </div>
+              
+              {formData.has_irrigation && (
+                <Select value={formData.irrigation_type} onValueChange={(value) => handleInputChange('irrigation_type', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select irrigation type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="drip">Drip Irrigation</SelectItem>
+                    <SelectItem value="sprinkler">Sprinkler</SelectItem>
+                    <SelectItem value="flood">Flood Irrigation</SelectItem>
+                    <SelectItem value="rainfed">Rainfed</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_tractor"
+                  checked={formData.has_tractor}
+                  onCheckedChange={(checked) => handleInputChange('has_tractor', checked)}
+                />
+                <Label htmlFor="has_tractor">Has Tractor</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has_storage"
+                  checked={formData.has_storage}
+                  onCheckedChange={(checked) => handleInputChange('has_storage', checked)}
+                />
+                <Label htmlFor="has_storage">Has Storage Facility</Label>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
 
+        <div className="space-y-4">
           <Button 
             onClick={handleSubmit}
-            disabled={loading}
-            className="w-full h-12 text-base font-semibold rounded-xl"
-            style={{ backgroundColor: branding?.primaryColor || '#8BC34A', color: 'white' }}
+            disabled={loading || !formData.full_name.trim()}
+            className="w-full py-3 text-lg"
+            size="lg"
           >
             {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader className="w-4 h-4 animate-spin" />
-                <span>{t('profile.creating_profile')}</span>
-              </div>
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Account...
+              </>
             ) : (
-              t('profile.complete_registration')
+              <>
+                Create Account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
             )}
           </Button>
+        </div>
 
-          <Button 
-            variant="outline" 
-            onClick={onPrev}
-            className="w-full h-10 border-2 rounded-xl"
-            disabled={loading}
-          >
-            {t('common.back')}
-          </Button>
-        </CardContent>
-      </Card>
+        <Button 
+          variant="ghost" 
+          onClick={onPrev}
+          className="w-full"
+        >
+          Back
+        </Button>
+      </div>
     </div>
   );
 };

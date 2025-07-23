@@ -10,14 +10,25 @@ interface Farmer {
   tenant_id: string;
 }
 
+interface Profile {
+  id: string;
+  mobile_number: string;
+  full_name: string;
+  is_profile_complete: boolean;
+  tenant_id: string;
+  [key: string]: any;
+}
+
 interface CustomAuthContextType {
   farmer: Farmer | null;
+  profile: Profile | null;
   loading: boolean;
   isAuthenticated: boolean;
   isOnline: boolean;
   login: (mobileNumber: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   register: (mobileNumber: string, pin: string, farmerData?: any) => Promise<{ success: boolean; error?: string }>;
-  checkExistingFarmer: (mobileNumber: string) => Promise<boolean>;
+  checkExistingUser: (mobileNumber: string) => Promise<{ exists: boolean; farmer?: any; profile?: any }>;
+  updateProfile: (profileData: any) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -34,6 +45,7 @@ export const useCustomAuth = () => {
 
 export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [farmer, setFarmer] = useState<Farmer | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -41,7 +53,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     // Monitor online/offline status
     const handleOnline = () => {
       setIsOnline(true);
-      refreshSession(); // Refresh session when coming back online
+      refreshSession();
     };
     
     const handleOffline = () => {
@@ -70,8 +82,13 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       
       if (restored) {
         const currentFarmer = customAuthService.getCurrentFarmer();
+        const currentProfile = customAuthService.getCurrentProfile();
+        
         if (currentFarmer) {
           setFarmer(currentFarmer);
+        }
+        if (currentProfile) {
+          setProfile(currentProfile);
         }
       }
     } catch (error) {
@@ -84,12 +101,16 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
   const refreshSession = async () => {
     try {
       const currentFarmer = customAuthService.getCurrentFarmer();
+      const currentProfile = customAuthService.getCurrentProfile();
       const token = customAuthService.getCurrentToken();
       
       if (currentFarmer && token) {
         // If we have stored credentials but no current farmer state, restore it
         if (!farmer) {
           setFarmer(currentFarmer);
+        }
+        if (!profile && currentProfile) {
+          setProfile(currentProfile);
         }
         
         // If online, try to refresh with server
@@ -109,6 +130,9 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       
       if (response.success && response.farmer) {
         setFarmer(response.farmer);
+        if (response.profile) {
+          setProfile(response.profile);
+        }
       }
       
       return { success: response.success, error: response.error };
@@ -128,6 +152,9 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       
       if (response.success && response.farmer) {
         setFarmer(response.farmer);
+        if (response.profile) {
+          setProfile(response.profile);
+        }
       }
       
       return { success: response.success, error: response.error };
@@ -140,12 +167,31 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const checkExistingFarmer = async (mobileNumber: string) => {
+  const checkExistingUser = async (mobileNumber: string) => {
     try {
-      return await customAuthService.checkExistingFarmer(mobileNumber);
+      return await customAuthService.checkExistingUser(mobileNumber);
     } catch (error) {
-      console.error('Check existing farmer error:', error);
-      return false;
+      console.error('Check existing user error:', error);
+      return { exists: false };
+    }
+  };
+
+  const updateProfile = async (profileData: any) => {
+    try {
+      setLoading(true);
+      const response = await customAuthService.updateProfile(profileData);
+      
+      if (response.success && response.profile) {
+        setProfile(response.profile);
+      }
+      
+      return { success: response.success, error: response.error };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Profile update failed';
+      console.error('Update profile error:', error);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -154,6 +200,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       setLoading(true);
       await customAuthService.signOut();
       setFarmer(null);
+      setProfile(null);
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
@@ -163,12 +210,14 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const contextValue: CustomAuthContextType = {
     farmer,
+    profile,
     loading,
     isAuthenticated: !!farmer,
     isOnline,
     login,
     register,
-    checkExistingFarmer,
+    checkExistingUser,
+    updateProfile,
     signOut,
     refreshSession,
   };

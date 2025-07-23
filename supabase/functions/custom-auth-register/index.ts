@@ -50,18 +50,24 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Check if farmer already exists with this mobile number
+    // Check if farmer already exists in either table
     const { data: existingFarmer } = await supabase
       .from('farmers')
       .select('id')
       .eq('mobile_number', cleanMobile)
       .maybeSingle()
 
-    if (existingFarmer) {
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('mobile_number', cleanMobile)
+      .maybeSingle()
+
+    if (existingFarmer || existingProfile) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'A farmer with this mobile number already exists' 
+          error: 'A user with this mobile number already exists' 
         }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -82,16 +88,19 @@ Deno.serve(async (req) => {
 
     // Generate a UUID for the farmer
     const farmerId = crypto.randomUUID()
+    
+    // Default tenant ID
+    const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3'
 
-    // Create farmer record directly (no auth user needed for this approach)
-    const { data: farmer, error: insertError } = await supabase
+    // Create farmer record
+    const { data: farmer, error: farmerError } = await supabase
       .from('farmers')
       .insert([{
         id: farmerId,
         mobile_number: cleanMobile,
         pin_hash: pinHash,
         farmer_code: farmerCode,
-        tenant_id: farmer_data.tenant_id || null,
+        tenant_id: defaultTenantId,
         app_install_date: new Date().toISOString().split('T')[0],
         login_attempts: 0,
         is_verified: false,
@@ -101,41 +110,17 @@ Deno.serve(async (req) => {
         primary_crops: farmer_data.primary_crops || null,
         annual_income_range: farmer_data.annual_income_range || null,
         has_loan: farmer_data.has_loan || false,
-        loan_amount: farmer_data.loan_amount || null,
         has_tractor: farmer_data.has_tractor || false,
         has_irrigation: farmer_data.has_irrigation || false,
-        irrigation_type: farmer_data.irrigation_type || null,
         has_storage: farmer_data.has_storage || false,
+        irrigation_type: farmer_data.irrigation_type || null,
         ...farmer_data
       }])
       .select()
       .single()
 
-    if (insertError) {
-      console.error('Insert error:', insertError)
-      
-      // Handle specific constraint violations
-      if (insertError.code === '23505') {
-        if (insertError.message.includes('farmers_farmer_code_unique')) {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'Registration failed due to code conflict. Please try again.' 
-            }),
-            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-        if (insertError.message.includes('farmers_mobile_tenant_unique')) {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'A farmer with this mobile number already exists' 
-            }),
-            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-      }
-      
+    if (farmerError) {
+      console.error('Farmer insert error:', farmerError)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -150,11 +135,23 @@ Deno.serve(async (req) => {
       .from('user_profiles')
       .insert({
         id: farmerId,
-        phone: cleanMobile,
+        mobile_number: cleanMobile,
         phone_verified: true,
         preferred_language: farmer_data.preferred_language || 'hi',
         full_name: farmer_data.full_name || farmerCode,
         farmer_id: farmerId,
+        tenant_id: defaultTenantId,
+        is_profile_complete: false,
+        village: farmer_data.village || null,
+        district: farmer_data.district || null,
+        state: farmer_data.state || null,
+        farming_experience_years: farmer_data.farming_experience_years || null,
+        total_land_acres: farmer_data.total_land_acres || null,
+        primary_crops: farmer_data.primary_crops || null,
+        has_irrigation: farmer_data.has_irrigation || false,
+        has_tractor: farmer_data.has_tractor || false,
+        has_storage: farmer_data.has_storage || false,
+        annual_income_range: farmer_data.annual_income_range || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
