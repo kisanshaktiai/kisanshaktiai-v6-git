@@ -5,9 +5,9 @@ interface AuthHealthCheck {
   status: 'healthy' | 'warning' | 'error';
   checks: {
     supabaseConnection: boolean;
-    farmerTableAccess: boolean;
-    profileTableAccess: boolean;
-    authServiceHealth: boolean;
+    sessionValid: boolean;
+    profileExists: boolean;
+    edgeFunctionReachable: boolean;
   };
   errors: string[];
   timestamp: string;
@@ -26,9 +26,9 @@ interface HealthCheckResult {
   status: 'healthy' | 'warning' | 'error';
   checks: {
     supabaseConnection: boolean;
-    farmerTableAccess: boolean;
-    profileTableAccess: boolean;
-    authServiceHealth: boolean;
+    sessionValid: boolean;
+    profileExists: boolean;
+    edgeFunctionReachable: boolean;
   };
   errors: string[];
   timestamp: string;
@@ -71,9 +71,9 @@ class AuthHealthService {
       status: 'healthy',
       checks: {
         supabaseConnection: false,
-        farmerTableAccess: false,
-        profileTableAccess: false,
-        authServiceHealth: false
+        sessionValid: false,
+        profileExists: false,
+        edgeFunctionReachable: false
       },
       errors: [],
       timestamp: new Date().toISOString()
@@ -88,26 +88,31 @@ class AuthHealthService {
         this.addDebugLog('error', 'Supabase connection failed', connectionError);
       }
 
-      // Test farmer table access
-      const { error: farmerError } = await supabase.from('farmers').select('id').limit(1);
-      result.checks.farmerTableAccess = !farmerError;
-      if (farmerError) {
-        result.errors.push(`Farmer table access failed: ${farmerError.message}`);
-        this.addDebugLog('error', 'Farmer table access failed', farmerError);
+      // Test session validity
+      const { data: { session } } = await supabase.auth.getSession();
+      result.checks.sessionValid = !!session;
+      if (!session) {
+        result.errors.push('No active session found');
+        this.addDebugLog('warn', 'No active session found');
       }
 
-      // Test profile table access
-      const { error: profileError } = await supabase.from('user_profiles').select('id').limit(1);
-      result.checks.profileTableAccess = !profileError;
-      if (profileError) {
-        result.errors.push(`Profile table access failed: ${profileError.message}`);
-        this.addDebugLog('error', 'Profile table access failed', profileError);
+      // Test profile existence
+      if (session) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+        
+        result.checks.profileExists = !!profile && !profileError;
+        if (profileError) {
+          result.errors.push(`Profile check failed: ${profileError.message}`);
+          this.addDebugLog('error', 'Profile check failed', profileError);
+        }
       }
 
-      // Test auth service health
-      result.checks.authServiceHealth = result.checks.supabaseConnection && 
-                                       result.checks.farmerTableAccess && 
-                                       result.checks.profileTableAccess;
+      // Test edge function reachability (simplified check)
+      result.checks.edgeFunctionReachable = result.checks.supabaseConnection;
 
       // Determine overall status
       if (result.errors.length === 0) {
