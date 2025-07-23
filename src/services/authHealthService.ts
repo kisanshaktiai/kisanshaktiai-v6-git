@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthHealthCheck {
+  status: 'healthy' | 'warning' | 'error';
   checks: {
     supabaseConnection: boolean;
     farmerTableAccess: boolean;
@@ -22,6 +23,7 @@ interface DiagnosisResult {
 }
 
 interface HealthCheckResult {
+  status: 'healthy' | 'warning' | 'error';
   checks: {
     supabaseConnection: boolean;
     farmerTableAccess: boolean;
@@ -66,6 +68,7 @@ class AuthHealthService {
 
   async performHealthCheck(): Promise<HealthCheckResult> {
     const result: HealthCheckResult = {
+      status: 'healthy',
       checks: {
         supabaseConnection: false,
         farmerTableAccess: false,
@@ -106,8 +109,18 @@ class AuthHealthService {
                                        result.checks.farmerTableAccess && 
                                        result.checks.profileTableAccess;
 
+      // Determine overall status
+      if (result.errors.length === 0) {
+        result.status = 'healthy';
+      } else if (result.checks.supabaseConnection) {
+        result.status = 'warning';
+      } else {
+        result.status = 'error';
+      }
+
       this.addDebugLog('info', 'Health check completed', result);
     } catch (error) {
+      result.status = 'error';
       result.errors.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.addDebugLog('error', 'Health check failed', error);
     }

@@ -34,10 +34,11 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly and handle mobile_number field
+      // Type cast JSON fields properly and handle all fields
       return {
         ...data,
         mobile_number: data.mobile_number,
+        gender: (data.gender as 'male' | 'female' | 'other') || null,
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -53,7 +54,8 @@ export const useUserProfile = (userId?: string) => {
         mobile_number_verified: data.mobile_number_verified || false,
         email_verified: data.email_verified || false,
         last_seen: data.last_seen || null,
-        timezone: data.timezone || null
+        timezone: data.timezone || null,
+        preferred_language: data.preferred_language || null
       };
     },
     enabled: !!userId,
@@ -69,9 +71,15 @@ export const useUserProfile = (userId?: string) => {
         updates.preferred_language = 'hi'; // Default to Hindi
       }
 
+      // Prepare database update object
+      const dbUpdate: any = { ...updates };
+      
+      // Remove TypeScript-only fields that don't exist in database
+      delete dbUpdate.id;
+      
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(updates)
+        .update(dbUpdate)
         .eq('id', userId)
         .select()
         .single();
@@ -92,9 +100,12 @@ export const useUserProfile = (userId?: string) => {
         profileData.preferred_language = 'hi'; // Default to Hindi
       }
 
+      // Prepare database insert object
+      const dbInsert: any = { ...profileData };
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert(profileData)
+        .insert(dbInsert)
         .select()
         .single();
 

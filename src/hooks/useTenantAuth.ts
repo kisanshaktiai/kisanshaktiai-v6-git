@@ -89,6 +89,7 @@ const convertDatabaseProfile = (dbProfile: any): UserProfile => {
   return {
     ...dbProfile,
     mobile_number: dbProfile.mobile_number,
+    gender: (dbProfile.gender as 'male' | 'female' | 'other') || null,
     notification_preferences: safeJsonParse(dbProfile.notification_preferences, {
       sms: true,
       push: true,
@@ -262,8 +263,13 @@ export const useTenantAuth = () => {
       if (tenantsError) throw tenantsError;
 
       const userTenants: UserTenant[] = userTenantsData?.map(ut => ({
-        ...ut,
+        id: ut.id,
+        user_id: ut.user_id,
+        tenant_id: ut.tenant_id,
+        role: ut.role,
         permissions: safeJsonParse(ut.permissions, []),
+        is_active: ut.is_active,
+        joined_at: ut.joined_at,
         tenant: ut.tenant ? convertDatabaseTenant(ut.tenant) : undefined
       })) || [];
 
