@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -54,11 +53,11 @@ serve(async (req) => {
 
     console.log('Using tenant ID:', resolvedTenantId);
 
-    // Check if user profile exists
+    // Check if user profile exists - FIXED: using mobile_number instead of phone
     const { data: existingProfile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('id, phone, full_name')
-      .eq('phone', cleanPhone)
+      .select('id, mobile_number, full_name')  // ✅ Changed from phone to mobile_number
+      .eq('mobile_number', cleanPhone)         // ✅ Changed from phone to mobile_number
       .maybeSingle();
 
     if (profileError) {
@@ -106,7 +105,7 @@ serve(async (req) => {
         phone_confirmed: true,
         email_confirmed: true,
         user_metadata: {
-          phone: cleanPhone,
+          mobile_number: cleanPhone,  // ✅ Changed from phone to mobile_number
           is_mobile_user: true,
           tenant_id: resolvedTenantId,
           preferred_language: preferredLanguage,
@@ -124,22 +123,27 @@ serve(async (req) => {
 
       authUser = newUserData.user;
 
-      // Create user profile
+      // Create user profile - FIXED: using mobile_number instead of phone
       const { error: profileInsertError } = await supabase
         .from('user_profiles')
         .insert({
           id: authUser.id,
-          phone: cleanPhone,
+          mobile_number: cleanPhone,    // ✅ Changed from phone to mobile_number
           phone_verified: true,
           preferred_language: preferredLanguage as any,
           country: 'India',
+          tenant_id: resolvedTenantId,  // ✅ Added tenant_id
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
       if (profileInsertError) {
         console.error('Profile creation error:', profileInsertError);
-        // Continue anyway, profile can be created later
+        // Don't continue - this is critical for the app to work
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to create user profile. Please try again.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Create farmer profile automatically
@@ -148,13 +152,14 @@ serve(async (req) => {
         .insert({
           id: authUser.id,
           tenant_id: resolvedTenantId,
+          mobile_number: cleanPhone,    // ✅ Added mobile_number for farmers table too
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
       if (farmerInsertError) {
         console.error('Farmer profile creation error:', farmerInsertError);
-        // Continue anyway
+        // Continue anyway - user_profile is more important
       }
 
       // Link user to tenant
