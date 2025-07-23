@@ -79,33 +79,37 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Check user profiles with simplified query handling
+      // Use raw SQL-like approach to avoid complex type inference
       let userProfileExists = false;
+      let farmerExists = false;
+      
+      // Check user profiles with very simple query
       try {
-        const userQuery = supabase
+        const { data: userProfileData, error: userProfileError } = await supabase
           .from('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
-          .maybeSingle();
+          .limit(1);
         
-        const userResult = await userQuery;
-        userProfileExists = userResult.data ? true : false;
+        if (!userProfileError && userProfileData && userProfileData.length > 0) {
+          userProfileExists = true;
+        }
       } catch (err) {
         console.error('User profile query error:', err);
         userProfileExists = false;
       }
       
-      // Check farmers with simplified query handling
-      let farmerExists = false;
+      // Check farmers with very simple query
       try {
-        const farmerQuery = supabase
+        const { data: farmerData, error: farmerError } = await supabase
           .from('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
-          .maybeSingle();
+          .limit(1);
         
-        const farmerResult = await farmerQuery;
-        farmerExists = farmerResult.data ? true : false;
+        if (!farmerError && farmerData && farmerData.length > 0) {
+          farmerExists = true;
+        }
       } catch (err) {
         console.error('Farmer query error:', err);
         farmerExists = false;
