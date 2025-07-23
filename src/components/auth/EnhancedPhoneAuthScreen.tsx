@@ -10,13 +10,15 @@ import { MobileNumberService } from '@/services/MobileNumberService';
 import { toast } from 'sonner';
 
 interface EnhancedPhoneAuthScreenProps {
-  onBack: () => void;
-  onSuccess: () => void;
+  onComplete?: () => void;
+  onBack?: () => void;
+  onSuccess?: () => void;
 }
 
 type AuthStep = 'phone' | 'pin_new' | 'pin_existing';
 
 export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = ({
+  onComplete,
   onBack,
   onSuccess
 }) => {
@@ -122,7 +124,9 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
 
       if (result.success) {
         toast.success(isExistingUser ? 'Login successful!' : 'Account created successfully!');
-        onSuccess();
+        // Call the appropriate callback
+        if (onComplete) onComplete();
+        if (onSuccess) onSuccess();
       } else {
         console.error('Auth failed:', result.error);
         toast.error(result.error || 'Authentication failed. Please try again.');
@@ -132,6 +136,14 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBackClick = () => {
+    if (currentStep === 'phone') {
+      if (onBack) onBack();
+    } else {
+      setCurrentStep('phone');
     }
   };
 
@@ -295,16 +307,18 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="mb-4"
-          disabled={loading || checkingUser}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {/* Back button - only show if onBack is provided and we're on phone step */}
+        {onBack && currentStep === 'phone' && (
+          <Button 
+            variant="ghost" 
+            onClick={handleBackClick}
+            className="mb-4"
+            disabled={loading || checkingUser}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
 
         {/* Progress indicator */}
         <div className="flex items-center justify-center space-x-2 mb-6">

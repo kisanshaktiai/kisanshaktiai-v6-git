@@ -1,6 +1,8 @@
+
 export interface Profile {
   id: string;
   phone?: string;
+  mobile_number?: string; // Database field name
   phone_verified?: boolean;
   full_name?: string;
   display_name?: string;

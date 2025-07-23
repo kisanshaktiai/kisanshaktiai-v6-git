@@ -28,7 +28,7 @@ const safeJsonParse = (value: any, fallback: any = null) => {
   return value;
 };
 
-// Helper function to convert database subscription plan to our type
+// Helper function to convert subscription plan to our type
 const convertSubscriptionPlan = (plan: string | null | undefined): SubscriptionPlan => {
   if (!plan) return 'kisan';
   
@@ -144,6 +144,8 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
+          // Map mobile_number to phone for compatibility
+          phone: profileData.mobile_number || '',
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,
