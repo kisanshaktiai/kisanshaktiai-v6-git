@@ -34,9 +34,10 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly
+      // Type cast JSON fields properly and map mobile_number to phone
       return {
         ...data,
+        phone: data.mobile_number || '', // Map mobile_number to phone
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -58,9 +59,16 @@ export const useUserProfile = (userId?: string) => {
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required');
 
+      // Convert phone back to mobile_number for database
+      const dbUpdates = {
+        ...updates,
+        mobile_number: updates.phone, // Map phone to mobile_number
+      };
+      delete dbUpdates.phone; // Remove phone property
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', userId)
         .select()
         .single();
@@ -75,9 +83,16 @@ export const useUserProfile = (userId?: string) => {
 
   const createMutation = useMutation({
     mutationFn: async (profileData: Partial<UserProfile> & { id: string; phone: string }) => {
+      // Convert phone to mobile_number for database
+      const dbData = {
+        ...profileData,
+        mobile_number: profileData.phone,
+      };
+      delete dbData.phone; // Remove phone property
+
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([profileData])
+        .insert([dbData])
         .select()
         .single();
 
