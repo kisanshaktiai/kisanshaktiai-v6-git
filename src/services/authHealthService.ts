@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface HealthCheck {
@@ -9,15 +8,154 @@ interface HealthCheck {
   details?: any;
 }
 
+interface AuthHealthCheck {
+  status: 'healthy' | 'warning' | 'error';
+  checks: {
+    supabaseConnection: boolean;
+    sessionValid: boolean;
+    profileExists: boolean;
+    edgeFunctionReachable: boolean;
+  };
+  errors: string[];
+  timestamp: string;
+}
+
+interface AuthDiagnosis {
+  userExists: boolean;
+  profileExists: boolean;
+  authRecordExists: boolean;
+  issues: string[];
+  recommendations: string[];
+}
+
+interface DebugLogEntry {
+  event: string;
+  timestamp: string;
+  details?: any;
+}
+
 class AuthHealthService {
   private static instance: AuthHealthService;
   private healthChecks: HealthCheck[] = [];
+  private debugLogs: DebugLogEntry[] = [];
 
   static getInstance(): AuthHealthService {
     if (!AuthHealthService.instance) {
       AuthHealthService.instance = new AuthHealthService();
     }
     return AuthHealthService.instance;
+  }
+
+  async performHealthCheck(): Promise<AuthHealthCheck> {
+    const checks = await this.runAllHealthChecks();
+    
+    const supabaseConnection = checks.find(c => c.service === 'database')?.status === 'healthy';
+    const sessionValid = true; // Simplified for now
+    const profileExists = checks.find(c => c.service === 'user_profiles')?.status === 'healthy';
+    const edgeFunctionReachable = checks.find(c => c.service === 'auth')?.status === 'healthy';
+
+    const errors: string[] = [];
+    checks.forEach(check => {
+      if (check.status !== 'healthy') {
+        errors.push(`${check.service}: ${check.message}`);
+      }
+    });
+
+    let status: 'healthy' | 'warning' | 'error' = 'healthy';
+    if (errors.length > 0) {
+      status = errors.length > 2 ? 'error' : 'warning';
+    }
+
+    return {
+      status,
+      checks: {
+        supabaseConnection,
+        sessionValid,
+        profileExists,
+        edgeFunctionReachable
+      },
+      errors,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  getDebugLogs(): DebugLogEntry[] {
+    return this.debugLogs;
+  }
+
+  addDebugLog(event: string, details?: any): void {
+    this.debugLogs.unshift({
+      event,
+      timestamp: new Date().toISOString(),
+      details
+    });
+    
+    // Keep only last 50 logs
+    if (this.debugLogs.length > 50) {
+      this.debugLogs = this.debugLogs.slice(0, 50);
+    }
+  }
+
+  clearDebugLogs(): void {
+    this.debugLogs = [];
+  }
+
+  async diagnoseAuthIssue(phoneNumber: string): Promise<AuthDiagnosis> {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+
+    try {
+      // Check if farmer exists
+      const { data: farmer, error: farmerError } = await supabase
+        .from('farmers')
+        .select('id, mobile_number')
+        .eq('mobile_number', phoneNumber)
+        .single();
+
+      const userExists = !farmerError && farmer !== null;
+      
+      // Check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, mobile_number')
+        .eq('mobile_number', phoneNumber)
+        .single();
+
+      const profileExists = !profileError && profile !== null;
+
+      // Check auth record (simplified)
+      const authRecordExists = userExists; // For now, same as farmer exists
+
+      if (!userExists) {
+        issues.push('User does not exist in farmers table');
+        recommendations.push('User needs to register first');
+      }
+
+      if (!profileExists) {
+        issues.push('User profile does not exist');
+        recommendations.push('Create user profile after registration');
+      }
+
+      this.addDebugLog('auth_diagnosis', {
+        phoneNumber,
+        userExists,
+        profileExists,
+        authRecordExists,
+        issues,
+        recommendations
+      });
+
+      return {
+        userExists,
+        profileExists,
+        authRecordExists,
+        issues,
+        recommendations
+      };
+    } catch (error) {
+      this.addDebugLog('auth_diagnosis_error', { phoneNumber, error });
+      throw error;
+    }
   }
 
   async checkDatabaseHealth(): Promise<HealthCheck> {

@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/types/tenant';
+import { UserProfile, LanguageCode } from '@/types/tenant';
 
 // Helper function to safely parse JSON
 const safeJsonParse = (value: any, fallback: any = null) => {
@@ -14,6 +14,19 @@ const safeJsonParse = (value: any, fallback: any = null) => {
     }
   }
   return value;
+};
+
+// Helper function to safely cast language code
+const castLanguageCode = (lang: string | null | undefined): LanguageCode => {
+  if (!lang) return 'en';
+  
+  const validLanguages: LanguageCode[] = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
+  
+  if (validLanguages.includes(lang as LanguageCode)) {
+    return lang as LanguageCode;
+  }
+  
+  return 'en'; // Default fallback
 };
 
 export const useUserProfile = (userId?: string) => {
@@ -38,6 +51,7 @@ export const useUserProfile = (userId?: string) => {
       return {
         ...data,
         phone: data.mobile_number || '', // Map mobile_number to phone
+        preferred_language: castLanguageCode(data.preferred_language), // Safe cast
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
