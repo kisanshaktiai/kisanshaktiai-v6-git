@@ -81,7 +81,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         </div>
       </div>
     );
-  }
+  };
 
   if (isAuthenticated) {
     return (
@@ -109,21 +109,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         return (
           <LocationBasedLanguageScreen 
             onNext={handleNext}
-            onPrev={handleBack}
           />
         );
       case 'Authentication':
         return (
           <AuthScreen 
             onComplete={handleAuthComplete}
-            selectedLanguage={selectedLanguage}
           />
         );
       case 'Profile':
         return (
           <ProfileRegistrationScreen 
             onComplete={handleProfileComplete}
-            selectedLanguage={selectedLanguage}
           />
         );
       default:
