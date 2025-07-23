@@ -79,32 +79,32 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
         return false;
       }
       
-      // Simplified database queries with explicit typing to avoid deep type instantiation
+      // Simplified database queries with explicit boolean variables
       let userProfileExists = false;
       let farmerExists = false;
       
-      // Check user profiles table
+      // Check user profiles table with explicit typing
       try {
-        const { data: userProfileData } = await supabase
+        const userProfileResponse = await supabase
           .from('user_profiles')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .maybeSingle();
         
-        userProfileExists = Boolean(userProfileData);
+        userProfileExists = userProfileResponse.data !== null;
       } catch (err) {
         console.error('User profile query error:', err);
       }
       
-      // Check farmers table
+      // Check farmers table with explicit typing
       try {
-        const { data: farmerData } = await supabase
+        const farmerResponse = await supabase
           .from('farmers')
           .select('mobile_number')
           .eq('mobile_number', mobile)
           .maybeSingle();
         
-        farmerExists = Boolean(farmerData);
+        farmerExists = farmerResponse.data !== null;
       } catch (err) {
         console.error('Farmer query error:', err);
       }
