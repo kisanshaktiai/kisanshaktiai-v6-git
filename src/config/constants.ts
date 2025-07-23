@@ -1,6 +1,5 @@
 
-// First, let's get the correct tenant ID from the database
-export const DEFAULT_TENANT_ID = "e6ea43a7-8c91-44da-b4bc-ca9899f3a0f7";
+// Removed hardcoded tenant values - now using dynamic detection
 
 export const STORAGE_KEYS = {
   TENANT_ID: 'tenant_id',
@@ -28,6 +27,4 @@ export const FARMER_REGISTRATION = {
   MOBILE_REGEX: /^[6-9]\d{9}$/,
   PIN_LENGTH: 4,
   OTP_LENGTH: 6,
-  DEFAULT_TENANT: DEFAULT_TENANT_ID,
-  DEFAULT_TENANT_SLUG: 'kisanshakti-ai', // Updated to match actual database slug
 };

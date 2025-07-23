@@ -6,9 +6,35 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const jwtSecret = Deno.env.get('JWT_SECRET') || 'your-jwt-secret'
 
-// Default tenant configuration
-const DEFAULT_TENANT_ID = "e6ea43a7-8c91-44da-b4bc-ca9899f3a0f7"
-const DEFAULT_TENANT_SLUG = "kisanshakti-ai"
+async function getDefaultTenant() {
+  try {
+    console.log('Fetching default tenant from tenant-default endpoint');
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/tenant-default`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch default tenant:', response.status, response.statusText);
+      return null;
+    }
+
+    const tenantData = await response.json();
+    console.log('Default tenant fetched successfully:', tenantData);
+    
+    return {
+      id: tenantData.id,
+      name: tenantData.name
+    };
+  } catch (error) {
+    console.error('Error fetching default tenant:', error);
+    return null;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -67,35 +93,11 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get tenant ID with fallback to default
-    console.log('Looking up tenant with slug:', DEFAULT_TENANT_SLUG)
-    let tenantId = DEFAULT_TENANT_ID // Start with default
+    // Get default tenant dynamically
+    const defaultTenant = await getDefaultTenant()
     
-    try {
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .select('id, name, slug, status')
-        .eq('slug', DEFAULT_TENANT_SLUG)
-        .maybeSingle()
-
-      if (tenantError) {
-        console.error('Tenant lookup error:', tenantError)
-        console.log('Using default tenant ID as fallback:', DEFAULT_TENANT_ID)
-      } else if (tenant) {
-        console.log('Tenant found:', tenant)
-        tenantId = tenant.id
-      } else {
-        console.log('No tenant found with slug, using default:', DEFAULT_TENANT_ID)
-      }
-    } catch (error) {
-      console.error('Tenant lookup failed, using default:', error)
-    }
-
-    // Use provided tenant_id or the resolved one
-    const finalTenantId = farmer_data.tenant_id || tenantId
-
-    if (!finalTenantId) {
-      console.error('No valid tenant ID available')
+    if (!defaultTenant || !defaultTenant.id) {
+      console.error('No default tenant available')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -105,7 +107,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Using tenant ID:', finalTenantId)
+    console.log('Using tenant:', defaultTenant)
+
+    // Use provided tenant_id or the resolved one
+    const finalTenantId = farmer_data.tenant_id || defaultTenant.id
 
     // Check if farmer already exists with this mobile number
     console.log('Checking for existing farmer...')

@@ -1,342 +1,297 @@
-import { supabase } from '@/integrations/supabase/client';
-import { secureStorage } from '@/services/storage/secureStorage';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 
-interface AuthResponse {
+import { supabase } from '@/integrations/supabase/client';
+import { secureStorage } from './storage/secureStorage';
+import { STORAGE_KEYS } from '@/config/constants';
+
+interface LoginResponse {
   success: boolean;
+  error?: string;
   farmer?: any;
   user_profile?: any;
-  error?: string;
-  userId?: string;
   token?: string;
 }
 
+interface RegistrationResponse {
+  success: boolean;
+  error?: string;
+  farmer?: any;
+  user_profile?: any;
+  token?: string;
+}
+
+// Cache for tenant data to avoid repeated API calls
+let cachedDefaultTenant: any = null;
+let tenantCacheTimestamp = 0;
+const TENANT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 class CustomAuthService {
-  private static instance: CustomAuthService;
   private currentFarmer: any = null;
-  private currentToken: string | null = null;
   private currentUserProfile: any = null;
-  private maxRetries: number = 3;
-  private retryDelay: number = 1000;
+  private currentToken: string | null = null;
 
-  static getInstance(): CustomAuthService {
-    if (!CustomAuthService.instance) {
-      CustomAuthService.instance = new CustomAuthService();
+  async getDefaultTenant() {
+    const now = Date.now();
+    
+    // Return cached tenant if still valid
+    if (cachedDefaultTenant && (now - tenantCacheTimestamp) < TENANT_CACHE_DURATION) {
+      console.log('CustomAuthService: Using cached default tenant');
+      return cachedDefaultTenant;
     }
-    return CustomAuthService.instance;
-  }
 
-  private async retryOperation<T>(operation: () => Promise<T>, retries: number = this.maxRetries): Promise<T> {
-    for (let i = 0; i < retries; i++) {
+    try {
+      console.log('CustomAuthService: Fetching default tenant from API');
+      
+      const { data, error } = await supabase.functions.invoke('tenant-default', {
+        method: 'GET'
+      });
+
+      if (error) {
+        console.error('CustomAuthService: Error fetching default tenant:', error);
+        // Return cached tenant as fallback if available
+        if (cachedDefaultTenant) {
+          console.log('CustomAuthService: Using cached tenant as fallback');
+          return cachedDefaultTenant;
+        }
+        throw error;
+      }
+
+      if (data) {
+        console.log('CustomAuthService: Default tenant fetched successfully:', data);
+        cachedDefaultTenant = data;
+        tenantCacheTimestamp = now;
+        return data;
+      }
+
+      throw new Error('No default tenant data received');
+    } catch (error) {
+      console.error('CustomAuthService: Failed to fetch default tenant:', error);
+      
+      // Try to get cached tenant from storage as last resort
       try {
-        return await operation();
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, this.retryDelay * (i + 1)));
-      }
-    }
-    throw new Error('Max retries exceeded');
-  }
-
-  private validateMobileNumber(mobile: string): boolean {
-    const cleanMobile = mobile.replace(/\D/g, '');
-    return cleanMobile.length === 10 && /^[6-9]\d{9}$/.test(cleanMobile);
-  }
-
-  private validatePin(pin: string): boolean {
-    return pin.length === 4 && /^\d{4}$/.test(pin);
-  }
-
-  async register(mobileNumber: string, pin: string, farmerData: any = {}): Promise<AuthResponse> {
-    try {
-      // Validate inputs
-      if (!this.validateMobileNumber(mobileNumber)) {
-        return {
-          success: false,
-          error: 'Please enter a valid 10-digit mobile number'
-        };
-      }
-
-      if (!this.validatePin(pin)) {
-        return {
-          success: false,
-          error: 'PIN must be exactly 4 digits'
-        };
-      }
-
-      // Clean mobile number (remove any non-digits)
-      const cleanMobile = mobileNumber.replace(/\D/g, '');
-      
-      console.log('CustomAuthService: Registering farmer with mobile:', cleanMobile);
-      console.log('CustomAuthService: Registration data:', farmerData);
-      
-      // Enhanced registration with proper tenant ID and retry logic
-      const result = await this.retryOperation(async () => {
-        const { data, error } = await supabase.functions.invoke('custom-auth-register', {
-          body: {
-            mobile_number: cleanMobile,
-            pin,
-            farmer_data: {
-              ...farmerData,
-              tenant_id: farmerData.tenant_id || DEFAULT_TENANT_ID
-            }
-          }
-        });
-
-        if (error) {
-          console.error('CustomAuthService: Registration error:', error);
-          throw new Error(error.message || 'Registration failed');
+        const cached = await secureStorage.getItem('cached_default_tenant');
+        if (cached) {
+          const parsedCached = JSON.parse(cached);
+          console.log('CustomAuthService: Using stored cached tenant as fallback');
+          cachedDefaultTenant = parsedCached;
+          return parsedCached;
         }
+      } catch (storageError) {
+        console.error('CustomAuthService: Failed to get cached tenant from storage:', storageError);
+      }
+      
+      throw error;
+    }
+  }
 
-        return data;
+  async register(mobileNumber: string, pin: string, farmerData: any = {}): Promise<RegistrationResponse> {
+    try {
+      console.log('CustomAuthService: Starting registration process');
+      
+      // Get default tenant first
+      const defaultTenant = await this.getDefaultTenant();
+      if (!defaultTenant) {
+        throw new Error('Unable to get default tenant configuration');
+      }
+
+      const requestData = {
+        mobile_number: mobileNumber,
+        pin: pin,
+        farmer_data: {
+          ...farmerData,
+          tenant_id: defaultTenant.id
+        }
+      };
+
+      console.log('CustomAuthService: Calling custom-auth-register function');
+      const { data, error } = await supabase.functions.invoke('custom-auth-register', {
+        body: requestData
       });
 
-      console.log('CustomAuthService: Registration response:', result);
-
-      if (!result || !result.success) {
-        console.error('CustomAuthService: Registration failed:', result?.error);
-        return { 
-          success: false, 
-          error: result?.error || 'Registration failed' 
-        };
-      }
-
-      // Validate response data
-      if (!result.farmer || !result.farmer.id) {
-        console.error('CustomAuthService: Invalid farmer data in response');
+      if (error) {
+        console.error('CustomAuthService: Registration function error:', error);
         return {
           success: false,
-          error: 'Invalid registration response'
+          error: error.message || 'Registration failed'
         };
       }
 
-      // Store authentication data
-      this.currentFarmer = result.farmer;
-      this.currentToken = result.token;
-      this.currentUserProfile = result.user_profile;
-      
-      // Save to secure storage with enhanced data
-      const authData = {
-        farmer: result.farmer,
-        token: result.token,
-        user_profile: result.user_profile,
-        registered_at: new Date().toISOString()
-      };
+      if (data?.success) {
+        console.log('CustomAuthService: Registration successful');
+        
+        // Store authentication data
+        if (data.farmer) {
+          this.currentFarmer = data.farmer;
+          await secureStorage.setItem(STORAGE_KEYS.FARMER_DATA, JSON.stringify(data.farmer));
+        }
 
-      await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
-      console.log('CustomAuthService: Auth data stored successfully');
+        if (data.user_profile) {
+          this.currentUserProfile = data.user_profile;
+          await secureStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.user_profile));
+        }
 
-      return { 
-        success: true, 
-        farmer: result.farmer,
-        user_profile: result.user_profile,
-        userId: result.farmer.id,
-        token: result.token
-      };
+        if (data.token) {
+          this.currentToken = data.token;
+          await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, data.token);
+        }
+
+        console.log('CustomAuthService: Registration data stored successfully');
+        return data;
+      } else {
+        console.error('CustomAuthService: Registration failed:', data?.error);
+        return {
+          success: false,
+          error: data?.error || 'Registration failed'
+        };
+      }
     } catch (error) {
-      console.error('CustomAuthService: Registration process error:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Registration failed' 
+      console.error('CustomAuthService: Registration error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Registration failed'
       };
     }
   }
 
-  async login(mobileNumber: string, pin: string): Promise<AuthResponse> {
+  async login(mobileNumber: string, pin: string): Promise<LoginResponse> {
     try {
-      // Validate inputs
-      if (!this.validateMobileNumber(mobileNumber)) {
-        return {
-          success: false,
-          error: 'Please enter a valid 10-digit mobile number'
-        };
+      console.log('CustomAuthService: Starting login process');
+      
+      // Get default tenant first
+      const defaultTenant = await this.getDefaultTenant();
+      if (!defaultTenant) {
+        throw new Error('Unable to get default tenant configuration');
       }
 
-      if (!this.validatePin(pin)) {
-        return {
-          success: false,
-          error: 'PIN must be exactly 4 digits'
-        };
-      }
+      const requestData = {
+        mobile_number: mobileNumber,
+        pin: pin
+      };
 
-      // Clean mobile number (remove any non-digits)
-      const cleanMobile = mobileNumber.replace(/\D/g, '');
-      
-      console.log('CustomAuthService: Logging in farmer with mobile:', cleanMobile);
-      
-      // Enhanced login with retry logic
-      const result = await this.retryOperation(async () => {
-        const { data, error } = await supabase.functions.invoke('custom-auth-login', {
-          body: {
-            mobile_number: cleanMobile,
-            pin
-          }
-        });
-
-        if (error) {
-          console.error('CustomAuthService: Login error:', error);
-          throw new Error(error.message || 'Login failed');
-        }
-
-        return data;
+      console.log('CustomAuthService: Calling custom-auth-login function');
+      const { data, error } = await supabase.functions.invoke('custom-auth-login', {
+        body: requestData
       });
 
-      console.log('CustomAuthService: Login response:', result);
-
-      if (!result || !result.success) {
-        console.error('CustomAuthService: Login failed:', result?.error);
-        return { 
-          success: false, 
-          error: result?.error || 'Login failed' 
-        };
-      }
-
-      // Validate response data
-      if (!result.farmer || !result.farmer.id) {
-        console.error('CustomAuthService: Invalid farmer data in response');
+      if (error) {
+        console.error('CustomAuthService: Login function error:', error);
         return {
           success: false,
-          error: 'Invalid login response'
+          error: error.message || 'Login failed'
         };
       }
 
-      // Store authentication data
-      this.currentFarmer = result.farmer;
-      this.currentToken = result.token;
-      this.currentUserProfile = result.user_profile;
-      
-      // Save to secure storage with enhanced data
-      const authData = {
-        farmer: result.farmer,
-        token: result.token,
-        user_profile: result.user_profile,
-        logged_in_at: new Date().toISOString()
-      };
+      if (data?.success) {
+        console.log('CustomAuthService: Login successful');
+        
+        // Store authentication data
+        if (data.farmer) {
+          this.currentFarmer = data.farmer;
+          await secureStorage.setItem(STORAGE_KEYS.FARMER_DATA, JSON.stringify(data.farmer));
+        }
 
-      await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
-      console.log('CustomAuthService: Auth data stored successfully');
+        if (data.user_profile) {
+          this.currentUserProfile = data.user_profile;
+          await secureStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.user_profile));
+        }
 
-      return { 
-        success: true, 
-        farmer: result.farmer,
-        user_profile: result.user_profile,
-        userId: result.farmer.id,
-        token: result.token
-      };
+        if (data.token) {
+          this.currentToken = data.token;
+          await secureStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, data.token);
+        }
+
+        console.log('CustomAuthService: Login data stored successfully');
+        return data;
+      } else {
+        console.error('CustomAuthService: Login failed:', data?.error);
+        return {
+          success: false,
+          error: data?.error || 'Login failed'
+        };
+      }
     } catch (error) {
-      console.error('CustomAuthService: Login process error:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Login failed' 
+      console.error('CustomAuthService: Login error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Login failed'
       };
     }
   }
 
   async checkExistingFarmer(mobileNumber: string): Promise<boolean> {
     try {
-      if (!this.validateMobileNumber(mobileNumber)) {
+      console.log('CustomAuthService: Checking existing farmer');
+      
+      // Get default tenant first
+      const defaultTenant = await this.getDefaultTenant();
+      if (!defaultTenant) {
+        console.warn('CustomAuthService: No default tenant available for farmer check');
         return false;
       }
 
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      console.log('CustomAuthService: Checking existing farmer with mobile:', cleanMobile);
-      
       const { data, error } = await supabase
         .from('farmers')
-        .select('id, mobile_number, tenant_id')
+        .select('id')
         .eq('mobile_number', cleanMobile)
-        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .eq('tenant_id', defaultTenant.id)
         .maybeSingle();
 
       if (error) {
-        console.error('CustomAuthService: Error checking farmer existence:', error);
+        console.error('CustomAuthService: Error checking existing farmer:', error);
         return false;
       }
 
-      const exists = !!data;
-      console.log('CustomAuthService: Farmer exists:', exists, data);
-      return exists;
+      return !!data;
     } catch (error) {
-      console.error('CustomAuthService: Error in checkExistingFarmer:', error);
+      console.error('CustomAuthService: Check existing farmer error:', error);
       return false;
     }
   }
 
   async restoreSession(): Promise<boolean> {
     try {
-      console.log('CustomAuthService: Attempting to restore session');
-      const storedAuth = await secureStorage.getItem('farmer_auth');
+      console.log('CustomAuthService: Restoring session from storage');
       
-      if (!storedAuth) {
-        console.log('CustomAuthService: No stored authentication found');
-        return false;
+      const [farmerData, userProfileData, token] = await Promise.all([
+        secureStorage.getItem(STORAGE_KEYS.FARMER_DATA),
+        secureStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+        secureStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
+      ]);
+
+      if (farmerData) {
+        this.currentFarmer = JSON.parse(farmerData);
+        console.log('CustomAuthService: Farmer data restored');
       }
 
-      const { farmer, token, user_profile } = JSON.parse(storedAuth);
-      
-      if (!farmer || !token || !farmer.id) {
-        console.log('CustomAuthService: Invalid stored authentication data');
-        return false;
+      if (userProfileData) {
+        this.currentUserProfile = JSON.parse(userProfileData);
+        console.log('CustomAuthService: User profile data restored');
       }
 
-      console.log('CustomAuthService: Restoring session for farmer:', farmer.id);
+      if (token) {
+        this.currentToken = token;
+        console.log('CustomAuthService: Auth token restored');
+      }
 
-      // Restore session state
-      this.currentFarmer = farmer;
-      this.currentToken = token;
-      this.currentUserProfile = user_profile;
+      const hasSession = !!(this.currentFarmer && this.currentToken);
+      console.log('CustomAuthService: Session restoration result:', hasSession);
       
-      console.log('CustomAuthService: Session restored successfully');
-      return true;
+      return hasSession;
     } catch (error) {
-      console.error('CustomAuthService: Error restoring session:', error);
+      console.error('CustomAuthService: Session restoration error:', error);
       return false;
     }
   }
 
-  async signOut(): Promise<void> {
-    console.log('CustomAuthService: Signing out farmer');
-    this.currentFarmer = null;
-    this.currentToken = null;
-    this.currentUserProfile = null;
-    await secureStorage.removeItem('farmer_auth');
-  }
-
-  getCurrentFarmer(): any {
-    return this.currentFarmer;
-  }
-
-  getCurrentToken(): string | null {
-    return this.currentToken;
-  }
-
-  getCurrentUserProfile(): any {
-    return this.currentUserProfile;
-  }
-
-  isAuthenticated(): boolean {
-    const authenticated = !!this.currentFarmer && !!this.currentToken;
-    console.log('CustomAuthService: Authentication status:', authenticated);
-    return authenticated;
-  }
-
-  // Enhanced method to get complete user data
-  getCurrentUserData(): { farmer: any; userProfile: any; token: string | null } {
-    return {
-      farmer: this.currentFarmer,
-      userProfile: this.currentUserProfile,
-      token: this.currentToken
-    };
-  }
-
-  // Method to refresh user profile data
   async refreshUserProfile(): Promise<void> {
-    if (!this.currentFarmer) return;
-
     try {
-      console.log('CustomAuthService: Refreshing user profile for farmer:', this.currentFarmer.id);
+      if (!this.currentFarmer) {
+        console.warn('CustomAuthService: No current farmer for profile refresh');
+        return;
+      }
+
+      console.log('CustomAuthService: Refreshing user profile');
       
       const { data, error } = await supabase
         .from('user_profiles')
@@ -344,24 +299,58 @@ class CustomAuthService {
         .eq('id', this.currentFarmer.id)
         .maybeSingle();
 
-      if (!error && data) {
-        this.currentUserProfile = data;
-        console.log('CustomAuthService: User profile refreshed successfully');
-        
-        // Update stored data
-        const storedAuth = await secureStorage.getItem('farmer_auth');
-        if (storedAuth) {
-          const authData = JSON.parse(storedAuth);
-          authData.user_profile = data;
-          await secureStorage.setItem('farmer_auth', JSON.stringify(authData));
-        }
-      } else {
+      if (error) {
         console.error('CustomAuthService: Error refreshing user profile:', error);
+        return;
+      }
+
+      if (data) {
+        this.currentUserProfile = data;
+        await secureStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data));
+        console.log('CustomAuthService: User profile refreshed successfully');
       }
     } catch (error) {
-      console.error('CustomAuthService: Error refreshing user profile:', error);
+      console.error('CustomAuthService: Profile refresh error:', error);
     }
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      console.log('CustomAuthService: Signing out');
+      
+      // Clear in-memory data
+      this.currentFarmer = null;
+      this.currentUserProfile = null;
+      this.currentToken = null;
+      
+      // Clear stored data
+      await Promise.all([
+        secureStorage.removeItem(STORAGE_KEYS.FARMER_DATA),
+        secureStorage.removeItem(STORAGE_KEYS.USER_PROFILE),
+        secureStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
+      ]);
+      
+      console.log('CustomAuthService: Sign out completed');
+    } catch (error) {
+      console.error('CustomAuthService: Sign out error:', error);
+    }
+  }
+
+  getCurrentFarmer() {
+    return this.currentFarmer;
+  }
+
+  getCurrentUserProfile() {
+    return this.currentUserProfile;
+  }
+
+  getCurrentToken() {
+    return this.currentToken;
+  }
+
+  isAuthenticated(): boolean {
+    return !!(this.currentFarmer && this.currentToken);
   }
 }
 
-export const customAuthService = CustomAuthService.getInstance();
+export const customAuthService = new CustomAuthService();
