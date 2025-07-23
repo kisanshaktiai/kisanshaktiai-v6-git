@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WelcomeScreen } from './WelcomeScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
@@ -14,7 +13,6 @@ interface OnboardingFlowProps {
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('hi');
   const { farmer, userProfile, loading, isAuthenticated } = useCustomAuth();
   const navigate = useNavigate();
 
@@ -50,12 +48,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
-  };
-
-  const handleLanguageSelect = (language: string) => {
-    console.log('OnboardingFlow: Language selected:', language);
-    setSelectedLanguage(language);
-    handleNext();
   };
 
   const handleAuthComplete = () => {
@@ -112,7 +104,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
       case 'Language':
         return (
           <LocationBasedLanguageScreen 
-            onNext={handleLanguageSelect}
+            onNext={handleNext}
           />
         );
       case 'Authentication':
