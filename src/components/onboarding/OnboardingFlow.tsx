@@ -120,6 +120,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
       case 'Profile':
         return (
           <ProfileRegistrationScreen 
+            onNext={handleNext}
+            onPrev={handleBack}
+            isFirstStep={currentStep === 0}
+            isLastStep={currentStep === steps.length - 1}
             onComplete={handleProfileComplete}
           />
         );
