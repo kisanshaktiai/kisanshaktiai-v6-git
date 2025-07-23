@@ -1,6 +1,5 @@
 
 import { Capacitor } from '@capacitor/core';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 import { customAuthService } from './customAuthService';
 import { supabase } from '@/integrations/supabase/client';
 import { SIMDetectionService, SIMCard } from './SIMDetectionService';
@@ -10,7 +9,9 @@ export type SIMInfo = SIMCard;
 
 export interface AuthResult {
   success: boolean;
-  userId?: string;
+  farmer?: any;
+  user_profile?: any;
+  token?: string;
   error?: string;
 }
 
@@ -105,7 +106,7 @@ export class MobileNumberService {
     try {
       const formattedNumber = this.formatMobileNumber(mobileNumber);
       await this.saveMobileNumber(formattedNumber);
-      return { success: true, userId: 'temp_user_id' };
+      return { success: true, farmer: { id: 'temp_user_id' } };
     } catch (error) {
       console.error('Authentication error:', error);
       return { success: false, error: 'Authentication failed' };
@@ -121,7 +122,9 @@ export class MobileNumberService {
       
       return {
         success: result.success,
-        userId: result.userId,
+        farmer: result.farmer,
+        user_profile: result.user_profile,
+        token: result.token,
         error: result.error
       };
     } catch (error) {
@@ -137,16 +140,15 @@ export class MobileNumberService {
       
       console.log('Registering user with data:', { mobileNumber: formattedNumber, userData });
       
-      // Use tenant_id from constants if not provided
-      userData.tenant_id = userData.tenant_id || DEFAULT_TENANT_ID;
-      
       const result = await customAuthService.register(formattedNumber, pin, userData);
       
       console.log('Registration result:', result);
       
       return {
         success: result.success,
-        userId: result.userId,
+        farmer: result.farmer,
+        user_profile: result.user_profile,
+        token: result.token,
         error: result.error
       };
     } catch (error) {

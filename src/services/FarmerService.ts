@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { tenantService } from './TenantService';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 export interface FarmerRegistrationData {
   mobile_number: string;

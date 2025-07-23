@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from 'react';
 import { tenantService } from '@/services/TenantService';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 
 interface TenantData {
   tenant: any;
@@ -23,9 +22,6 @@ export const useTenantContext = () => {
       setLoading(true);
       setError(null);
       
-      // Ensure we're using the default tenant
-      tenantService.setCurrentTenantId(DEFAULT_TENANT_ID);
-      
       console.log('Loading tenant context data');
       
       const data = await tenantService.getTenantData();
@@ -38,7 +34,7 @@ export const useTenantContext = () => {
       // Set fallback data
       setTenantData({
         tenant: {
-          id: DEFAULT_TENANT_ID,
+          id: 'fallback-tenant-id',
           name: 'KisanShakti AI',
           slug: 'default',
           type: 'default'
@@ -52,7 +48,7 @@ export const useTenantContext = () => {
   };
 
   const getCurrentTenantId = () => {
-    return tenantService.getCurrentTenantId();
+    return tenantData?.tenant?.id || 'fallback-tenant-id';
   };
 
   const switchTenant = async (tenantId: string) => {

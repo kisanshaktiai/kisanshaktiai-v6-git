@@ -1,11 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { DEFAULT_TENANT_ID } from '@/config/constants';
 import { SubscriptionPlan, getSubscriptionPlanLimits } from '@/types/tenant';
 
 export class TenantService {
   private static instance: TenantService;
-  private currentTenantId: string = DEFAULT_TENANT_ID;
+  private currentTenantId: string = 'fallback-tenant-id';
 
   static getInstance(): TenantService {
     if (!TenantService.instance) {
@@ -26,6 +24,22 @@ export class TenantService {
   async getTenantData() {
     try {
       console.log('TenantService: Getting tenant data for:', this.currentTenantId);
+
+      // If we don't have a valid tenant ID, try to get the default tenant
+      if (this.currentTenantId === 'fallback-tenant-id') {
+        try {
+          const { data: defaultTenant, error } = await supabase.functions.invoke('tenant-default', {
+            method: 'GET'
+          });
+
+          if (!error && defaultTenant?.id) {
+            this.currentTenantId = defaultTenant.id;
+            console.log('TenantService: Updated tenant ID to:', this.currentTenantId);
+          }
+        } catch (tenantError) {
+          console.warn('TenantService: Could not get default tenant, using fallback');
+        }
+      }
 
       // First, let's try a simple query to test if the database is accessible
       try {
