@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { WelcomeScreen } from './WelcomeScreen';
-import { LanguageSelectionScreen } from './LanguageSelectionScreen';
 import { MobileNumberScreen } from './MobileNumberScreen';
 import { PinAuthScreen } from '../auth/PinAuthScreen';
 import { ProfileRegistrationScreen } from './ProfileRegistrationScreen';
@@ -21,7 +20,6 @@ export const OnboardingFlow: React.FC = () => {
 
   const steps = [
     'welcome',
-    'language',
     'mobile',
     'pin',
     'profile'
@@ -43,39 +41,38 @@ export const OnboardingFlow: React.FC = () => {
     setMobileNumber(mobile);
     setUserExists(exists);
     setUserData(data);
-    setCurrentStep(3); // Go to PIN screen
+    setCurrentStep(2); // Go to PIN screen
   };
 
   const handlePinNext = (data: any) => {
     setPin(data.pin);
     if (userExists) {
-      // User exists, redirect to dashboard
       navigate('/dashboard');
     } else {
-      // New user, go to profile registration
-      setCurrentStep(4);
+      setCurrentStep(3);
     }
   };
 
   const handleRegistrationComplete = (data: any) => {
-    // Set profile in Redux store
     if (data.profile) {
       dispatch(setProfile(data.profile));
     }
     
-    // Set authentication completed
     dispatch(setOnboardingCompleted());
-    
-    // Navigate to dashboard
     navigate('/dashboard');
   };
 
   const renderStep = () => {
     switch (steps[currentStep]) {
       case 'welcome':
-        return <WelcomeScreen onNext={handleNext} onPrev={handlePrev} />;
-      case 'language':
-        return <LanguageSelectionScreen onNext={handleNext} onPrev={handlePrev} />;
+        return (
+          <WelcomeScreen 
+            onNext={handleNext} 
+            onPrev={handlePrev}
+            isFirstStep={currentStep === 0}
+            isLastStep={currentStep === steps.length - 1}
+          />
+        );
       case 'mobile':
         return <MobileNumberScreen onNext={handleMobileNumberNext} onPrev={handlePrev} />;
       case 'pin':
@@ -98,7 +95,14 @@ export const OnboardingFlow: React.FC = () => {
           />
         );
       default:
-        return <WelcomeScreen onNext={handleNext} onPrev={handlePrev} />;
+        return (
+          <WelcomeScreen 
+            onNext={handleNext} 
+            onPrev={handlePrev}
+            isFirstStep={currentStep === 0}
+            isLastStep={currentStep === steps.length - 1}
+          />
+        );
     }
   };
 

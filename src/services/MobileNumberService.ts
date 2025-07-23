@@ -1,6 +1,16 @@
 
 import { customAuthService } from './customAuthService';
 
+export interface SIMInfo {
+  slotIndex: number;
+  carrierName: string;
+  countryCode: string;
+  mobileCountryCode: string;
+  mobileNetworkCode: string;
+  phoneNumber?: string;
+  isActive: boolean;
+}
+
 export class MobileNumberService {
   private static instance: MobileNumberService;
 
@@ -12,10 +22,8 @@ export class MobileNumberService {
   }
 
   formatMobileNumber(phoneNumber: string): string {
-    // Remove all non-digit characters
     const cleaned = phoneNumber.replace(/\D/g, '');
     
-    // Remove country code if present
     if (cleaned.startsWith('91') && cleaned.length === 12) {
       return cleaned.substring(2);
     }
@@ -25,10 +33,24 @@ export class MobileNumberService {
 
   validateMobileNumber(phoneNumber: string): boolean {
     const cleaned = this.formatMobileNumber(phoneNumber);
-    
-    // Check if it's exactly 10 digits and starts with valid prefixes
     const isValid = /^[6-9]\d{9}$/.test(cleaned);
     return isValid;
+  }
+
+  async detectSIMCards(): Promise<SIMInfo[]> {
+    // Mock implementation for SIM card detection
+    // In a real app, this would use device APIs
+    return [
+      {
+        slotIndex: 0,
+        carrierName: 'Airtel',
+        countryCode: 'IN',
+        mobileCountryCode: '404',
+        mobileNetworkCode: '45',
+        phoneNumber: undefined,
+        isActive: true,
+      }
+    ];
   }
 
   async checkUserExists(mobileNumber: string): Promise<{ exists: boolean; farmer?: any; profile?: any }> {

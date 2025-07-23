@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { customAuthService } from '@/services/customAuthService';
 import { secureStorage } from '@/services/storage/secureStorage';
@@ -28,6 +27,7 @@ interface CustomAuthContextType {
   login: (mobileNumber: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   register: (mobileNumber: string, pin: string, farmerData?: any) => Promise<{ success: boolean; error?: string }>;
   checkExistingUser: (mobileNumber: string) => Promise<{ exists: boolean; farmer?: any; profile?: any }>;
+  checkExistingFarmer: (mobileNumber: string) => Promise<boolean>;
   updateProfile: (profileData: any) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -176,6 +176,16 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const checkExistingFarmer = async (mobileNumber: string) => {
+    try {
+      const result = await customAuthService.checkExistingUser(mobileNumber);
+      return result.exists;
+    } catch (error) {
+      console.error('Check existing farmer error:', error);
+      return false;
+    }
+  };
+
   const updateProfile = async (profileData: any) => {
     try {
       setLoading(true);
@@ -217,6 +227,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     login,
     register,
     checkExistingUser,
+    checkExistingFarmer,
     updateProfile,
     signOut,
     refreshSession,

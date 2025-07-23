@@ -144,6 +144,7 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
+          mobile_number: profileData.mobile_number, // Use mobile_number instead of phone
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,

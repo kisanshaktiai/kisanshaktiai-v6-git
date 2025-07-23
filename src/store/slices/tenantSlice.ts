@@ -107,6 +107,9 @@ const tenantSlice = createSlice({
     setTenantBranding: (state, action: PayloadAction<TenantBranding>) => {
       state.tenantBranding = action.payload;
     },
+    setBranding: (state, action: PayloadAction<TenantBranding>) => {
+      state.tenantBranding = action.payload;
+    },
     setTenantFeatures: (state, action: PayloadAction<TenantFeatures>) => {
       state.tenantFeatures = action.payload;
     },
@@ -128,6 +131,7 @@ const tenantSlice = createSlice({
 export const {
   setCurrentTenant,
   setTenantBranding,
+  setBranding,
   setTenantFeatures,
   setLoading,
   setError,
