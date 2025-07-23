@@ -6,6 +6,10 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const jwtSecret = Deno.env.get('JWT_SECRET') || 'your-jwt-secret'
 
+// Default tenant configuration
+const DEFAULT_TENANT_ID = "e6ea43a7-8c91-44da-b4bc-ca9899f3a0f7"
+const DEFAULT_TENANT_SLUG = "kisanshakti-ai"
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -63,16 +67,35 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get default tenant ID with enhanced logging
-    console.log('Looking up default tenant...')
-    const { data: defaultTenant, error: tenantError } = await supabase
-      .from('tenants')
-      .select('id, name, slug, status')
-      .eq('slug', 'kisanshakti')
-      .single()
+    // Get tenant ID with fallback to default
+    console.log('Looking up tenant with slug:', DEFAULT_TENANT_SLUG)
+    let tenantId = DEFAULT_TENANT_ID // Start with default
+    
+    try {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, name, slug, status')
+        .eq('slug', DEFAULT_TENANT_SLUG)
+        .maybeSingle()
 
-    if (tenantError) {
-      console.error('Tenant lookup error:', tenantError)
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError)
+        console.log('Using default tenant ID as fallback:', DEFAULT_TENANT_ID)
+      } else if (tenant) {
+        console.log('Tenant found:', tenant)
+        tenantId = tenant.id
+      } else {
+        console.log('No tenant found with slug, using default:', DEFAULT_TENANT_ID)
+      }
+    } catch (error) {
+      console.error('Tenant lookup failed, using default:', error)
+    }
+
+    // Use provided tenant_id or the resolved one
+    const finalTenantId = farmer_data.tenant_id || tenantId
+
+    if (!finalTenantId) {
+      console.error('No valid tenant ID available')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -82,25 +105,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Default tenant found:', defaultTenant)
-
-    const tenantId = farmer_data.tenant_id || defaultTenant?.id
-
-    if (!tenantId) {
-      console.error('No tenant ID available:', { 
-        farmer_data_tenant_id: farmer_data.tenant_id,
-        default_tenant_id: defaultTenant?.id 
-      })
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'System configuration error. Please contact support.' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('Using tenant ID:', tenantId)
+    console.log('Using tenant ID:', finalTenantId)
 
     // Check if farmer already exists with this mobile number
     console.log('Checking for existing farmer...')
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
       .from('farmers')
       .select('id, mobile_number, tenant_id')
       .eq('mobile_number', cleanMobile)
-      .eq('tenant_id', tenantId)
+      .eq('tenant_id', finalTenantId)
       .maybeSingle()
 
     if (existingError) {
@@ -153,7 +158,7 @@ Deno.serve(async (req) => {
     console.log('Generated farmer details:', {
       farmerId,
       farmerCode,
-      tenantId,
+      tenantId: finalTenantId,
       pinHashLength: pinHash.length
     })
 
@@ -163,7 +168,7 @@ Deno.serve(async (req) => {
       mobile_number: cleanMobile,
       pin_hash: pinHash,
       farmer_code: farmerCode,
-      tenant_id: tenantId,
+      tenant_id: finalTenantId,
       app_install_date: new Date().toISOString().split('T')[0],
       login_attempts: 0,
       is_verified: false,
@@ -182,7 +187,7 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString()
     }
 
-    console.log('Inserting farmer data:', farmerInsertData)
+    console.log('Inserting farmer data...')
 
     // Create farmer record
     const { data: farmerData, error: farmerError } = await supabase
@@ -207,7 +212,7 @@ Deno.serve(async (req) => {
     // Prepare user profile data
     const userProfileData = {
       id: farmerId,
-      mobile_number: cleanMobile, // Use mobile_number consistently
+      mobile_number: cleanMobile,
       phone_verified: true,
       preferred_language: farmer_data.preferred_language || 'hi',
       full_name: farmer_data.full_name || farmerCode,
@@ -216,7 +221,7 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString()
     }
 
-    console.log('Creating user profile:', userProfileData)
+    console.log('Creating user profile...')
 
     // Create user profile
     const { data: profileData, error: profileError } = await supabase

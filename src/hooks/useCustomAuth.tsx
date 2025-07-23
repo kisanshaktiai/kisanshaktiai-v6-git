@@ -47,18 +47,21 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Monitor online/offline status
     const handleOnline = () => {
       console.log('CustomAuthProvider: Coming back online');
       setIsOnline(true);
+      setError(null);
       refreshSession(); // Refresh session when coming back online
     };
     
     const handleOffline = () => {
       console.log('CustomAuthProvider: Going offline');
       setIsOnline(false);
+      setError('You are currently offline. Some features may not work properly.');
     };
 
     window.addEventListener('online', handleOnline);
@@ -78,6 +81,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     try {
       console.log('CustomAuthProvider: Initializing authentication');
       setLoading(true);
+      setError(null);
       
       // Try to restore session
       const restored = await customAuthService.restoreSession();
@@ -104,6 +108,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('CustomAuthProvider: Auth initialization error:', error);
+      setError('Failed to initialize authentication. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -133,6 +138,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('CustomAuthProvider: Session refresh error:', error);
+      setError('Failed to refresh session. Please try logging in again.');
     }
   };
 
@@ -147,6 +153,7 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('CustomAuthProvider: User profile refresh error:', error);
+      // Don't set error for profile refresh failures as they're not critical
     }
   };
 
@@ -154,6 +161,13 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     try {
       console.log('CustomAuthProvider: Attempting login');
       setLoading(true);
+      setError(null);
+      
+      if (!isOnline) {
+        setError('You need to be online to log in. Please check your internet connection.');
+        return { success: false, error: 'No internet connection' };
+      }
+      
       const response = await customAuthService.login(mobileNumber, pin);
       
       if (response.success && response.farmer) {
@@ -163,14 +177,17 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
           setUserProfile(response.user_profile);
         }
         console.log('CustomAuthProvider: Login successful, farmer and profile set');
+        setError(null);
       } else {
         console.error('CustomAuthProvider: Login failed:', response.error);
+        setError(response.error || 'Login failed');
       }
       
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       console.error('CustomAuthProvider: Login error:', error);
+      setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -181,6 +198,13 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     try {
       console.log('CustomAuthProvider: Attempting registration');
       setLoading(true);
+      setError(null);
+      
+      if (!isOnline) {
+        setError('You need to be online to register. Please check your internet connection.');
+        return { success: false, error: 'No internet connection' };
+      }
+      
       const response = await customAuthService.register(mobileNumber, pin, farmerData);
       
       if (response.success && response.farmer) {
@@ -190,14 +214,17 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
           setUserProfile(response.user_profile);
         }
         console.log('CustomAuthProvider: Registration successful, farmer and profile set');
+        setError(null);
       } else {
         console.error('CustomAuthProvider: Registration failed:', response.error);
+        setError(response.error || 'Registration failed');
       }
       
       return { success: response.success, error: response.error };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       console.error('CustomAuthProvider: Registration error:', error);
+      setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -207,9 +234,17 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
   const checkExistingFarmer = async (mobileNumber: string) => {
     try {
       console.log('CustomAuthProvider: Checking existing farmer');
+      setError(null);
+      
+      if (!isOnline) {
+        console.log('CustomAuthProvider: Offline - cannot check existing farmer');
+        return false;
+      }
+      
       return await customAuthService.checkExistingFarmer(mobileNumber);
     } catch (error) {
       console.error('CustomAuthProvider: Check existing farmer error:', error);
+      setError('Failed to check existing farmer. Please try again.');
       return false;
     }
   };
@@ -218,12 +253,14 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     try {
       console.log('CustomAuthProvider: Signing out');
       setLoading(true);
+      setError(null);
       await customAuthService.signOut();
       setFarmer(null);
       setUserProfile(null);
       console.log('CustomAuthProvider: Sign out successful');
     } catch (error) {
       console.error('CustomAuthProvider: Sign out error:', error);
+      setError('Failed to sign out properly. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -236,7 +273,8 @@ export const CustomAuthProvider = ({ children }: { children: React.ReactNode }) 
     userProfile: userProfile?.id,
     loading,
     isAuthenticated,
-    isOnline
+    isOnline,
+    error
   });
 
   const contextValue: CustomAuthContextType = {

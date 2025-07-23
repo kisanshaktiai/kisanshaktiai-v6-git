@@ -6,6 +6,10 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const jwtSecret = Deno.env.get('JWT_SECRET') || 'your-jwt-secret'
 
+// Default tenant configuration
+const DEFAULT_TENANT_ID = "e6ea43a7-8c91-44da-b4bc-ca9899f3a0f7"
+const DEFAULT_TENANT_SLUG = "kisanshakti-ai"
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -49,31 +53,32 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get default tenant ID with enhanced logging
-    console.log('Looking up default tenant...')
-    const { data: defaultTenant, error: tenantError } = await supabase
-      .from('tenants')
-      .select('id, name, slug, status')
-      .eq('slug', 'kisanshakti')
-      .single()
+    // Get tenant ID with fallback to default
+    console.log('Looking up tenant with slug:', DEFAULT_TENANT_SLUG)
+    let tenantId = DEFAULT_TENANT_ID // Start with default
+    
+    try {
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, name, slug, status')
+        .eq('slug', DEFAULT_TENANT_SLUG)
+        .maybeSingle()
 
-    if (tenantError) {
-      console.error('Tenant lookup error:', tenantError)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'System configuration error. Please contact support.' 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      if (tenantError) {
+        console.error('Tenant lookup error:', tenantError)
+        console.log('Using default tenant ID as fallback:', DEFAULT_TENANT_ID)
+      } else if (tenant) {
+        console.log('Tenant found:', tenant)
+        tenantId = tenant.id
+      } else {
+        console.log('No tenant found with slug, using default:', DEFAULT_TENANT_ID)
+      }
+    } catch (error) {
+      console.error('Tenant lookup failed, using default:', error)
     }
 
-    console.log('Default tenant found:', defaultTenant)
-
-    const tenantId = defaultTenant?.id
-
     if (!tenantId) {
-      console.error('No tenant ID available')
+      console.error('No valid tenant ID available')
       return new Response(
         JSON.stringify({ 
           success: false, 
