@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -19,7 +18,7 @@ import {
 } from 'lucide-react';
 
 interface MobileNumberScreenProps {
-  onNext: () => void;
+  onNext: (mobile: string) => void;
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
@@ -128,7 +127,7 @@ export const MobileNumberScreen: React.FC<MobileNumberScreenProps> = ({
         }
       } else {
         // New user - continue to next step (profile registration)
-        onNext();
+        onNext(formatted);
       }
     } catch (error) {
       console.error('Continue error:', error);
