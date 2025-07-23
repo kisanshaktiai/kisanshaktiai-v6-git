@@ -14,6 +14,8 @@ Deno.serve(async (req) => {
   try {
     const { mobile_number, pin } = await req.json()
 
+    console.log('Login request received:', { mobile_number, hasPin: !!pin })
+
     if (!mobile_number || !pin) {
       return new Response(
         JSON.stringify({ 
@@ -39,13 +41,32 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Find farmer by mobile_number using maybeSingle() to handle multiple matches gracefully
+    // Get default tenant ID
+    const { data: defaultTenant } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('slug', 'kisanshakti')
+      .single()
+
+    const tenantId = defaultTenant?.id
+
+    if (!tenantId) {
+      console.error('No tenant ID found')
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'System configuration error. Please contact support.' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Find farmer by mobile_number and tenant_id
     const { data: farmer, error: fetchError } = await supabase
       .from('farmers')
       .select('id, pin_hash, login_attempts, tenant_id, farmer_code, mobile_number')
       .eq('mobile_number', cleanMobile)
-      .order('created_at', { ascending: false }) // Get the most recent if multiple exist
-      .limit(1)
+      .eq('tenant_id', tenantId)
       .maybeSingle()
 
     if (fetchError) {
@@ -60,6 +81,7 @@ Deno.serve(async (req) => {
     }
 
     if (!farmer) {
+      console.log('No farmer found with mobile:', cleanMobile)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -82,7 +104,7 @@ Deno.serve(async (req) => {
 
     // Verify PIN using the same hashing method as registration
     const encoder = new TextEncoder()
-    const salt = 'kisan_shakti_pin_salt_2024' // Same salt as registration
+    const salt = 'kisan_shakti_pin_salt_2024'
     const data = encoder.encode(pin + salt + cleanMobile)
     const hashBuffer = await crypto.subtle.digest('SHA-256', data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
@@ -96,6 +118,7 @@ Deno.serve(async (req) => {
         .update({ login_attempts: (farmer.login_attempts || 0) + 1 })
         .eq('id', farmer.id)
 
+      console.log('Invalid PIN attempt for farmer:', farmer.id)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -103,6 +126,41 @@ Deno.serve(async (req) => {
         }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Check if user profile exists, create if missing
+    let { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', farmer.id)
+      .maybeSingle()
+
+    if (!userProfile) {
+      console.log('User profile missing for farmer:', farmer.id, 'Creating...')
+      
+      // Create missing user profile
+      const { data: newProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: farmer.id,
+          mobile_number: cleanMobile,
+          phone_verified: true,
+          preferred_language: 'hi',
+          full_name: farmer.farmer_code,
+          farmer_id: farmer.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (profileError) {
+        console.error('Failed to create user profile:', profileError)
+        // Continue with login even if profile creation fails
+      } else {
+        userProfile = newProfile
+        console.log('User profile created successfully:', userProfile.id)
+      }
     }
 
     // Reset login attempts and update last login
@@ -121,7 +179,7 @@ Deno.serve(async (req) => {
     
     const payload = {
       farmer_id: farmer.id,
-      tenant_id: farmer.tenant_id, // Can be null
+      tenant_id: farmer.tenant_id,
       mobile_number: farmer.mobile_number,
       farmer_code: farmer.farmer_code,
       iat: Math.floor(Date.now() / 1000),
@@ -134,6 +192,8 @@ Deno.serve(async (req) => {
       jwtSecret
     )
 
+    console.log('Login successful for farmer:', farmer.id)
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -143,7 +203,12 @@ Deno.serve(async (req) => {
           farmer_code: farmer.farmer_code,
           mobile_number: farmer.mobile_number,
           tenant_id: farmer.tenant_id
-        }
+        },
+        user_profile: userProfile ? {
+          id: userProfile.id,
+          mobile_number: userProfile.mobile_number,
+          preferred_language: userProfile.preferred_language
+        } : null
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -153,7 +218,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error. Please try again.' 
+        error: 'Internal server error: ' + (error.message || 'Unknown error') 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

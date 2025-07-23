@@ -146,7 +146,10 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     setError(null);
 
     try {
-      const result = await register(mobileNumber, pin);
+      const result = await register(mobileNumber, pin, {
+        mobile_number: mobileNumber,
+        preferred_language: 'hi'
+      });
       
       if (result.success) {
         setStep('success');
