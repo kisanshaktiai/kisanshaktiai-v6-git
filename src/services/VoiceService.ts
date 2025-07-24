@@ -1,30 +1,36 @@
+import { supabase } from '@/integrations/supabase/client';
 
-import { tenantManager } from './TenantManager';
-
-interface VoiceSettings {
-  enabled: boolean;
-  language: string;
+export interface VoiceSettings {
   rate: number;
   pitch: number;
   volume: number;
   voice?: SpeechSynthesisVoice;
+  language: string;
 }
 
-class VoiceService {
+export interface VoiceCommand {
+  phrase: string;
+  action: string;
+  parameters?: Record<string, any>;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
+export class VoiceService {
   private static instance: VoiceService;
-  private synthesis: SpeechSynthesis | null = null;
-  private voices: SpeechSynthesisVoice[] = [];
-  private settings: VoiceSettings = {
-    enabled: true,
-    language: 'hi-IN',
-    rate: 0.8,
-    pitch: 1.0,
-    volume: 0.8
-  };
-  private commandRegistry: Map<string, () => void> = new Map();
+  private synthesis: SpeechSynthesis;
   private recognition: any = null;
-  private isListening: boolean = false;
-  private wakeWordActive: boolean = false;
+  private isListening = false;
+  private isWakeWordMode = false;
+  private settings: VoiceSettings;
+  private commandHandlers: Map<string, (params?: any) => void> = new Map();
+  private voices: SpeechSynthesisVoice[] = [];
+  private wakeWord = 'hey kisanshakti';
 
   static getInstance(): VoiceService {
     if (!VoiceService.instance) {
@@ -33,241 +39,289 @@ class VoiceService {
     return VoiceService.instance;
   }
 
-  initialize(): void {
-    if ('speechSynthesis' in window) {
-      this.synthesis = window.speechSynthesis;
-      this.loadVoices();
-      
-      this.synthesis.onvoiceschanged = () => {
-        this.loadVoices();
-      };
+  constructor() {
+    this.synthesis = window.speechSynthesis;
+    this.settings = {
+      rate: 1,
+      pitch: 1,
+      volume: 1,
+      language: 'hi-IN'
+    };
+    this.loadVoices();
+    this.initializeRecognition();
+  }
 
-      console.log('VoiceService: Initialized with Web Speech API');
-    } else {
-      console.warn('VoiceService: Web Speech API not supported');
+  private loadVoices() {
+    const updateVoices = () => {
+      this.voices = this.synthesis.getVoices();
+    };
+
+    updateVoices();
+    if (this.synthesis.onvoiceschanged !== undefined) {
+      this.synthesis.onvoiceschanged = updateVoices;
     }
+  }
 
-    // Initialize speech recognition if available
+  private initializeRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       this.recognition = new SpeechRecognition();
-      this.recognition.continuous = false;
-      this.recognition.interimResults = false;
-      this.recognition.lang = this.settings.language;
+      
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.maxAlternatives = 1;
+      
+      this.recognition.onresult = this.handleSpeechResult.bind(this);
+      this.recognition.onerror = this.handleSpeechError.bind(this);
+      this.recognition.onend = this.handleSpeechEnd.bind(this);
     }
   }
 
-  private loadVoices(): void {
-    if (!this.synthesis) return;
+  private handleSpeechResult(event: any) {
+    let finalTranscript = '';
+    let interimTranscript = '';
 
-    this.voices = this.synthesis.getVoices();
-    console.log('VoiceService: Loaded voices:', this.voices.length);
-    this.selectBestVoice();
-  }
-
-  private selectBestVoice(): void {
-    if (this.voices.length === 0) return;
-
-    const currentLangVoices = this.voices.filter(voice => 
-      voice.lang.startsWith(this.settings.language.split('-')[0])
-    );
-
-    if (currentLangVoices.length > 0) {
-      const localVoice = currentLangVoices.find(voice => voice.localService);
-      this.settings.voice = localVoice || currentLangVoices[0];
-    } else {
-      const englishVoice = this.voices.find(voice => voice.lang.startsWith('en'));
-      if (englishVoice) {
-        this.settings.voice = englishVoice;
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
       }
     }
 
-    console.log('VoiceService: Selected voice:', this.settings.voice?.name);
+    if (finalTranscript) {
+      if (this.isWakeWordMode) {
+        this.checkWakeWord(finalTranscript);
+      } else {
+        this.processVoiceCommand(finalTranscript);
+      }
+    }
   }
 
-  speak(text: string, options: Partial<VoiceSettings> = {}): Promise<void> {
+  private handleSpeechError(event: any) {
+    console.error('Speech recognition error:', event.error);
+    if (event.error === 'no-speech' && this.isWakeWordMode) {
+      // Restart listening for wake word
+      setTimeout(() => this.startWakeWordDetection(), 1000);
+    }
+  }
+
+  private handleSpeechEnd() {
+    if (this.isListening || this.isWakeWordMode) {
+      // Auto-restart recognition
+      setTimeout(() => {
+        if (this.recognition && (this.isListening || this.isWakeWordMode)) {
+          this.recognition.start();
+        }
+      }, 500);
+    }
+  }
+
+  private checkWakeWord(transcript: string) {
+    const normalized = transcript.toLowerCase().trim();
+    if (normalized.includes(this.wakeWord)) {
+      this.onWakeWordDetected();
+    }
+  }
+
+  private onWakeWordDetected() {
+    this.stopWakeWordDetection();
+    this.playConfirmationSound();
+    this.speak('Yes, how can I help you?');
+    this.startListening();
+  }
+
+  private playConfirmationSound() {
+    const audioContext = new AudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  }
+
+  async speak(text: string, language?: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.synthesis || !this.settings.enabled) {
+      if (!text) {
         resolve();
         return;
       }
 
-      this.synthesis.cancel();
+      // Use edge function for better voice quality if available
+      this.speakWithEdgeFunction(text, language).catch(() => {
+        // Fallback to browser TTS
+        this.speakWithBrowser(text, language).then(resolve).catch(reject);
+      });
+    });
+  }
 
+  private async speakWithEdgeFunction(text: string, language?: string) {
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: {
+          text,
+          language: language || this.settings.language,
+          voice: 'alloy',
+          format: 'mp3'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        audio.volume = this.settings.volume;
+        await audio.play();
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async speakWithBrowser(text: string, language?: string): Promise<void> {
+    return new Promise((resolve, reject) => {
       const utterance = new SpeechSynthesisUtterance(text);
       
-      utterance.lang = options.language || this.settings.language;
-      utterance.rate = options.rate || this.settings.rate;
-      utterance.pitch = options.pitch || this.settings.pitch;
-      utterance.volume = options.volume || this.settings.volume;
+      utterance.rate = this.settings.rate;
+      utterance.pitch = this.settings.pitch;
+      utterance.volume = this.settings.volume;
+      utterance.lang = language || this.settings.language;
 
-      if (this.settings.voice) {
-        utterance.voice = this.settings.voice;
+      // Find appropriate voice
+      const voice = this.findVoiceForLanguage(utterance.lang);
+      if (voice) {
+        utterance.voice = voice;
       }
 
       utterance.onend = () => resolve();
-      utterance.onerror = (error) => {
-        console.error('VoiceService: Speech error:', error);
-        reject(error);
-      };
+      utterance.onerror = (event) => reject(event.error);
 
       this.synthesis.speak(utterance);
     });
   }
 
-  stop(): void {
-    if (this.synthesis) {
-      this.synthesis.cancel();
-    }
-    if (this.recognition && this.isListening) {
-      this.recognition.stop();
-      this.isListening = false;
-    }
+  private findVoiceForLanguage(language: string): SpeechSynthesisVoice | null {
+    const langCode = language.split('-')[0];
+    
+    // Exact match first
+    let voice = this.voices.find(v => v.lang === language);
+    if (voice) return voice;
+
+    // Language code match
+    voice = this.voices.find(v => v.lang.startsWith(langCode));
+    if (voice) return voice;
+
+    // Default fallback
+    return this.voices.find(v => v.default) || this.voices[0] || null;
   }
 
-  pause(): void {
-    if (this.synthesis) {
-      this.synthesis.pause();
-    }
-  }
+  async transcribeAudio(audioBlob: Blob, language?: string): Promise<string> {
+    try {
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-  resume(): void {
-    if (this.synthesis) {
-      this.synthesis.resume();
-    }
-  }
+      const { data, error } = await supabase.functions.invoke('voice-to-text', {
+        body: {
+          audio: base64Audio,
+          language: language || this.settings.language
+        }
+      });
 
-  // Speech Recognition methods
-  registerCommand(command: string, callback: () => void): void {
-    this.commandRegistry.set(command.toLowerCase(), callback);
+      if (error) throw error;
+      return data?.text || '';
+    } catch (error) {
+      console.error('Transcription failed:', error);
+      throw error;
+    }
   }
 
   startListening(): void {
-    if (!this.recognition || this.isListening) return;
+    if (!this.recognition) {
+      throw new Error('Speech recognition not supported');
+    }
 
     this.isListening = true;
+    this.recognition.lang = this.settings.language;
     this.recognition.start();
-
-    this.recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.toLowerCase();
-      console.log('VoiceService: Recognized:', transcript);
-      
-      // Check for registered commands
-      for (const [command, callback] of this.commandRegistry) {
-        if (transcript.includes(command)) {
-          callback();
-          break;
-        }
-      }
-    };
-
-    this.recognition.onerror = (event: any) => {
-      console.error('VoiceService: Recognition error:', event.error);
-      this.isListening = false;
-    };
-
-    this.recognition.onend = () => {
-      this.isListening = false;
-    };
   }
 
   stopListening(): void {
     if (this.recognition && this.isListening) {
-      this.recognition.stop();
       this.isListening = false;
+      this.recognition.stop();
     }
   }
 
   startWakeWordDetection(): void {
-    this.wakeWordActive = true;
-    this.registerCommand('hey kisanshakti', () => {
-      console.log('Wake word detected');
-      this.startListening();
-    });
+    if (!this.recognition) return;
+
+    this.isWakeWordMode = true;
+    this.recognition.lang = this.settings.language;
+    this.recognition.start();
   }
 
   stopWakeWordDetection(): void {
-    this.wakeWordActive = false;
+    if (this.recognition && this.isWakeWordMode) {
+      this.isWakeWordMode = false;
+      this.recognition.stop();
+    }
   }
 
-  // Language-specific speak methods
-  async speakInHindi(text: string): Promise<void> {
-    return this.speak(text, { language: 'hi-IN' });
+  registerCommand(phrase: string, handler: (params?: any) => void): void {
+    this.commandHandlers.set(phrase.toLowerCase(), handler);
   }
 
-  async speakInEnglish(text: string): Promise<void> {
-    return this.speak(text, { language: 'en-IN' });
+  private processVoiceCommand(transcript: string): void {
+    const normalized = transcript.toLowerCase().trim();
+    
+    // Check exact matches first
+    for (const [phrase, handler] of this.commandHandlers) {
+      if (normalized.includes(phrase)) {
+        handler();
+        return;
+      }
+    }
+
+    // If no command found, treat as general input
+    this.onUnrecognizedCommand(transcript);
   }
 
-  async speakInMarathi(text: string): Promise<void> {
-    return this.speak(text, { language: 'mr-IN' });
+  private onUnrecognizedCommand(transcript: string): void {
+    // Default action - could be handled by parent component
+    console.log('Unrecognized command:', transcript);
   }
 
-  // Utility methods
-  isSupported(): boolean {
-    return !!this.synthesis;
-  }
-
-  isSpeaking(): boolean {
-    return this.synthesis ? this.synthesis.speaking : false;
-  }
-
-  getAvailableVoices(): SpeechSynthesisVoice[] {
-    return this.voices;
+  updateSettings(settings: Partial<VoiceSettings>): void {
+    this.settings = { ...this.settings, ...settings };
   }
 
   getSettings(): VoiceSettings {
     return { ...this.settings };
   }
 
-  updateSettings(newSettings: Partial<VoiceSettings>): void {
-    this.settings = { ...this.settings, ...newSettings };
-    
-    // Save to localStorage
-    localStorage.setItem('voice_settings', JSON.stringify(this.settings));
+  getAvailableVoices(): SpeechSynthesisVoice[] {
+    return this.voices;
   }
 
-  loadSettings(): void {
-    const saved = localStorage.getItem('voice_settings');
-    if (saved) {
-      try {
-        const savedSettings = JSON.parse(saved);
-        this.settings = { ...this.settings, ...savedSettings };
-        // Re-find voice object since it's not serializable
-        if (savedSettings.voice?.name) {
-          const voice = this.voices.find(v => v.name === savedSettings.voice.name);
-          if (voice) {
-            this.settings.voice = voice;
-          }
-        }
-      } catch (error) {
-        console.error('VoiceService: Error loading settings:', error);
-      }
-    }
+  isSupported(): boolean {
+    return 'speechSynthesis' in window && 
+           ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
   }
 
-  // Smart reading methods for different content types
-  async readCard(title: string, content: string): Promise<void> {
-    const text = `${title}. ${content}`;
-    return this.speak(text);
-  }
-
-  async readNotification(message: string): Promise<void> {
-    const prefix = 'सूचना'; // "Notification" in Hindi
-    return this.speak(`${prefix}. ${message}`);
-  }
-
-  async readWeatherAlert(alert: string): Promise<void> {
-    const prefix = 'मौसम चेतावनी'; // "Weather Alert" in Hindi
-    return this.speak(`${prefix}. ${alert}`);
-  }
-
-  async readFormField(label: string, value?: string): Promise<void> {
-    const text = value ? `${label}: ${value}` : label;
-    return this.speak(text);
+  stop(): void {
+    this.synthesis.cancel();
+    this.stopListening();
+    this.stopWakeWordDetection();
   }
 }
-
-// Export both the class and instance
-export { VoiceService };
-export const voiceService = VoiceService.getInstance();

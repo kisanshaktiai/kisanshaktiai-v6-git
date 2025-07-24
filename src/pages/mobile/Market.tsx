@@ -5,5 +5,3 @@ import { MarketplaceHome } from '@/components/marketplace/MarketplaceHome';
 export const Market: React.FC = () => {
   return <MarketplaceHome />;
 };
-
-export default Market;

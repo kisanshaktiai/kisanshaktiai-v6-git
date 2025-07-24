@@ -1,25 +1,37 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { MobileApp } from '@/components/mobile/MobileApp';
-import { NotFound } from '@/components/ui/NotFound';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import { AuthProvider } from './hooks/useAuth';
+import { TenantProvider } from './context/TenantContext';
+import { MobileApp } from './components/mobile/MobileApp';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { Toaster } from './components/ui/sonner';
+import './i18n';
+import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <Routes>
-        {/* Redirect root to mobile dashboard */}
-        <Route path="/" element={<Navigate to="/mobile" replace />} />
-        
-        {/* Mobile app routes */}
-        <Route path="/mobile/*" element={<MobileApp />} />
-
-        {/* Fallback routes */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-    </div>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <AuthProvider>
+          <TenantProvider>
+            <Router>
+              <div className="min-h-screen bg-background">
+                <Routes>
+                  <Route 
+                    path="/*" 
+                    element={<MobileApp />} 
+                  />
+                </Routes>
+                <Toaster />
+              </div>
+            </Router>
+          </TenantProvider>
+        </AuthProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 

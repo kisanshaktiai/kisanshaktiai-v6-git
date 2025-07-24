@@ -1,18 +1,86 @@
 
 {
   "common": {
+    "continue": "جاری رکھیں",
+    "back": "واپس",
+    "next": "اگلا",
+    "previous": "پچھلا",
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ کریں",
+    "submit": "جمع کریں",
     "loading": "لوڈ ہو رہا ہے...",
+    "error": "خرابی",
+    "success": "کامیابی",
+    "welcome": "خوش آمدید",
+    "hello": "سلام",
+    "goodbye": "الوداع",
+    "yes": "ہاں",
+    "no": "نہیں",
+    "ok": "ٹھیک ہے",
+    "close": "بند کریں",
+    "search": "تلاش کریں",
+    "select": "منتخب کریں",
+    "confirm": "تصدیق کریں",
+    "delete": "ڈیلیٹ کریں",
+    "edit": "ترمیم کریں",
+    "add": "شامل کریں",
+    "view": "دیکھیں",
+    "update": "اپ ڈیٹ کریں",
+    "refresh": "ریفریش کریں"
+  },
+  "auth": {
+    "sign_in": "سائن ان کریں",
+    "sign_out": "سائن آؤٹ کریں",
+    "sign_up": "سائن اپ کریں",
+    "email": "ای میل",
+    "password": "پاس ورڈ",
+    "phone": "فون نمبر",
+    "enter_phone": "اپنا فون نمبر درج کریں",
+    "verify_phone": "فون نمبر کی تصدیق کریں",
+    "otp": "OTP",
+    "enter_otp": "OTP درج کریں",
+    "resend_otp": "OTP دوبارہ بھیجیں",
+    "login_success": "کامیابی سے لاگ ان ہو گئے",
+    "logout_success": "کامیابی سے لاگ آؤٹ ہو گئے"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShakti AI میں خوش آمدید",
+    "welcome_subtitle": "آپ کا ذہین زراعت مددگار",
+    "language_title": "اپنی زبان منتخب کریں",
+    "language_subtitle": "اپنی پسندیدہ زبان کا انتخاب کریں",
+    "autoDetected": "خودکار طور پر شناخت شدہ",
+    "location_title": "اپنا مقام شیئر کریں",
+    "location_subtitle": "مقامی موسم اور فصل کی معلومات حاصل کرنے کے لیے",
+    "profile_title": "اپنا پروفائل بنائیں",
+    "profile_subtitle": "ہمیں بہتر خدمات فراہم کرنے میں مدد کریں"
+  },
+  "navigation": {
     "home": "ہوم",
     "dashboard": "ڈیش بورڈ",
-    "profile": "پروفائل"
+    "profile": "پروفائل",
+    "settings": "سیٹنگز",
+    "help": "مدد",
+    "about": "کے بارے میں",
+    "contact": "رابطہ"
   },
-  "dashboard": {
-    "welcome": "کسان شکتی AI میں خوش آمدید"
+  "weather": {
+    "current_weather": "موجودہ موسم",
+    "forecast": "پیش گوئی",
+    "temperature": "درجہ حرارت",
+    "humidity": "نمی",
+    "wind_speed": "ہوا کی رفتار",
+    "rainfall": "بارش",
+    "alerts": "انتباہات"
   },
-  "chat": {
-    "title": "AI معاون"
-  },
-  "community": {
-    "title": "کسان کمیونٹی"
+  "farming": {
+    "my_lands": "میری زمینیں",
+    "crops": "فصلیں",
+    "activities": "سرگرمیاں",
+    "schedule": "شیڈول",
+    "harvest": "فصل کاٹنا",
+    "sowing": "بوائی",
+    "irrigation": "آبپاشی",
+    "fertilizer": "کھاد",
+    "pesticide": "کیڑے مار دوا"
   }
 }

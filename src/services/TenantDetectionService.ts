@@ -1,5 +1,4 @@
-
-// Enhanced TenantDetectionService with Dynamic Tenant Resolution
+// Enhanced TenantDetectionService with Build-Time Config Support
 
 import { Preferences } from '@capacitor/preferences';
 import { LocationService } from './LocationService';
@@ -96,7 +95,7 @@ export class TenantDetectionService {
         console.log('Location-based detection failed:', error);
       }
 
-      // PRIORITY 5: Use dynamic default tenant from database
+      // PRIORITY 5: Default KisanShakti AI tenant
       const defaultTenant = await this.getDefaultTenant();
       if (defaultTenant) {
         await this.cacheTenant(defaultTenant.id);
@@ -196,27 +195,38 @@ export class TenantDetectionService {
 
   private async getDefaultTenant(): Promise<DetectedTenant | null> {
     try {
-      console.log('TenantDetectionService: Fetching default tenant from database');
+      const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
       
-      // Query database for default tenant (same logic as tenant-default edge function)
+      // Try to get the default tenant from database
       const { data: tenant, error } = await supabase
         .from('tenants')
         .select('*')
-        .eq('is_default', true)
+        .eq('id', defaultTenantId)
         .eq('status', 'active')
         .maybeSingle();
 
       if (error) {
-        console.error('TenantDetectionService: Error fetching default tenant:', error);
-        return null;
+        console.error('Error fetching default tenant:', error);
       }
 
       if (!tenant) {
-        console.log('TenantDetectionService: No default tenant found in database');
-        return null;
+        console.log('No default tenant found in database, using hardcoded KisanShakti AI fallback');
+        // Return hardcoded fallback with existing tenant ID
+        return {
+          id: defaultTenantId,
+          name: 'KisanShakti AI',
+          slug: 'default',
+          branding: {
+            logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+            app_name: 'KisanShakti AI',
+            app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
+            primary_color: '#8BC34A',
+            secondary_color: '#4CAF50',
+            accent_color: '#689F38',
+            background_color: '#FFFFFF',
+          }
+        };
       }
-
-      console.log('TenantDetectionService: Found default tenant:', tenant.id);
 
       const { data: branding } = await supabase
         .from('tenant_branding')
@@ -236,7 +246,16 @@ export class TenantDetectionService {
           secondary_color: branding.secondary_color,
           accent_color: branding.accent_color,
           background_color: branding.background_color,
-        } : {
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Error fetching default tenant:', error);
+      // Return hardcoded fallback with existing tenant ID
+      return {
+        id: '66372c6f-c996-4425-8749-a7561e5d6ae3',
+        name: 'KisanShakti AI',
+        slug: 'default',
+        branding: {
           logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
           app_name: 'KisanShakti AI',
           app_tagline: 'INTELLIGENT AI GURU FOR FARMERS',
@@ -246,9 +265,6 @@ export class TenantDetectionService {
           background_color: '#FFFFFF',
         }
       };
-    } catch (error) {
-      console.error('TenantDetectionService: Error fetching default tenant:', error);
-      return null;
     }
   }
 

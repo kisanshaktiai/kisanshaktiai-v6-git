@@ -34,11 +34,9 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly and map mobile_number to phone
+      // Type cast JSON fields properly
       return {
         ...data,
-        phone: data.mobile_number || '', // Map mobile_number to phone for compatibility
-        preferred_language: (data.preferred_language || 'hi') as UserProfile['preferred_language'], // Ensure proper type casting
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -60,18 +58,9 @@ export const useUserProfile = (userId?: string) => {
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required');
 
-      // Map phone back to mobile_number for database storage
-      const dbUpdates: any = {
-        ...updates,
-        mobile_number: updates.phone || (updates as any).mobile_number
-      };
-      
-      // Remove phone field as it doesn't exist in database
-      delete dbUpdates.phone;
-
       const { data, error } = await supabase
         .from('user_profiles')
-        .update(dbUpdates)
+        .update(updates)
         .eq('id', userId)
         .select()
         .single();
@@ -85,19 +74,10 @@ export const useUserProfile = (userId?: string) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (profileData: Partial<UserProfile> & { id: string; mobile_number: string }) => {
-      // Ensure mobile_number is set for database insertion
-      const dbData: any = {
-        ...profileData,
-        mobile_number: profileData.mobile_number || (profileData as any).phone
-      };
-      
-      // Remove phone field as it doesn't exist in database
-      delete dbData.phone;
-
+    mutationFn: async (profileData: Partial<UserProfile> & { id: string; phone: string }) => {
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([dbData])
+        .insert([profileData])
         .select()
         .single();
 

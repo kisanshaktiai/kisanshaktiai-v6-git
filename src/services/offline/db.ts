@@ -16,7 +16,7 @@ export interface SyncQueueItem {
   table: string;
   data: any;
   timestamp: number;
-  status: 'pending' | 'syncing' | 'synced' | 'error' | 'failed';
+  status: 'pending' | 'syncing' | 'synced' | 'error';
   retryCount: number;
   tenantId?: string;
 }

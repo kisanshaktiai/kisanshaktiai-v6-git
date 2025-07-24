@@ -1,18 +1,86 @@
 
 {
   "common": {
+    "continue": "തുടരുക",
+    "back": "തിരികെ",
+    "next": "അടുത്തത്",
+    "previous": "മുമ്പത്തെ",
+    "save": "സേവ് ചെയ്യുക",
+    "cancel": "റദ്ദാക്കുക",
+    "submit": "സമർപ്പിക്കുക",
     "loading": "ലോഡ് ചെയ്യുന്നു...",
+    "error": "പിശക്",
+    "success": "വിജയം",
+    "welcome": "സ്വാഗതം",
+    "hello": "നമസ്കാരം",
+    "goodbye": "വിട",
+    "yes": "അതെ",
+    "no": "ഇല്ല",
+    "ok": "ശരി",
+    "close": "അടയ്ക്കുക",
+    "search": "തിരയുക",
+    "select": "തിരഞ്ഞെടുക്കുക",
+    "confirm": "സ്ഥിരീകരിക്കുക",
+    "delete": "ഇല്ലാതാക്കുക",
+    "edit": "എഡിറ്റ് ചെയ്യുക",
+    "add": "ചേർക്കുക",
+    "view": "കാണുക",
+    "update": "അപ്ഡേറ്റ് ചെയ്യുക",
+    "refresh": "പുതുക്കുക"
+  },
+  "auth": {
+    "sign_in": "സൈൻ ഇൻ ചെയ്യുക",
+    "sign_out": "സൈൻ ഔട്ട് ചെയ്യുക",
+    "sign_up": "സൈൻ അപ്പ് ചെയ്യുക",
+    "email": "ഇമെയിൽ",
+    "password": "പാസ്‌വേഡ്",
+    "phone": "ഫോൺ നമ്പർ",
+    "enter_phone": "നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക",
+    "verify_phone": "ഫോൺ നമ്പർ പരിശോധിക്കുക",
+    "otp": "OTP",
+    "enter_otp": "OTP നൽകുക",
+    "resend_otp": "OTP വീണ്ടും അയയ്ക്കുക",
+    "login_success": "വിജയകരമായി ലോഗിൻ ചെയ്തു",
+    "logout_success": "വിജയകരമായി ലോഗൗട്ട് ചെയ്തു"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShakti AI-യിലേക്ക് സ്വാഗതം",
+    "welcome_subtitle": "നിങ്ങളുടെ സ്മാർട്ട് കൃഷി സഹായി",
+    "language_title": "നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക",
+    "language_subtitle": "നിങ്ങളുടെ പ്രിയപ്പെട്ട ഭാഷ തിരഞ്ഞെടുക്കുക",
+    "autoDetected": "സ്വയം കണ്ടെത്തി",
+    "location_title": "നിങ്ങളുടെ സ്ഥാനം പങ്കിടുക",
+    "location_subtitle": "പ്രാദേശിക കാലാവസ്ഥയും വിള വിവരങ്ങളും ലഭിക്കാൻ",
+    "profile_title": "നിങ്ങളുടെ പ്രൊഫൈൽ സൃഷ്ടിക്കുക",
+    "profile_subtitle": "ഞങ്ങൾക്ക് മികച്ച സേവനം നൽകാൻ സഹായിക്കുക"
+  },
+  "navigation": {
     "home": "ഹോം",
     "dashboard": "ഡാഷ്ബോർഡ്",
-    "profile": "പ്രൊഫൈൽ"
+    "profile": "പ്രൊഫൈൽ",
+    "settings": "ക്രമീകരണങ്ങൾ",
+    "help": "സഹായം",
+    "about": "കുറിച്ച്",
+    "contact": "ബന്ധപ്പെടുക"
   },
-  "dashboard": {
-    "welcome": "കിസാൻ ശക്തി AI-ലേക്ക് സ്വാഗതം"
+  "weather": {
+    "current_weather": "നിലവിലെ കാലാവസ്ഥ",
+    "forecast": "പ്രവചനം",
+    "temperature": "താപനില",
+    "humidity": "ഈർപ്പം",
+    "wind_speed": "കാറ്റിന്റെ വേഗത",
+    "rainfall": "മഴ",
+    "alerts": "മുന്നറിയിപ്പുകൾ"
   },
-  "chat": {
-    "title": "AI സഹായി"
-  },
-  "community": {
-    "title": "കർഷക സമുദായം"
+  "farming": {
+    "my_lands": "എന്റെ ഭൂമി",
+    "crops": "വിളകൾ",
+    "activities": "പ്രവർത്തനങ്ങൾ",
+    "schedule": "ഷെഡ്യൂൾ",
+    "harvest": "വിളവെടുപ്പ്",
+    "sowing": "വിതയൽ",
+    "irrigation": "ജലസേചനം",
+    "fertilizer": "വളം",
+    "pesticide": "കീടനാശിനി"
   }
 }

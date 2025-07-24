@@ -1,18 +1,86 @@
 
 {
   "common": {
+    "continue": "ଆଗକୁ ବଢ଼ନ୍ତୁ",
+    "back": "ପଛକୁ",
+    "next": "ପରବର୍ତ୍ତୀ",
+    "previous": "ପୂର୍ବବର୍ତ୍ତୀ",
+    "save": "ସଞ୍ଚୟ କରନ୍ତୁ",
+    "cancel": "ବାତିଲ କରନ୍ତୁ",
+    "submit": "ଦାଖଲ କରନ୍ତୁ",
     "loading": "ଲୋଡ଼ ହେଉଛି...",
-    "home": "ହୋମ",
+    "error": "ତ୍ରୁଟି",
+    "success": "ସଫଳତା",
+    "welcome": "ସ୍ୱାଗତ",
+    "hello": "ନମସ୍କାର",
+    "goodbye": "ବିଦାୟ",
+    "yes": "ହଁ",
+    "no": "ନା",
+    "ok": "ଠିକ୍ ଅଛି",
+    "close": "ବନ୍ଦ କରନ୍ତୁ",
+    "search": "ଖୋଜନ୍ତୁ",
+    "select": "ବାଛନ୍ତୁ",
+    "confirm": "ନିଶ୍ଚିତ କରନ୍ତୁ",
+    "delete": "ଡିଲିଟ୍ କରନ୍ତୁ",
+    "edit": "ସମ୍ପାଦନା କରନ୍ତୁ",
+    "add": "ଯୋଗ କରନ୍ତୁ",
+    "view": "ଦେଖନ୍ତୁ",
+    "update": "ଅପଡେଟ୍ କରନ୍ତୁ",
+    "refresh": "ରିଫ୍ରେସ୍ କରନ୍ତୁ"
+  },
+  "auth": {
+    "sign_in": "ସାଇନ୍ ଇନ୍ କରନ୍ତୁ",
+    "sign_out": "ସାଇନ୍ ଆଉଟ୍ କରନ୍ତୁ",
+    "sign_up": "ସାଇନ୍ ଅପ୍ କରନ୍ତୁ",
+    "email": "ଇମେଲ୍",
+    "password": "ପାସୱାର୍ଡ",
+    "phone": "ଫୋନ୍ ନମ୍ବର",
+    "enter_phone": "ଆପଣଙ୍କ ଫୋନ୍ ନମ୍ବର ଲେଖନ୍ତୁ",
+    "verify_phone": "ଫୋନ୍ ନମ୍ବର ଯାଞ୍ଚ କରନ୍ତୁ",
+    "otp": "OTP",
+    "enter_otp": "OTP ଲେଖନ୍ତୁ",
+    "resend_otp": "OTP ପୁନଃପଠାନ୍ତୁ",
+    "login_success": "ସଫଳଭାବେ ଲଗଇନ୍ ହୋଇଛି",
+    "logout_success": "ସଫଳଭାବେ ଲଗଆଉଟ୍ ହୋଇଛି"
+  },
+  "onboarding": {
+    "welcome_title": "KisanShakti AI ରେ ସ୍ୱାଗତ",
+    "welcome_subtitle": "ଆପଣଙ୍କର ସ୍ମାର୍ଟ କୃଷି ସହାୟକ",
+    "language_title": "ଆପଣଙ୍କ ଭାଷା ବାଛନ୍ତୁ",
+    "language_subtitle": "ଆପଣଙ୍କ ପସନ୍ଦର ଭାଷା ବାଛନ୍ତୁ",
+    "autoDetected": "ସ୍ୱୟଂଚାଳିତ ଭାବରେ ଚିହ୍ନଟ ହୋଇଛି",
+    "location_title": "ଆପଣଙ୍କ ସ୍ଥାନ ଶେୟାର କରନ୍ତୁ",
+    "location_subtitle": "ସ୍ଥାନୀୟ ପାଗ ଏବଂ ଫସଲ ସୂଚନା ପାଇବାକୁ",
+    "profile_title": "ଆପଣଙ୍କ ପ୍ରୋଫାଇଲ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+    "profile_subtitle": "ଆମକୁ ଭଲ ସେବା ଦେବାରେ ସାହାଯ୍ୟ କରନ୍ତୁ"
+  },
+  "navigation": {
+    "home": "ଘର",
     "dashboard": "ଡ୍ୟାସବୋର୍ଡ",
-    "profile": "ପ୍ରୋଫାଇଲ"
+    "profile": "ପ୍ରୋଫାଇଲ୍",
+    "settings": "ସେଟିଂସ୍",
+    "help": "ସହାୟତା",
+    "about": "ବିଷୟରେ",
+    "contact": "ଯୋଗାଯୋଗ"
   },
-  "dashboard": {
-    "welcome": "କିସାନ ଶକ୍ତି AI ରେ ସ୍ୱାଗତ"
+  "weather": {
+    "current_weather": "ବର୍ତ୍ତମାନର ପାଗ",
+    "forecast": "ପୂର୍ବାନୁମାନ",
+    "temperature": "ତାପମାତ୍ରା",
+    "humidity": "ଆର୍ଦ୍ରତା",
+    "wind_speed": "ପବନର ଗତି",
+    "rainfall": "ବର୍ଷା",
+    "alerts": "ସତର୍କତା"
   },
-  "chat": {
-    "title": "AI ସହାୟକ"
-  },
-  "community": {
-    "title": "କୃଷକ ସମୁଦାୟ"
+  "farming": {
+    "my_lands": "ମୋର ଜମି",
+    "crops": "ଫସଲ",
+    "activities": "କାର୍ଯ୍ୟକଳାପ",
+    "schedule": "କାର୍ଯ୍ୟସୂଚୀ",
+    "harvest": "ଅମଳ",
+    "sowing": "ବୁଣା",
+    "irrigation": "ଜଳସେଚନ",
+    "fertilizer": "ସାର",
+    "pesticide": "କୀଟନାଶକ"
   }
 }

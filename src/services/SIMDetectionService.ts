@@ -1,20 +1,19 @@
+
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 
-// Define a consistent interface for the SIM plugin
+// Import the native SIM plugin
 declare global {
   interface Window {
     CapacitorSim?: {
-      getSimInfo(): Promise<{
-        cards: Array<{
-          simSlotIndex?: number;
-          displayName?: string;
-          carrierName?: string;
-          isoCountryCode?: string;
-          mcc?: string;
-          mnc?: string;
-          isEmbedded?: boolean;
+      getSimCards(): Promise<{
+        simCards: Array<{
+          slotIndex: number;
+          displayName: string;
+          carrierName: string;
+          countryCode: string;
           phoneNumber?: string;
+          isEmbedded: boolean;
         }>;
       }>;
     };
@@ -28,7 +27,6 @@ export interface SIMCard {
   countryCode: string;
   isActive: boolean;
   displayName: string;
-  isDefault?: boolean;
 }
 
 export class SIMDetectionService {
@@ -59,22 +57,21 @@ export class SIMDetectionService {
         return await this.getMockSIMs();
       }
 
-      const result = await window.CapacitorSim.getSimInfo();
+      const result = await window.CapacitorSim.getSimCards();
       const simCards: SIMCard[] = [];
 
-      if (result.cards && result.cards.length > 0) {
-        result.cards.forEach((sim, index) => {
+      if (result.simCards && result.simCards.length > 0) {
+        result.simCards.forEach((sim, index) => {
           // Some carriers don't expose phone numbers, so we generate a placeholder
-          const phoneNumber = sim.phoneNumber || this.generatePlaceholderNumber(sim.carrierName || '', index);
+          const phoneNumber = sim.phoneNumber || this.generatePlaceholderNumber(sim.carrierName, index);
           
           simCards.push({
-            slot: (sim.simSlotIndex !== undefined ? sim.simSlotIndex : index) + 1, // Convert 0-based to 1-based indexing
+            slot: sim.slotIndex + 1, // Convert 0-based to 1-based indexing
             phoneNumber: this.formatPhoneNumber(phoneNumber),
             carrierName: sim.carrierName || 'Unknown Carrier',
-            countryCode: sim.isoCountryCode || 'IN',
-            isActive: !(sim.isEmbedded || false), // Physical SIMs are typically active
-            displayName: sim.displayName || `${sim.carrierName || 'SIM'} - ${(sim.simSlotIndex !== undefined ? sim.simSlotIndex : index) + 1}`,
-            isDefault: index === 0 // First SIM is default
+            countryCode: sim.countryCode || '+91',
+            isActive: !sim.isEmbedded, // Physical SIMs are typically active
+            displayName: sim.displayName || `${sim.carrierName} - SIM ${sim.slotIndex + 1}`
           });
         });
       }
@@ -122,8 +119,7 @@ export class SIMDetectionService {
       carrierName: 'Airtel',
       countryCode: '+91',
       isActive: true,
-      displayName: 'Airtel - 9876543210',
-      isDefault: true
+      displayName: 'Airtel - 9876543210'
     });
     
     // Randomly add a second SIM for dual-SIM testing
@@ -134,8 +130,7 @@ export class SIMDetectionService {
         carrierName: 'Jio',
         countryCode: '+91',
         isActive: true,
-        displayName: 'Jio - 7218973005',
-        isDefault: false
+        displayName: 'Jio - 7218973005'
       });
     }
 
@@ -147,7 +142,7 @@ export class SIMDetectionService {
   async getPrimarySIM(): Promise<SIMCard | null> {
     try {
       const sims = await this.detectSIMs();
-      return sims.find(sim => sim.isActive && sim.isDefault) || sims[0] || null;
+      return sims.find(sim => sim.isActive && sim.slot === 1) || sims[0] || null;
     } catch (error) {
       console.error('Error getting primary SIM:', error);
       return null;

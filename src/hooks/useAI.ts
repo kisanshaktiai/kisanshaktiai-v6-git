@@ -1,91 +1,69 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-
-interface AIContext {
-  farmerInfo?: any;
-  landInfo?: any;
-  weatherInfo?: any;
-  cropInfo?: any;
-  userProfile?: any;
-  tenant?: any;
-}
+import { agentOrchestrator } from '@/lib/ai/AgentOrchestrator';
+import { AgentContext, AgentResponse, AgentType, SupportedLanguage } from '@/types/ai';
+import { useAuth } from './useAuth';
 
 export const useAI = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { farmer, currentAssociation } = useAuth();
 
-  const generateContextualPrompt = (userQuery: string, context: AIContext = {}) => {
-    let contextPrompt = `User Query: ${userQuery}\n\nContext:\n`;
-    
-    if (context.farmerInfo) {
-      const farmer = context.farmerInfo;
-      contextPrompt += `Farmer Profile:
-- Primary Crops: ${farmer.primary_crops || 'Not specified'}
-- Total Land: ${farmer.total_land_acres || 'Not specified'} acres
-- Experience: ${farmer.farming_experience_years || 'Not specified'} years
-- Location: ${farmer.village || 'Not specified'}, ${farmer.district || 'Not specified'}
-`;
+  const askAgent = async (
+    query: string,
+    agentType?: AgentType,
+    language: SupportedLanguage = 'hi'
+  ): Promise<AgentResponse | null> => {
+    if (!farmer || !currentAssociation) {
+      setError('Authentication required');
+      return null;
     }
 
-    if (context.userProfile) {
-      const profile = context.userProfile;
-      contextPrompt += `User Profile:
-- Language: ${profile.preferred_language || 'Not specified'}
-- Name: ${profile.full_name || 'Not specified'}
-`;
-    }
-
-    if (context.landInfo && context.landInfo.length > 0) {
-      contextPrompt += `\nLand Information:\n`;
-      context.landInfo.forEach((land: any, index: number) => {
-        contextPrompt += `Land ${index + 1}: ${land.name} - ${land.area_acres} acres, Current Crop: ${land.current_crop || 'None'}\n`;
-      });
-    }
-
-    if (context.weatherInfo) {
-      contextPrompt += `\nWeather Context: ${JSON.stringify(context.weatherInfo)}\n`;
-    }
-
-    if (context.cropInfo) {
-      contextPrompt += `\nCrop Context: ${JSON.stringify(context.cropInfo)}\n`;
-    }
-
-    return contextPrompt;
-  };
-
-  const queryAI = async (userQuery: string, context: AIContext = {}) => {
     setLoading(true);
+    setError(null);
+
     try {
-      const contextualPrompt = generateContextualPrompt(userQuery, context);
+      const context: AgentContext = {
+        farmerId: farmer.id,
+        tenantId: currentAssociation.tenant_id,
+        language,
+        sessionId: `session-${Date.now()}`,
+        location: {
+          latitude: 0,
+          longitude: 0,
+          district: 'Unknown',
+          state: 'Unknown',
+        },
+        farmingProfile: {
+          crops: Array.isArray(farmer.primary_crops) ? farmer.primary_crops : [],
+          landArea: farmer.total_land_acres || 0,
+          experience: farmer.farming_experience_years || 0,
+        },
+      };
+
+      // Classify query if agent type not specified
+      const targetAgentType = agentType || await agentOrchestrator.classifyQuery(query, context);
       
-      const { data, error } = await supabase.functions.invoke('ai-orchestrator', {
-        body: {
-          query: contextualPrompt,
-          context: context
-        }
-      });
-
-      if (error) throw error;
-
-      return {
-        success: true,
-        response: data.response,
-        suggestions: data.suggestions || []
-      };
-    } catch (error) {
-      console.error('AI Query Error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
+      const response = await agentOrchestrator.processQuery(query, targetAgentType, context);
+      return response;
+      
+    } catch (err) {
+      console.error('AI query error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process query');
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
+  const setOfflineMode = (isOffline: boolean) => {
+    agentOrchestrator.setOfflineMode(isOffline);
+  };
+
   return {
-    queryAI,
+    askAgent,
+    setOfflineMode,
     loading,
-    generateContextualPrompt
+    error,
   };
 };

@@ -1,21 +1,24 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { RootState } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Settings, User } from 'lucide-react';
-import { useSimpleFarmer } from '@/hooks/useSimpleFarmer';
-import { useTenantContext } from '@/hooks/useTenantContext';
 
 export const DashboardHeader: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { farmer } = useSimpleFarmer();
-  const { tenantData } = useTenantContext();
+  const { profile } = useSelector((state: RootState) => state.farmer);
+  const { isOnline } = useSelector((state: RootState) => state.sync);
+  const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant);
 
   const getFarmerName = (): string => {
-    return farmer.full_name || t('dashboard.defaultFarmerName', 'Farmer');
+    // Since farmers table doesn't have a name field, we'll use a default greeting
+    // In a real implementation, this would come from user_profiles table or auth metadata
+    return t('dashboard.defaultFarmerName', 'Farmer');
   };
 
   const getGreeting = (): string => {
@@ -30,26 +33,26 @@ export const DashboardHeader: React.FC = () => {
       {/* Top Row - Logo and Status */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-3">
-          {tenantData?.branding?.logo_url && (
+          {tenantBranding?.logo_url && (
             <img 
-              src={tenantData.branding.logo_url} 
-              alt={tenantData.branding.app_name || 'Logo'}
+              src={tenantBranding.logo_url} 
+              alt={tenantBranding.app_name || 'Logo'}
               className="w-8 h-8 rounded"
             />
           )}
           <div>
             <h1 className="text-lg font-semibold text-gray-900">
-              {tenantData?.branding?.app_name || tenantData?.tenant?.name || 'KisanShakti AI'}
+              {tenantBranding?.app_name || currentTenant?.name || 'KisanShakti AI'}
             </h1>
-            {tenantData?.branding?.app_tagline && (
-              <p className="text-xs text-gray-500">{tenantData.branding.app_tagline}</p>
+            {tenantBranding?.app_tagline && (
+              <p className="text-xs text-gray-500">{tenantBranding.app_tagline}</p>
             )}
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Badge variant="default" className="text-xs">
-            {t('status.online', 'Online')}
+          <Badge variant={isOnline ? 'default' : 'secondary'} className="text-xs">
+            {isOnline ? t('status.online', 'Online') : t('status.offline', 'Offline')}
           </Badge>
           
           <Button variant="ghost" size="sm" className="relative">

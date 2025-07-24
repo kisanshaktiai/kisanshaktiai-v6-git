@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Tenant, TenantBranding, TenantFeatures, UserProfile, UserTenant, SubscriptionPlan } from '@/types/tenant';
+import { Tenant, TenantBranding, TenantFeatures, UserProfile, UserTenant } from '@/types/tenant';
 
 interface TenantAuthState {
   user: User | null;
@@ -26,58 +26,6 @@ const safeJsonParse = (value: any, fallback: any = null) => {
     }
   }
   return value;
-};
-
-// Helper function to convert subscription plan to our type
-const convertSubscriptionPlan = (plan: string | null | undefined): SubscriptionPlan => {
-  if (!plan) return 'kisan';
-  
-  switch (plan) {
-    case 'starter':
-      return 'kisan';
-    case 'growth':
-      return 'shakti';
-    case 'enterprise':
-      return 'ai';
-    case 'kisan':
-    case 'shakti':
-    case 'ai':
-      return plan as SubscriptionPlan;
-    default:
-      return 'kisan';
-  }
-};
-
-// Helper function to convert database tenant to our Tenant type
-const convertDatabaseTenant = (dbTenant: any): Tenant => {
-  return {
-    id: dbTenant.id,
-    slug: dbTenant.slug,
-    name: dbTenant.name,
-    type: dbTenant.type,
-    status: dbTenant.status,
-    owner_name: dbTenant.owner_name,
-    owner_email: dbTenant.owner_email,
-    owner_phone: dbTenant.owner_phone,
-    business_registration: dbTenant.business_registration,
-    business_address: safeJsonParse(dbTenant.business_address, null),
-    established_date: dbTenant.established_date,
-    subscription_plan: convertSubscriptionPlan(dbTenant.subscription_plan),
-    subscription_start_date: dbTenant.subscription_start_date,
-    subscription_end_date: dbTenant.subscription_end_date,
-    trial_ends_at: dbTenant.trial_ends_at,
-    max_farmers: dbTenant.max_farmers || 1000,
-    max_dealers: dbTenant.max_dealers || 50,
-    max_products: dbTenant.max_products || 100,
-    max_storage_gb: dbTenant.max_storage_gb || 10,
-    max_api_calls_per_day: dbTenant.max_api_calls_per_day || 10000,
-    subdomain: dbTenant.subdomain,
-    custom_domain: dbTenant.custom_domain,
-    metadata: safeJsonParse(dbTenant.metadata, {}),
-    created_at: dbTenant.created_at,
-    updated_at: dbTenant.updated_at,
-    deleted_at: dbTenant.deleted_at,
-  };
 };
 
 export const useTenantAuth = () => {
@@ -144,10 +92,6 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
-          // Map mobile_number to phone for compatibility
-          phone: profileData.mobile_number || '',
-          // Ensure proper type casting for preferred_language
-          preferred_language: (profileData.preferred_language || 'hi') as UserProfile['preferred_language'],
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,
@@ -207,7 +151,7 @@ export const useTenantAuth = () => {
           .eq('tenant_id', currentTenantAssoc.tenant_id)
           .single();
 
-        currentTenant = tenant ? convertDatabaseTenant(tenant) : null;
+        currentTenant = tenant;
         tenantBranding = branding;
         tenantFeatures = features;
       }
@@ -258,7 +202,7 @@ export const useTenantAuth = () => {
 
       setState(prev => ({
         ...prev,
-        currentTenant: tenant ? convertDatabaseTenant(tenant) : null,
+        currentTenant: tenant,
         tenantBranding: branding,
         tenantFeatures: features,
       }));

@@ -12,7 +12,7 @@ class SecureStorageService {
     return SecureStorageService.instance;
   }
 
-  async setItem(key: string, value: string): Promise<void> {
+  async set(key: string, value: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Preferences.set({ key, value });
     } else {
@@ -20,7 +20,7 @@ class SecureStorageService {
     }
   }
 
-  async getItem(key: string): Promise<string | null> {
+  async get(key: string): Promise<string | null> {
     if (Capacitor.isNativePlatform()) {
       const { value } = await Preferences.get({ key });
       return value;
@@ -29,7 +29,7 @@ class SecureStorageService {
     }
   }
 
-  async removeItem(key: string): Promise<void> {
+  async remove(key: string): Promise<void> {
     if (Capacitor.isNativePlatform()) {
       await Preferences.remove({ key });
     } else {
@@ -46,11 +46,11 @@ class SecureStorageService {
   }
 
   async setObject(key: string, value: any): Promise<void> {
-    await this.setItem(key, JSON.stringify(value));
+    await this.set(key, JSON.stringify(value));
   }
 
   async getObject<T>(key: string): Promise<T | null> {
-    const value = await this.getItem(key);
+    const value = await this.get(key);
     if (value) {
       try {
         return JSON.parse(value) as T;
@@ -59,19 +59,6 @@ class SecureStorageService {
       }
     }
     return null;
-  }
-
-  // Add aliases for backward compatibility
-  async set(key: string, value: string): Promise<void> {
-    return this.setItem(key, value);
-  }
-
-  async get(key: string): Promise<string | null> {
-    return this.getItem(key);
-  }
-
-  async remove(key: string): Promise<void> {
-    return this.removeItem(key);
   }
 }
 

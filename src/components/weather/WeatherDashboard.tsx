@@ -1,6 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,7 +12,6 @@ import { AgriculturalInsights } from './AgriculturalInsights';
 import { WeatherSettings } from './WeatherSettings';
 import { RefreshCw, Settings, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useStubData } from '@/hooks/useStubData';
 
 interface WeatherData {
   id: string;
@@ -55,21 +55,16 @@ interface WeatherAlert {
 
 export const WeatherDashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { farmer } = useStubData();
+  const { location, profile } = useSelector((state: RootState) => state.farmer);
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Mock location data
-  const location = {
-    latitude: 28.6139,
-    longitude: 77.2090,
-    address: `${farmer.village}, ${farmer.district}, ${farmer.state}`
-  };
-
   const fetchWeatherData = async () => {
+    if (!location) return;
+
     try {
       // Get current weather
       const { data: weather, error: weatherError } = await supabase
@@ -110,6 +105,8 @@ export const WeatherDashboard: React.FC = () => {
   };
 
   const refreshWeatherData = async () => {
+    if (!location) return;
+    
     setRefreshing(true);
     
     try {
@@ -142,7 +139,7 @@ export const WeatherDashboard: React.FC = () => {
     const interval = setInterval(fetchWeatherData, 10 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [location]);
 
   if (loading) {
     return (
@@ -167,6 +164,22 @@ export const WeatherDashboard: React.FC = () => {
     );
   }
 
+  if (!location) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {t('weather.locationRequired', 'Location Required')}
+          </h3>
+          <p className="text-gray-600">
+            {t('weather.enableLocation', 'Please enable location access to view weather data')}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -176,7 +189,7 @@ export const WeatherDashboard: React.FC = () => {
             {t('weather.dashboard', 'Weather Dashboard')}
           </h2>
           <p className="text-gray-600">
-            {location.address}
+            {location.address || `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -208,7 +221,7 @@ export const WeatherDashboard: React.FC = () => {
       {/* Weather Settings */}
       {showSettings && (
         <WeatherSettings 
-          farmerId={farmer.id || ''}
+          farmerId={profile?.id || ''}
           location={location}
           onClose={() => setShowSettings(false)}
         />

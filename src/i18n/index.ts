@@ -60,27 +60,6 @@ const resources = {
   },
 };
 
-// RTL languages list
-const rtlLanguages = ['ur', 'ar'];
-
-// Function to set document direction based on language
-const setDocumentDirection = (language: string) => {
-  const isRTL = rtlLanguages.includes(language);
-  document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
-  document.documentElement.setAttribute('lang', language);
-  
-  // Add language-specific class to body
-  document.body.className = document.body.className.replace(/lang-\w+/g, '');
-  document.body.classList.add(`lang-${language}`);
-  
-  // Apply RTL-specific styles
-  if (isRTL) {
-    document.body.classList.add('rtl-layout');
-  } else {
-    document.body.classList.remove('rtl-layout');
-  }
-};
-
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -99,13 +78,5 @@ i18n
       useSuspense: false,
     },
   });
-
-// Set initial direction
-setDocumentDirection(i18n.language);
-
-// Listen for language changes
-i18n.on('languageChanged', (language) => {
-  setDocumentDirection(language);
-});
 
 export default i18n;

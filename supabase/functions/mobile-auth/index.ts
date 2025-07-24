@@ -7,36 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-async function getDefaultTenant() {
-  try {
-    console.log('Fetching default tenant from tenant-default endpoint');
-    
-    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/tenant-default`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Failed to fetch default tenant:', response.status, response.statusText);
-      return null;
-    }
-
-    const tenantData = await response.json();
-    console.log('Default tenant fetched successfully:', tenantData);
-    
-    return {
-      id: tenantData.id,
-      name: tenantData.name
-    };
-  } catch (error) {
-    console.error('Error fetching default tenant:', error);
-    return null;
-  }
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -64,37 +34,35 @@ serve(async (req) => {
       );
     }
 
-    // Get default tenant dynamically
-    const defaultTenant = await getDefaultTenant();
-    
-    if (!defaultTenant || !defaultTenant.id) {
-      console.error('No default tenant available')
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'System configuration error. Please contact support.' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    // Use the known default tenant ID for KisanShakti AI
+    const defaultTenantId = '66372c6f-c996-4425-8749-a7561e5d6ae3';
+    let resolvedTenantId = defaultTenantId;
 
-    let resolvedTenantId = defaultTenant.id;
+    // Only try to resolve if it's not the default
+    if (tenantId !== 'default' && tenantId !== defaultTenantId) {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', tenantId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (tenant) {
+        resolvedTenantId = tenant.id;
+      }
+    }
 
     console.log('Using tenant ID:', resolvedTenantId);
 
-    // Check if farmer exists - using farmers table instead of user_profiles
-    const { data: existingFarmer, error: farmerError } = await supabase
-      .from('farmers')
-      .select('id, mobile_number, farmer_code, tenant_id')
-      .eq('mobile_number', cleanPhone)
-      .eq('tenant_id', resolvedTenantId)
+    // Check if user profile exists
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, phone, full_name')
+      .eq('phone', cleanPhone)
       .maybeSingle();
 
-    if (farmerError) {
-      console.error('Farmer check error:', farmerError);
+    if (profileError) {
+      console.error('Profile check error:', profileError);
       return new Response(
         JSON.stringify({ success: false, error: 'Database error. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -104,11 +72,11 @@ serve(async (req) => {
     let authUser;
     let isNewUser = false;
 
-    if (existingFarmer) {
-      console.log('Existing farmer found:', existingFarmer.id);
+    if (existingProfile) {
+      console.log('Existing user found:', existingProfile.id);
       
       // Get the auth user by user ID
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(existingFarmer.id);
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(existingProfile.id);
       
       if (userError || !userData.user) {
         console.error('Auth user not found:', userError);
@@ -123,7 +91,7 @@ serve(async (req) => {
 
     // For new users, create them and return credentials
     let tempPassword;
-    if (!existingFarmer) {
+    if (!existingProfile) {
       console.log('Creating new user');
       isNewUser = true;
 
@@ -138,7 +106,7 @@ serve(async (req) => {
         phone_confirmed: true,
         email_confirmed: true,
         user_metadata: {
-          mobile_number: cleanPhone,
+          phone: cleanPhone,
           is_mobile_user: true,
           tenant_id: resolvedTenantId,
           preferred_language: preferredLanguage,
@@ -156,43 +124,37 @@ serve(async (req) => {
 
       authUser = newUserData.user;
 
-      // Create user profile with dynamic tenant ID
+      // Create user profile
       const { error: profileInsertError } = await supabase
         .from('user_profiles')
         .insert({
           id: authUser.id,
-          mobile_number: cleanPhone,
+          phone: cleanPhone,
           phone_verified: true,
           preferred_language: preferredLanguage as any,
           country: 'India',
-          tenant_id: resolvedTenantId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
       if (profileInsertError) {
         console.error('Profile creation error:', profileInsertError);
-        // Don't continue - this is critical for the app to work
-        return new Response(
-          JSON.stringify({ success: false, error: 'Failed to create user profile. Please try again.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        // Continue anyway, profile can be created later
       }
 
-      // Create farmer profile automatically with dynamic tenant ID
+      // Create farmer profile automatically
       const { error: farmerInsertError } = await supabase
         .from('farmers')
         .insert({
           id: authUser.id,
           tenant_id: resolvedTenantId,
-          mobile_number: cleanPhone,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
       if (farmerInsertError) {
         console.error('Farmer profile creation error:', farmerInsertError);
-        // Continue anyway - user_profile is more important
+        // Continue anyway
       }
 
       // Link user to tenant
