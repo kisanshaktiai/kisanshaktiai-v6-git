@@ -92,6 +92,7 @@ export const useTenantAuth = () => {
       if (profileData) {
         profile = {
           ...profileData,
+          mobile_number: profileData.mobile_number || '', // Ensure mobile_number is present
           notification_preferences: safeJsonParse(profileData.notification_preferences, {
             sms: true,
             push: true,
@@ -151,7 +152,13 @@ export const useTenantAuth = () => {
           .eq('tenant_id', currentTenantAssoc.tenant_id)
           .single();
 
-        currentTenant = tenant;
+        // Type cast the tenant data to ensure compatibility
+        if (tenant) {
+          currentTenant = {
+            ...tenant,
+            status: tenant.status as any // Cast to handle the type mismatch
+          } as Tenant;
+        }
         tenantBranding = branding;
         tenantFeatures = features;
       }
@@ -202,7 +209,7 @@ export const useTenantAuth = () => {
 
       setState(prev => ({
         ...prev,
-        currentTenant: tenant,
+        currentTenant: tenant ? { ...tenant, status: tenant.status as any } as Tenant : null,
         tenantBranding: branding,
         tenantFeatures: features,
       }));

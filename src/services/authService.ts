@@ -34,6 +34,7 @@ const safeJsonParse = (value: any, fallback: any = null) => {
 const convertToProfile = (data: UserProfileRow): Profile => {
   return {
     ...data,
+    mobile_number: data.mobile_number || '', // Ensure mobile_number is present
     notification_preferences: safeJsonParse(data.notification_preferences, {
       sms: true,
       push: true,
@@ -86,7 +87,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('phone', cleanPhone)
+      .eq('mobile_number', cleanPhone) // Use mobile_number instead of phone
       .limit(1);
     
     if (error) {
@@ -231,7 +232,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
 
     // Validate and sanitize allowed fields
     const allowedFields: (keyof UserProfileRow)[] = [
-      'phone', 'phone_verified', 'full_name', 'display_name', 'date_of_birth',
+      'mobile_number', 'phone_verified', 'full_name', 'display_name', 'date_of_birth',
       'gender', 'address_line1', 'address_line2', 'village', 'taluka', 'district',
       'state', 'pincode', 'country', 'avatar_url', 'bio', 'aadhaar_number',
       'farmer_id', 'shc_id', 'coordinates', 'last_active_at', 'device_tokens',
@@ -248,7 +249,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
         }
         
         // Special validation for phone numbers
-        if (field === 'phone' && typeof value === 'string') {
+        if (field === 'mobile_number' && typeof value === 'string') {
           if (!validatePhoneNumber(value)) {
             throw new Error('Invalid phone number format');
           }

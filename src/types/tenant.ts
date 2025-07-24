@@ -1,4 +1,3 @@
-
 export type TenantType = 
   | 'agri_company' 
   | 'dealer' 
@@ -9,7 +8,7 @@ export type TenantType =
   | 'cooperative' 
   | 'insurance';
 
-export type TenantStatus = 'trial' | 'active' | 'suspended' | 'cancelled';
+export type TenantStatus = 'trial' | 'active' | 'suspended' | 'cancelled' | 'archived' | 'pending_approval';
 export type SubscriptionPlan = 'starter' | 'growth' | 'enterprise' | 'custom';
 export type UserRole = 
   | 'super_admin' 
@@ -139,7 +138,7 @@ export interface TenantFeatures {
 
 export interface UserProfile {
   id: string;
-  phone: string;
+  mobile_number: string;
   phone_verified: boolean;
   
   // Personal Information

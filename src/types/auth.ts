@@ -1,7 +1,7 @@
 
 export interface Profile {
   id: string;
-  phone: string;
+  mobile_number: string; // Changed from phone to mobile_number
   phone_verified?: boolean;
   full_name?: string;
   display_name?: string;

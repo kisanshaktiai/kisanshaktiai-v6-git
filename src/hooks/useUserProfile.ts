@@ -34,9 +34,10 @@ export const useUserProfile = (userId?: string) => {
       
       if (!data) return null;
 
-      // Type cast JSON fields properly
+      // Type cast JSON fields properly and ensure mobile_number is present
       return {
         ...data,
+        mobile_number: data.mobile_number || '', // Ensure mobile_number is present
         notification_preferences: safeJsonParse(data.notification_preferences, {
           sms: true,
           push: true,
@@ -74,10 +75,10 @@ export const useUserProfile = (userId?: string) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (profileData: Partial<UserProfile> & { id: string; phone: string }) => {
+    mutationFn: async (profileData: Partial<UserProfile> & { id: string; mobile_number: string }) => {
       const { data, error } = await supabase
         .from('user_profiles')
-        .insert([profileData])
+        .insert(profileData)
         .select()
         .single();
 
