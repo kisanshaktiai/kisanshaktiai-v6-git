@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_sessions: {
+        Row: {
+          client_info: Json | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_active_at: string
+          session_started_at: string
+          tenant_id: string | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          client_info?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_active_at?: string
+          session_started_at?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          client_info?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_active_at?: string
+          session_started_at?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_model_metrics: {
         Row: {
           accuracy_score: number | null
@@ -218,6 +298,68 @@ export type Database = {
             columns: ["api_key_id"]
             isOneToOne: false
             referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_plans: {
+        Row: {
+          base_price: number
+          billing_interval: string | null
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          is_custom: boolean | null
+          limits: Json | null
+          name: string
+          price_annually: number | null
+          price_monthly: number | null
+          price_quarterly: number | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_price?: number
+          billing_interval?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_custom?: boolean | null
+          limits?: Json | null
+          name: string
+          price_annually?: number | null
+          price_monthly?: number | null
+          price_quarterly?: number | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number
+          billing_interval?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_custom?: boolean | null
+          limits?: Json | null
+          name?: string
+          price_annually?: number | null
+          price_monthly?: number | null
+          price_quarterly?: number | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_plans_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -890,6 +1032,169 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_mappings: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          is_active: boolean | null
+          is_verified: boolean | null
+          portal_mappings: Json | null
+          ssl_status: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          portal_mappings?: Json | null
+          ssl_status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          portal_mappings?: Json | null
+          ssl_status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_mappings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_verifications: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          is_verified: boolean | null
+          updated_at: string | null
+          user_id: string
+          verification_token: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          verification_token: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          verification_token?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      farmer_subscriptions: {
+        Row: {
+          auto_renew: boolean
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          created_at: string
+          end_date: string | null
+          farmer_id: string
+          id: string
+          metadata: Json | null
+          payment_method: Json | null
+          plan_id: string
+          start_date: string
+          status: string
+          tenant_id: string
+          tenant_subscription_id: string | null
+          trial_end_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
+          created_at?: string
+          end_date?: string | null
+          farmer_id: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: Json | null
+          plan_id: string
+          start_date?: string
+          status?: string
+          tenant_id: string
+          tenant_subscription_id?: string | null
+          trial_end_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
+          created_at?: string
+          end_date?: string | null
+          farmer_id?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: Json | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          tenant_subscription_id?: string | null
+          trial_end_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmer_subscriptions_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: true
+            referencedRelation: "farmers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farmer_subscriptions_tenant_subscription_id_fkey"
+            columns: ["tenant_subscription_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farmers: {
         Row: {
           aadhaar_number: string | null
@@ -908,7 +1213,11 @@ export type Database = {
           irrigation_type: string | null
           is_verified: boolean | null
           last_app_open: string | null
+          last_login_at: string | null
           loan_amount: number | null
+          login_attempts: number | null
+          mobile_number: string | null
+          pin_hash: string | null
           preferred_dealer_id: string | null
           primary_crops: string[] | null
           shc_id: string | null
@@ -934,11 +1243,15 @@ export type Database = {
           has_loan?: boolean | null
           has_storage?: boolean | null
           has_tractor?: boolean | null
-          id: string
+          id?: string
           irrigation_type?: string | null
           is_verified?: boolean | null
           last_app_open?: string | null
+          last_login_at?: string | null
           loan_amount?: number | null
+          login_attempts?: number | null
+          mobile_number?: string | null
+          pin_hash?: string | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
           shc_id?: string | null
@@ -968,7 +1281,11 @@ export type Database = {
           irrigation_type?: string | null
           is_verified?: boolean | null
           last_app_open?: string | null
+          last_login_at?: string | null
           loan_amount?: number | null
+          login_attempts?: number | null
+          mobile_number?: string | null
+          pin_hash?: string | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
           shc_id?: string | null
@@ -1242,6 +1559,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          invoice_number: string
+          line_items: Json
+          metadata: Json | null
+          paid_date: string | null
+          paypal_invoice_id: string | null
+          status: string
+          stripe_invoice_id: string | null
+          subscription_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          due_date: string
+          id?: string
+          invoice_number: string
+          line_items?: Json
+          metadata?: Json | null
+          paid_date?: string | null
+          paypal_invoice_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          line_items?: Json
+          metadata?: Json | null
+          paid_date?: string | null
+          paypal_invoice_id?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       land_activities: {
         Row: {
@@ -1806,6 +2192,201 @@ export type Database = {
           },
         ]
       }
+      otp_sessions: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          is_used: boolean | null
+          otp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          otp: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          otp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      password_reset_requests: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          is_used: boolean | null
+          reset_token: string
+          updated_at: string | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          is_used?: boolean | null
+          reset_token: string
+          updated_at?: string | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean | null
+          reset_token?: string
+          updated_at?: string | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          gateway_response: Json | null
+          id: string
+          invoice_id: string | null
+          payment_method: string | null
+          processed_at: string | null
+          status: string
+          tenant_id: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          gateway_response?: Json | null
+          id?: string
+          invoice_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          status?: string
+          tenant_id: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          gateway_response?: Json | null
+          id?: string
+          invoice_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          status?: string
+          tenant_id?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          due_date: string | null
+          gateway_response: Json | null
+          id: string
+          invoice_number: string | null
+          metadata: Json | null
+          payment_date: string | null
+          payment_method: Json | null
+          payment_status: string | null
+          subscription_id: string | null
+          tenant_id: string
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          gateway_response?: Json | null
+          id?: string
+          invoice_number?: string | null
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_method?: Json | null
+          payment_status?: string | null
+          subscription_id?: string | null
+          tenant_id: string
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          gateway_response?: Json | null
+          id?: string
+          invoice_number?: string | null
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_method?: Json | null
+          payment_status?: string | null
+          subscription_id?: string | null
+          tenant_id?: string
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_admin_requests: {
         Row: {
           approved_at: string | null
@@ -1912,6 +2493,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "platform_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          severity: string
+          tenant_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          severity?: string
+          tenant_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          severity?: string
+          tenant_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_notifications_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2476,6 +3104,39 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          tenant_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       soil_health: {
         Row: {
           bulk_density: number | null
@@ -2624,6 +3285,72 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "subscription_plans_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_renewals: {
+        Row: {
+          amount: number
+          auto_renew: boolean
+          created_at: string
+          currency: string
+          id: string
+          notification_sent: boolean | null
+          paypal_subscription_id: string | null
+          processed_at: string | null
+          renewal_date: string
+          status: string
+          stripe_subscription_id: string | null
+          subscription_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          auto_renew?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          notification_sent?: boolean | null
+          paypal_subscription_id?: string | null
+          processed_at?: string | null
+          renewal_date: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscription_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          auto_renew?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          notification_sent?: boolean | null
+          paypal_subscription_id?: string | null
+          processed_at?: string | null
+          renewal_date?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscription_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_renewals_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_renewals_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2966,6 +3693,7 @@ export type Database = {
           deleted_at: string | null
           established_date: string | null
           id: string
+          is_default: boolean | null
           max_api_calls_per_day: number | null
           max_dealers: number | null
           max_farmers: number | null
@@ -2976,6 +3704,7 @@ export type Database = {
           owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
+          settings: Json | null
           slug: string
           status: Database["public"]["Enums"]["tenant_status"] | null
           subdomain: string | null
@@ -2996,6 +3725,7 @@ export type Database = {
           deleted_at?: string | null
           established_date?: string | null
           id?: string
+          is_default?: boolean | null
           max_api_calls_per_day?: number | null
           max_dealers?: number | null
           max_farmers?: number | null
@@ -3006,6 +3736,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          settings?: Json | null
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"] | null
           subdomain?: string | null
@@ -3026,6 +3757,7 @@ export type Database = {
           deleted_at?: string | null
           established_date?: string | null
           id?: string
+          is_default?: boolean | null
           max_api_calls_per_day?: number | null
           max_dealers?: number | null
           max_farmers?: number | null
@@ -3036,6 +3768,7 @@ export type Database = {
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          settings?: Json | null
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"] | null
           subdomain?: string | null
@@ -3108,6 +3841,7 @@ export type Database = {
           aadhaar_number: string | null
           address_line1: string | null
           address_line2: string | null
+          annual_income_range: string | null
           avatar_url: string | null
           bio: string | null
           coordinates: unknown | null
@@ -3117,23 +3851,34 @@ export type Database = {
           device_tokens: Json | null
           display_name: string | null
           district: string | null
+          email_verified_at: string | null
           expertise_areas: string[] | null
           farmer_id: string | null
+          farming_experience_years: number | null
           full_name: string | null
           gender: string | null
+          has_irrigation: boolean | null
+          has_storage: boolean | null
+          has_tractor: boolean | null
           id: string
+          is_account_locked: boolean | null
+          is_profile_complete: boolean | null
           last_active_at: string | null
           metadata: Json | null
+          mobile_number: string
           notification_preferences: Json | null
-          phone: string
+          password_changed_at: string | null
           phone_verified: boolean | null
           pincode: string | null
           preferred_language:
             | Database["public"]["Enums"]["language_code"]
             | null
+          primary_crops: string[] | null
           shc_id: string | null
           state: string | null
           taluka: string | null
+          tenant_id: string | null
+          total_land_acres: number | null
           updated_at: string | null
           village: string | null
         }
@@ -3141,6 +3886,7 @@ export type Database = {
           aadhaar_number?: string | null
           address_line1?: string | null
           address_line2?: string | null
+          annual_income_range?: string | null
           avatar_url?: string | null
           bio?: string | null
           coordinates?: unknown | null
@@ -3150,23 +3896,34 @@ export type Database = {
           device_tokens?: Json | null
           display_name?: string | null
           district?: string | null
+          email_verified_at?: string | null
           expertise_areas?: string[] | null
           farmer_id?: string | null
+          farming_experience_years?: number | null
           full_name?: string | null
           gender?: string | null
+          has_irrigation?: boolean | null
+          has_storage?: boolean | null
+          has_tractor?: boolean | null
           id: string
+          is_account_locked?: boolean | null
+          is_profile_complete?: boolean | null
           last_active_at?: string | null
           metadata?: Json | null
+          mobile_number: string
           notification_preferences?: Json | null
-          phone: string
+          password_changed_at?: string | null
           phone_verified?: boolean | null
           pincode?: string | null
           preferred_language?:
             | Database["public"]["Enums"]["language_code"]
             | null
+          primary_crops?: string[] | null
           shc_id?: string | null
           state?: string | null
           taluka?: string | null
+          tenant_id?: string | null
+          total_land_acres?: number | null
           updated_at?: string | null
           village?: string | null
         }
@@ -3174,6 +3931,7 @@ export type Database = {
           aadhaar_number?: string | null
           address_line1?: string | null
           address_line2?: string | null
+          annual_income_range?: string | null
           avatar_url?: string | null
           bio?: string | null
           coordinates?: unknown | null
@@ -3183,23 +3941,34 @@ export type Database = {
           device_tokens?: Json | null
           display_name?: string | null
           district?: string | null
+          email_verified_at?: string | null
           expertise_areas?: string[] | null
           farmer_id?: string | null
+          farming_experience_years?: number | null
           full_name?: string | null
           gender?: string | null
+          has_irrigation?: boolean | null
+          has_storage?: boolean | null
+          has_tractor?: boolean | null
           id?: string
+          is_account_locked?: boolean | null
+          is_profile_complete?: boolean | null
           last_active_at?: string | null
           metadata?: Json | null
+          mobile_number?: string
           notification_preferences?: Json | null
-          phone?: string
+          password_changed_at?: string | null
           phone_verified?: boolean | null
           pincode?: string | null
           preferred_language?:
             | Database["public"]["Enums"]["language_code"]
             | null
+          primary_crops?: string[] | null
           shc_id?: string | null
           state?: string | null
           taluka?: string | null
+          tenant_id?: string | null
+          total_land_acres?: number | null
           updated_at?: string | null
           village?: string | null
         }
@@ -4328,7 +5097,46 @@ export type Database = {
         Args: { land_uuid: string }
         Returns: number
       }
+      can_self_insert: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      check_slug_availability: {
+        Args: { p_slug: string }
+        Returns: Json
+      }
       cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_tenant_with_validation: {
+        Args: {
+          p_name: string
+          p_slug: string
+          p_type: string
+          p_status?: string
+          p_subscription_plan?: string
+          p_owner_name?: string
+          p_owner_email?: string
+          p_owner_phone?: string
+          p_business_registration?: string
+          p_business_address?: Json
+          p_established_date?: string
+          p_subscription_start_date?: string
+          p_subscription_end_date?: string
+          p_trial_ends_at?: string
+          p_max_farmers?: number
+          p_max_dealers?: number
+          p_max_products?: number
+          p_max_storage_gb?: number
+          p_max_api_calls_per_day?: number
+          p_subdomain?: string
+          p_custom_domain?: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      disable_expired_tenant_features: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -4587,6 +5395,14 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      generate_otp: {
+        Args: { p_length?: number }
+        Returns: string
+      }
+      generate_slug_suggestions: {
+        Args: { p_organization_name: string }
+        Returns: Json
+      }
       geography: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
@@ -4815,6 +5631,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_jwt_farmer_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_proj4_from_srid: {
         Args: { "": number }
         Returns: string
@@ -4860,6 +5680,14 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      is_authenticated_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_tenant_admin: {
         Args: { _tenant_id: string }
         Returns: boolean
@@ -4871,6 +5699,17 @@ export type Database = {
       jsonb: {
         Args: { "": unknown }
         Returns: Json
+      }
+      log_security_event: {
+        Args: {
+          event_type: string
+          user_id?: string
+          tenant_id?: string
+          metadata?: Json
+          ip_address?: string
+          user_agent?: string
+        }
+        Returns: string
       }
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
@@ -6151,6 +6990,22 @@ export type Database = {
         Args: { "": unknown }
         Returns: string
       }
+      track_failed_login: {
+        Args: {
+          p_user_id: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
+      track_user_login: {
+        Args: {
+          p_user_id: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       unlockrows: {
         Args: { "": string }
         Returns: number
@@ -6165,11 +7020,20 @@ export type Database = {
         }
         Returns: string
       }
+      user_has_tenant_access: {
+        Args: { tenant_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      alert_severity: "low" | "medium" | "high" | "critical"
+      alert_severity: "low" | "medium" | "high" | "critical" | "info"
       alert_status: "active" | "acknowledged" | "resolved"
-      billing_interval: "monthly" | "quarterly" | "annually"
+      billing_interval:
+        | "monthly"
+        | "quarterly"
+        | "annually"
+        | "biannual"
+        | "lifetime"
       language_code:
         | "en"
         | "hi"
@@ -6182,6 +7046,8 @@ export type Database = {
         | "ml"
         | "or"
         | "bn"
+        | "ur"
+        | "ne"
       metric_type: "system" | "usage" | "ai_model" | "financial" | "custom"
       onboarding_step_status:
         | "pending"
@@ -6189,10 +7055,27 @@ export type Database = {
         | "completed"
         | "skipped"
         | "failed"
-      payment_status: "pending" | "paid" | "partial" | "overdue" | "failed"
-      subscription_plan: "starter" | "growth" | "enterprise" | "custom"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "partial"
+        | "overdue"
+        | "failed"
+        | "refunded"
+        | "chargeback"
+      subscription_plan:
+        | "Kisan_Basic"
+        | "Shakti_Growth"
+        | "AI_Enterprise"
+        | "custom"
       subscription_plan_type: "basic" | "premium" | "enterprise" | "custom"
-      tenant_status: "trial" | "active" | "suspended" | "cancelled"
+      tenant_status:
+        | "trial"
+        | "active"
+        | "suspended"
+        | "cancelled"
+        | "archived"
+        | "pending_approval"
       tenant_type:
         | "agri_company"
         | "dealer"
@@ -6208,6 +7091,8 @@ export type Database = {
         | "completed"
         | "failed"
         | "cancelled"
+        | "refunded"
+        | "on_hold"
       user_role:
         | "super_admin"
         | "tenant_owner"
@@ -6351,9 +7236,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      alert_severity: ["low", "medium", "high", "critical"],
+      alert_severity: ["low", "medium", "high", "critical", "info"],
       alert_status: ["active", "acknowledged", "resolved"],
-      billing_interval: ["monthly", "quarterly", "annually"],
+      billing_interval: [
+        "monthly",
+        "quarterly",
+        "annually",
+        "biannual",
+        "lifetime",
+      ],
       language_code: [
         "en",
         "hi",
@@ -6366,6 +7257,8 @@ export const Constants = {
         "ml",
         "or",
         "bn",
+        "ur",
+        "ne",
       ],
       metric_type: ["system", "usage", "ai_model", "financial", "custom"],
       onboarding_step_status: [
@@ -6375,10 +7268,30 @@ export const Constants = {
         "skipped",
         "failed",
       ],
-      payment_status: ["pending", "paid", "partial", "overdue", "failed"],
-      subscription_plan: ["starter", "growth", "enterprise", "custom"],
+      payment_status: [
+        "pending",
+        "paid",
+        "partial",
+        "overdue",
+        "failed",
+        "refunded",
+        "chargeback",
+      ],
+      subscription_plan: [
+        "Kisan_Basic",
+        "Shakti_Growth",
+        "AI_Enterprise",
+        "custom",
+      ],
       subscription_plan_type: ["basic", "premium", "enterprise", "custom"],
-      tenant_status: ["trial", "active", "suspended", "cancelled"],
+      tenant_status: [
+        "trial",
+        "active",
+        "suspended",
+        "cancelled",
+        "archived",
+        "pending_approval",
+      ],
       tenant_type: [
         "agri_company",
         "dealer",
@@ -6395,6 +7308,8 @@ export const Constants = {
         "completed",
         "failed",
         "cancelled",
+        "refunded",
+        "on_hold",
       ],
       user_role: [
         "super_admin",

@@ -7,6 +7,16 @@ import { sessionService } from './sessionService';
 
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 
+// Input validation utilities
+const validatePhoneNumber = (phone: string): boolean => {
+  const cleanPhone = phone.replace(/\D/g, '');
+  return cleanPhone.length === 10 && /^[6-9]\d{9}$/.test(cleanPhone);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[<>\"'&]/g, '').trim();
+};
+
 // Helper function to safely parse JSON
 const safeJsonParse = (value: any, fallback: any = null) => {
   if (value === null || value === undefined) return fallback;
@@ -66,8 +76,10 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
   try {
     console.log('Checking if user exists for phone:', phone.replace(/\d/g, '*'));
     
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
+    const cleanPhone = sanitizeInput(phone.replace(/\D/g, ''));
+    
+    if (!validatePhoneNumber(cleanPhone)) {
+      console.error('Invalid phone number format');
       return false;
     }
     
@@ -91,12 +103,12 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
 
 export const signInWithPhone = async (phone: string): Promise<void> => {
   try {
-    console.log('Starting mobile authentication...');
+    console.log('Starting secure mobile authentication...');
     
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = sanitizeInput(phone.replace(/\D/g, ''));
     
-    if (cleanPhone.length !== 10) {
-      throw new Error('Please enter a valid 10-digit mobile number');
+    if (!validatePhoneNumber(cleanPhone)) {
+      throw new Error('Please enter a valid 10-digit Indian mobile number');
     }
     
     // Get current selected language
@@ -107,14 +119,14 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     await tenantService.clearCache();
     const currentTenant = await tenantService.detectTenant();
     
-    console.log('Calling mobile auth edge function...');
+    console.log('Calling secure mobile auth edge function...');
     
-    // Call simplified mobile auth edge function
+    // Call enhanced mobile auth edge function
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: { 
         phone: cleanPhone,
         tenantId: currentTenant?.id || 'default',
-        preferredLanguage: selectedLanguage
+        preferredLanguage: sanitizeInput(selectedLanguage)
       }
     });
 
@@ -124,14 +136,21 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     }
 
     if (!data?.success) {
+      if (data?.error?.includes('Too many authentication attempts')) {
+        throw new Error('Too many login attempts. Please wait and try again later.');
+      }
       throw new Error(data?.error || 'Authentication failed. Please try again.');
     }
 
-    console.log('Edge function completed successfully:', data);
+    console.log('Edge function completed successfully:', {
+      success: data.success,
+      isNewUser: data.isNewUser,
+      tenantId: data.tenantId
+    });
 
-    // Handle authentication flow - both new and existing users get credentials
+    // Handle authentication flow with enhanced security
     if (data.credentials) {
-      console.log('Signing in user with credentials...');
+      console.log('Signing in user with secure credentials...');
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.credentials.email,
         password: data.credentials.password
@@ -139,6 +158,9 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
       if (signInError) {
         console.error('Sign in error:', signInError);
+        if (signInError.message.includes('Invalid login credentials')) {
+          throw new Error('Authentication failed. Please try again or contact support.');
+        }
         throw new Error('Failed to complete authentication. Please try again.');
       }
 
@@ -146,7 +168,7 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
         throw new Error('Authentication failed. Please try again.');
       }
 
-      // Use session service to track the session
+      // Use enhanced session service to track the session
       await sessionService.setSession(authData.session);
       console.log('User authentication completed successfully');
     } else {
@@ -156,10 +178,12 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
   } catch (error) {
     console.error('Mobile authentication failed:', error);
     
-    // Enhanced error handling with more specific messages
+    // Enhanced error handling with security-aware messages
     if (error instanceof Error) {
       if (error.message.includes('valid 10-digit')) {
         throw error; // Already user-friendly
+      } else if (error.message.includes('Too many')) {
+        throw error; // Rate limiting message
       } else if (error.message.includes('Edge Function returned a non-2xx status code')) {
         throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
@@ -179,7 +203,7 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
 export const signOut = async (): Promise<void> => {
   try {
-    console.log('Starting sign out...');
+    console.log('Starting secure sign out...');
     
     // Clear stored session first
     await sessionService.clearSession();
@@ -191,7 +215,7 @@ export const signOut = async (): Promise<void> => {
       throw error;
     }
     
-    console.log('Sign out successful');
+    console.log('Secure sign out successful');
   } catch (error) {
     console.error('Error in signOut:', error);
     throw error;
@@ -200,12 +224,12 @@ export const signOut = async (): Promise<void> => {
 
 export const updateProfile = async (userId: string, updates: Partial<Profile>): Promise<void> => {
   try {
-    // Convert Profile updates to database format
-    const dbUpdates: Partial<UserProfileRow> = {
+    // Input validation and sanitization
+    const sanitizedUpdates: Partial<UserProfileRow> = {
       updated_at: new Date().toISOString()
     };
 
-    // Copy allowed fields
+    // Validate and sanitize allowed fields
     const allowedFields: (keyof UserProfileRow)[] = [
       'phone', 'phone_verified', 'full_name', 'display_name', 'date_of_birth',
       'gender', 'address_line1', 'address_line2', 'village', 'taluka', 'district',
@@ -216,21 +240,38 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
 
     allowedFields.forEach(field => {
       if (updates[field] !== undefined) {
-        (dbUpdates as any)[field] = updates[field];
+        let value = updates[field];
+        
+        // Sanitize string fields
+        if (typeof value === 'string') {
+          value = sanitizeInput(value);
+        }
+        
+        // Special validation for phone numbers
+        if (field === 'phone' && typeof value === 'string') {
+          if (!validatePhoneNumber(value)) {
+            throw new Error('Invalid phone number format');
+          }
+        }
+        
+        (sanitizedUpdates as any)[field] = value;
       }
     });
 
-    // Handle preferred_language separately
+    // Handle preferred_language with validation
     if (updates.preferred_language) {
       const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn'] as const;
-      if (validLanguages.includes(updates.preferred_language as any)) {
-        dbUpdates.preferred_language = updates.preferred_language as any;
+      const sanitizedLang = sanitizeInput(updates.preferred_language);
+      if (validLanguages.includes(sanitizedLang as any)) {
+        sanitizedUpdates.preferred_language = sanitizedLang as any;
+      } else {
+        throw new Error('Invalid language selection');
       }
     }
 
     const { error } = await supabase
       .from('user_profiles')
-      .update(dbUpdates)
+      .update(sanitizedUpdates)
       .eq('id', userId);
     
     if (error) {

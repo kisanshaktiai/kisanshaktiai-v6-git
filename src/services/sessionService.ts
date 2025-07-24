@@ -10,11 +10,13 @@ interface StoredSession {
   expires_at: number;
   user: User;
   stored_at: number;
+  session_hash: string;
 }
 
 export class SessionService {
   private static instance: SessionService;
-  private readonly SESSION_KEY = 'kisanshakti_session';
+  private readonly SESSION_KEY = 'kisanshakti_session_v2'; // Versioned for security
+  private readonly MAX_SESSION_AGE = 86400; // 24 hours in seconds
 
   static getInstance(): SessionService {
     if (!SessionService.instance) {
@@ -24,10 +26,10 @@ export class SessionService {
   }
 
   /**
-   * Basic session validation - simplified approach
+   * Enhanced session validation with security checks
    */
   validateSessionData(sessionData: any): { isValid: boolean; session?: Session; error?: string } {
-    console.log('Validating session data');
+    console.log('Validating session data with enhanced security checks');
 
     if (!sessionData || typeof sessionData !== 'object') {
       return { isValid: false, error: 'Invalid session data structure' };
@@ -41,9 +43,30 @@ export class SessionService {
       return { isValid: false, error: 'Missing user data' };
     }
 
-    // Basic token format check - just ensure they're strings
+    // Enhanced token format validation
     if (typeof sessionData.access_token !== 'string' || typeof sessionData.refresh_token !== 'string') {
       return { isValid: false, error: 'Invalid token format' };
+    }
+
+    // JWT structure validation
+    const accessTokenParts = sessionData.access_token.split('.');
+    const refreshTokenParts = sessionData.refresh_token.split('.');
+    
+    if (accessTokenParts.length !== 3 || refreshTokenParts.length !== 3) {
+      return { isValid: false, error: 'Invalid JWT structure' };
+    }
+
+    // Check token expiry with buffer
+    const now = Math.floor(Date.now() / 1000);
+    const tokenBuffer = 60; // 1 minute buffer
+    
+    if (sessionData.expires_at && sessionData.expires_at <= (now + tokenBuffer)) {
+      return { isValid: false, error: 'Session expired' };
+    }
+
+    // Check session age
+    if (sessionData.stored_at && (Date.now() - sessionData.stored_at) > (this.MAX_SESSION_AGE * 1000)) {
+      return { isValid: false, error: 'Session too old' };
     }
 
     const session: Session = {
@@ -59,7 +82,32 @@ export class SessionService {
   }
 
   /**
-   * Store session securely
+   * Create secure hash for session integrity
+   */
+  private async createSessionHash(sessionData: any): Promise<string> {
+    const dataToHash = `${sessionData.access_token}:${sessionData.user.id}:${sessionData.stored_at}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(dataToHash);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+  }
+
+  /**
+   * Verify session integrity
+   */
+  private async verifySessionIntegrity(storedSession: StoredSession): Promise<boolean> {
+    try {
+      const expectedHash = await this.createSessionHash(storedSession);
+      return storedSession.session_hash === expectedHash;
+    } catch (error) {
+      console.error('Session integrity check failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Store session securely with integrity checks
    */
   async storeSession(sessionData: any): Promise<void> {
     try {
@@ -73,8 +121,12 @@ export class SessionService {
         refresh_token: sessionData.refresh_token,
         expires_at: sessionData.expires_at || Math.floor(Date.now() / 1000) + 3600,
         user: sessionData.user,
-        stored_at: Date.now()
+        stored_at: Date.now(),
+        session_hash: '' // Will be filled below
       };
+
+      // Create integrity hash
+      storedSession.session_hash = await this.createSessionHash(storedSession);
 
       if (Capacitor.isNativePlatform()) {
         await Preferences.set({
@@ -85,7 +137,7 @@ export class SessionService {
         localStorage.setItem(this.SESSION_KEY, JSON.stringify(storedSession));
       }
 
-      console.log('Session stored successfully');
+      console.log('Session stored securely with integrity check');
     } catch (error) {
       console.error('Error storing session:', error);
       throw error;
@@ -93,7 +145,7 @@ export class SessionService {
   }
 
   /**
-   * Retrieve stored session
+   * Retrieve stored session with security validation
    */
   async getStoredSession(): Promise<StoredSession | null> {
     try {
@@ -112,10 +164,24 @@ export class SessionService {
 
       const stored: StoredSession = JSON.parse(sessionData);
 
-      // Simple expiry check
+      // Enhanced expiry check
       const now = Math.floor(Date.now() / 1000);
       if (stored.expires_at <= now) {
         console.log('Stored session is expired, removing...');
+        await this.clearSession();
+        return null;
+      }
+
+      // Check session age
+      if ((Date.now() - stored.stored_at) > (this.MAX_SESSION_AGE * 1000)) {
+        console.log('Session too old, removing...');
+        await this.clearSession();
+        return null;
+      }
+
+      // Verify session integrity
+      if (stored.session_hash && !(await this.verifySessionIntegrity(stored))) {
+        console.log('Session integrity check failed, removing...');
         await this.clearSession();
         return null;
       }
@@ -129,7 +195,7 @@ export class SessionService {
   }
 
   /**
-   * Clear stored session
+   * Clear stored session securely
    */
   async clearSession(): Promise<void> {
     try {
@@ -138,18 +204,18 @@ export class SessionService {
       } else {
         localStorage.removeItem(this.SESSION_KEY);
       }
-      console.log('Session cleared successfully');
+      console.log('Session cleared securely');
     } catch (error) {
       console.error('Error clearing session:', error);
     }
   }
 
   /**
-   * Restore session from storage
+   * Restore session from storage with enhanced validation
    */
   async restoreSession(): Promise<Session | null> {
     try {
-      console.log('Attempting to restore session from storage...');
+      console.log('Attempting to restore session from secure storage...');
       
       const storedSession = await this.getStoredSession();
       if (!storedSession) {
@@ -157,7 +223,29 @@ export class SessionService {
         return null;
       }
 
-      console.log('Found stored session, restoring...');
+      console.log('Found stored session, validating and restoring...');
+      
+      // Enhanced session validation using edge function
+      try {
+        const { data: validationResult, error: validationError } = await supabase.functions.invoke('session-validate', {
+          body: {
+            access_token: storedSession.access_token,
+            refresh_token: storedSession.refresh_token,
+            user_id: storedSession.user.id
+          }
+        });
+
+        if (validationError || !validationResult?.valid) {
+          console.log('Session validation failed:', validationResult?.error || validationError?.message);
+          await this.clearSession();
+          return null;
+        }
+
+        console.log('Session validation passed');
+      } catch (validationError) {
+        console.error('Session validation error:', validationError);
+        // Continue with local validation as fallback
+      }
       
       // Try to set the session with Supabase
       const { data, error } = await supabase.auth.setSession({
@@ -193,11 +281,11 @@ export class SessionService {
   }
 
   /**
-   * Set session with simplified retry mechanism
+   * Set session with enhanced security and validation
    */
   async setSession(sessionData: any): Promise<Session> {
     try {
-      console.log('Setting session...');
+      console.log('Setting session with enhanced security...');
 
       // Validate session data
       const validation = this.validateSessionData(sessionData);
@@ -220,12 +308,12 @@ export class SessionService {
         throw new Error('Session establishment failed - no session returned');
       }
 
-      console.log('Session set successfully, storing for future use...');
+      console.log('Session set successfully, storing securely...');
       
       // Store the session for future restoration
       await this.storeSession(data.session);
       
-      // Track session in database
+      // Track session in database with validation
       await this.trackSession(data.session);
 
       return data.session;
@@ -236,42 +324,40 @@ export class SessionService {
   }
 
   /**
-   * Track session in database
+   * Enhanced session tracking with validation
    */
   private async trackSession(session: Session): Promise<void> {
     try {
+      // Validate session data before tracking
+      if (!session.user?.id || !session.access_token || !session.refresh_token) {
+        console.error('Invalid session data for tracking');
+        return;
+      }
+
       const deviceInfo = {
         platform: Capacitor.getPlatform(),
         isNative: Capacitor.isNativePlatform(),
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString()
+        userAgent: navigator.userAgent.substring(0, 500), // Limit length
+        timestamp: new Date().toISOString(),
+        sessionVersion: 'v2'
       };
 
-      await supabase.from('user_sessions').insert({
-        user_id: session.user.id,
-        session_id: session.access_token.substring(0, 32),
-        access_token_hash: await this.hashToken(session.access_token),
-        refresh_token_hash: await this.hashToken(session.refresh_token),
-        expires_at: new Date(session.expires_at! * 1000).toISOString(),
-        device_info: deviceInfo
+      // Use session validation edge function for enhanced tracking
+      await supabase.functions.invoke('session-validate', {
+        body: {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          user_id: session.user.id,
+          track_session: true,
+          device_info: deviceInfo
+        }
       });
 
-      console.log('Session tracked in database');
+      console.log('Session tracked securely');
     } catch (error) {
       console.error('Error tracking session:', error);
       // Don't throw - session tracking is not critical
     }
-  }
-
-  /**
-   * Hash token for storage
-   */
-  private async hashToken(token: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(token);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
   }
 }
 
