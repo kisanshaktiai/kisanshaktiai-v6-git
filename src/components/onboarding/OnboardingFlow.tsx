@@ -30,27 +30,6 @@ export const OnboardingFlow: React.FC = () => {
     }
   }, [isAuthenticated, onboardingCompleted]);
 
-  // Initialize app and check for existing language preference
-  useEffect(() => {
-    const initializeApp = async () => {
-      // Check if language was already selected on this device
-      const savedLanguage = localStorage.getItem('selectedLanguage');
-      const languageSelectedAt = localStorage.getItem('languageSelectedAt');
-      
-      if (savedLanguage && languageSelectedAt) {
-        // Apply saved language
-        try {
-          await i18n.changeLanguage(savedLanguage);
-          console.log('Applied saved language:', savedLanguage);
-        } catch (error) {
-          console.error('Error applying saved language:', error);
-        }
-      }
-    };
-
-    initializeApp();
-  }, [i18n]);
-
   const handleSplashComplete = () => {
     setIsInitialized(true);
     
