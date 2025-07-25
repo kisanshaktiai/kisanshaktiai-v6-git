@@ -11,7 +11,7 @@ import { authHealthService } from '../../services/authHealthService';
 export const MobileAuthScreen: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { currentTenant, loading: tenantLoading } = useTenant();
+  const { tenant, loading: tenantLoading } = useTenant(); // Changed from currentTenant to tenant
   const [currentStep, setCurrentStep] = useState<'phone' | 'otp' | 'loading'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export const MobileAuthScreen: React.FC = () => {
   }
 
   // If no tenant found, show error
-  if (!currentTenant) {
+  if (!tenant) { // Changed from currentTenant to tenant
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 p-4">
         <div className="text-center">
@@ -104,7 +104,7 @@ export const MobileAuthScreen: React.FC = () => {
   if (currentStep === 'otp') {
     return (
       <PinAuthScreen
-        phoneNumber={phoneNumber}
+        phone={phoneNumber} // Changed from phoneNumber to phone
         onSuccess={handleOTPSuccess}
         onError={handleOTPError}
         onBack={handleBackToPhone}

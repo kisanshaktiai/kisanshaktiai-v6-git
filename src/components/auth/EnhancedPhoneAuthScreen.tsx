@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
@@ -21,7 +20,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   onError
 }) => {
   const { t } = useTranslation();
-  const { currentTenant } = useTenant();
+  const { tenant } = useTenant();
   const { isOnline } = useOffline();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +59,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       return;
     }
 
-    if (!currentTenant) {
+    if (!tenant) {
       setError('Unable to determine organization. Please refresh the page.');
       return;
     }
@@ -79,7 +78,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
 
       const result = await enhancedAuthService.authenticateWithMobile(
         phone,
-        currentTenant.id
+        tenant.id
       );
 
       if (result.success) {
