@@ -16,7 +16,7 @@ export interface Profile {
   pincode?: string;
   country?: string;
   coordinates?: any;
-  preferred_language?: string;
+  preferred_language?: 'en' | 'hi' | 'mr' | 'pa' | 'gu' | 'te' | 'ta' | 'kn' | 'ml' | 'or' | 'bn' | 'ur' | 'ne';
   notification_preferences?: {
     sms: boolean;
     push: boolean;
