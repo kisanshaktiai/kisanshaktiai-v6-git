@@ -31,6 +31,15 @@ export class TenantDetectionService {
     return this.instance;
   }
 
+  async clearCache(): Promise<void> {
+    this.cachedDefaultTenant = null;
+    this.defaultTenantId = null;
+    
+    // Clear localStorage cache as well
+    localStorage.removeItem('defaultTenantId');
+    localStorage.removeItem('defaultTenantData');
+  }
+
   async detectTenant(): Promise<TenantData | null> {
     try {
       // Try to get default tenant first
