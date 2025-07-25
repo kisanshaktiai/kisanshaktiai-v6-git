@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,6 +5,7 @@ import { RootState } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageService } from '@/services/LanguageService';
+import { LanguageCode } from '@/types/tenant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,10 +32,20 @@ export const Profile: React.FC = () => {
   const { phoneNumber } = useSelector((state: RootState) => state.auth);
   const { profile, location } = useSelector((state: RootState) => state.farmer);
   
-  // Get language preference from localStorage or default to Hindi
-  const storedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+  // Get language preference from localStorage with proper type checking
+  const getStoredLanguage = (): LanguageCode => {
+    const stored = localStorage.getItem('selectedLanguage');
+    const supportedCodes: LanguageCode[] = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'];
+    
+    if (stored && supportedCodes.includes(stored as LanguageCode)) {
+      return stored as LanguageCode;
+    }
+    return 'hi'; // Default to Hindi
+  };
+  
+  const storedLanguage = getStoredLanguage();
   const [isEditingLanguage, setIsEditingLanguage] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(storedLanguage);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(storedLanguage);
   const [updatingLanguage, setUpdatingLanguage] = useState(false);
 
   const handleLogout = () => {
@@ -212,7 +222,7 @@ export const Profile: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Select 
                   value={selectedLanguage} 
-                  onValueChange={setSelectedLanguage}
+                  onValueChange={(value) => setSelectedLanguage(value as LanguageCode)}
                   disabled={updatingLanguage}
                 >
                   <SelectTrigger className="w-40">
