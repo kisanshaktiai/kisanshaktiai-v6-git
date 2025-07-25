@@ -62,7 +62,7 @@ export class TenantDetectionService {
         console.warn(`Attempt ${attempt}/${maxRetries} failed:`, error);
         
         if (attempt < maxRetries) {
-          await this.delay(this.RETRY_DELAY * Math.pow(2, attempt - 1)); // Exponential backoff
+          await this.delay(this.RETRY_DELAY * Math.pow(2, attempt - 1));
         }
       }
     }
@@ -89,7 +89,7 @@ export class TenantDetectionService {
     }
     
     if (entry) {
-      this.cache.delete(cacheKey); // Remove expired entry
+      this.cache.delete(cacheKey);
     }
     
     return null;
@@ -103,39 +103,6 @@ export class TenantDetectionService {
     };
     
     this.cache.set(cacheKey, entry);
-    
-    // Also update database cache asynchronously
-    this.updateDatabaseCache(cacheKey, data).catch(error => {
-      console.warn('Failed to update database cache:', error);
-    });
-  }
-
-  private async updateDatabaseCache(cacheKey: string, data: TenantData): Promise<void> {
-    try {
-      await supabase.rpc('update_tenant_cache', {
-        p_cache_key: cacheKey,
-        p_tenant_data: data
-      });
-    } catch (error) {
-      console.error('Database cache update failed:', error);
-    }
-  }
-
-  private async getFromDatabaseCache(cacheKey: string): Promise<TenantData | null> {
-    try {
-      const { data, error } = await supabase
-        .from('tenant_cache')
-        .select('tenant_data')
-        .eq('cache_key', cacheKey)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-
-      if (error || !data) return null;
-      return data.tenant_data as TenantData;
-    } catch (error) {
-      console.warn('Failed to get from database cache:', error);
-      return null;
-    }
   }
 
   async detectTenant(): Promise<TenantData | null> {
@@ -147,18 +114,6 @@ export class TenantDetectionService {
     if (cachedTenant) {
       console.log('Tenant loaded from memory cache:', cachedTenant.slug);
       return cachedTenant;
-    }
-
-    // Try database cache
-    try {
-      const dbCachedTenant = await this.getFromDatabaseCache(cacheKey);
-      if (dbCachedTenant) {
-        console.log('Tenant loaded from database cache:', dbCachedTenant.slug);
-        this.setCachedTenant(cacheKey, dbCachedTenant);
-        return dbCachedTenant;
-      }
-    } catch (error) {
-      console.warn('Database cache lookup failed:', error);
     }
 
     // Detect tenant with retry logic
@@ -182,8 +137,6 @@ export class TenantDetectionService {
       return null;
     } catch (error) {
       console.error('Tenant detection failed completely:', error);
-      
-      // Last resort: try to get any cached tenant
       return this.getEmergencyFallback();
     }
   }
@@ -194,34 +147,66 @@ export class TenantDetectionService {
       return this.getDefaultTenant();
     }
 
-    // Use the optimized database function
-    const { data: tenantData, error } = await supabase
-      .rpc('get_tenant_by_domain', { p_domain: hostname });
+    try {
+      // First try domain mapping
+      const { data: domainMapping } = await supabase
+        .from('domain_mappings')
+        .select(`
+          tenant_id,
+          tenants!inner(
+            id,
+            name,
+            slug,
+            type,
+            tenant_branding(
+              logo_url,
+              app_name,
+              app_tagline,
+              primary_color,
+              secondary_color,
+              background_color
+            )
+          )
+        `)
+        .eq('domain', hostname)
+        .eq('is_active', true)
+        .single();
 
-    if (error) {
+      if (domainMapping?.tenants) {
+        const tenant = Array.isArray(domainMapping.tenants) 
+          ? domainMapping.tenants[0] 
+          : domainMapping.tenants;
+        
+        return this.formatTenantData(tenant);
+      }
+
+      // Try subdomain if no domain mapping
+      const subdomain = hostname.split('.')[0];
+      const { data: subdomainTenant } = await supabase
+        .from('tenants')
+        .select(`
+          id,
+          name,
+          slug,
+          type,
+          tenant_branding(
+            logo_url,
+            app_name,
+            app_tagline,
+            primary_color,
+            secondary_color,
+            background_color
+          )
+        `)
+        .eq('subdomain', subdomain)
+        .eq('status', 'active')
+        .single();
+
+      return subdomainTenant ? this.formatTenantData(subdomainTenant) : null;
+    } catch (error) {
       console.error('Tenant detection query failed:', error);
       throw error;
     }
-
-    if (tenantData && tenantData.length > 0) {
-      const tenant = tenantData[0];
-      return {
-        id: tenant.tenant_id,
-        name: tenant.tenant_name,
-        slug: tenant.tenant_slug,
-        type: tenant.tenant_type,
-        branding: {
-          logo_url: tenant.logo_url,
-          app_name: tenant.app_name,
-          app_tagline: tenant.app_tagline,
-          primary_color: tenant.primary_color,
-          secondary_color: tenant.secondary_color,
-          background_color: tenant.background_color
-        }
-      };
-    }
-
-    return null;
   }
 
   private async getDefaultTenant(): Promise<TenantData | null> {
@@ -232,33 +217,29 @@ export class TenantDetectionService {
     if (cached) return cached;
 
     try {
-      // Use the optimized database function
-      const { data: tenantData, error } = await supabase
-        .rpc('get_default_tenant');
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select(`
+          id,
+          name,
+          slug,
+          type,
+          tenant_branding(
+            logo_url,
+            app_name,
+            app_tagline,
+            primary_color,
+            secondary_color,
+            background_color
+          )
+        `)
+        .eq('is_default', true)
+        .eq('status', 'active')
+        .single();
 
-      if (error) {
-        console.error('Default tenant query failed:', error);
-        throw error;
-      }
-
-      if (tenantData && tenantData.length > 0) {
-        const tenant = tenantData[0];
-        const defaultTenant: TenantData = {
-          id: tenant.tenant_id,
-          name: tenant.tenant_name,
-          slug: tenant.tenant_slug,
-          type: tenant.tenant_type,
-          is_default: true,
-          branding: {
-            logo_url: tenant.logo_url,
-            app_name: tenant.app_name,
-            app_tagline: tenant.app_tagline,
-            primary_color: tenant.primary_color,
-            secondary_color: tenant.secondary_color,
-            background_color: tenant.background_color
-          }
-        };
-
+      if (tenant) {
+        const defaultTenant = this.formatTenantData(tenant);
+        defaultTenant.is_default = true;
         this.setCachedTenant(defaultCacheKey, defaultTenant);
         return defaultTenant;
       }
@@ -266,8 +247,28 @@ export class TenantDetectionService {
       console.error('Failed to load default tenant:', error);
     }
 
-    // Ultimate fallback - create a basic tenant structure
     return this.createEmergencyTenant();
+  }
+
+  private formatTenantData(tenant: any): TenantData {
+    const branding = Array.isArray(tenant.tenant_branding) 
+      ? tenant.tenant_branding[0] 
+      : tenant.tenant_branding;
+
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      type: tenant.type,
+      branding: branding ? {
+        logo_url: branding.logo_url,
+        app_name: branding.app_name,
+        app_tagline: branding.app_tagline,
+        primary_color: branding.primary_color,
+        secondary_color: branding.secondary_color,
+        background_color: branding.background_color
+      } : undefined
+    };
   }
 
   private getEmergencyFallback(): TenantData | null {
@@ -279,7 +280,6 @@ export class TenantDetectionService {
       }
     }
 
-    // Create emergency tenant
     return this.createEmergencyTenant();
   }
 
@@ -348,12 +348,6 @@ export class TenantDetectionService {
       }
     }
 
-    // Clean up database cache
-    try {
-      const { data } = await supabase.rpc('cleanup_tenant_cache');
-      console.log(`Cleaned up ${data} expired database cache entries`);
-    } catch (error) {
-      console.warn('Failed to cleanup database cache:', error);
-    }
+    console.log('Memory cache cleaned up');
   }
 }
