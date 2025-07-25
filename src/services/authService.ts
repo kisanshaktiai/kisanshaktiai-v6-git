@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -87,7 +86,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('mobile_number', cleanPhone) // Use mobile_number instead of phone
+      .eq('mobile_number', cleanPhone)
       .limit(1);
     
     if (error) {
@@ -122,10 +121,10 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     
     console.log('Calling secure mobile auth edge function...');
     
-    // Call enhanced mobile auth edge function
+    // Call enhanced mobile auth edge function with correct parameters
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: { 
-        phone: cleanPhone,
+        mobile_number: cleanPhone, // Use mobile_number instead of phone
         tenantId: currentTenant?.id || 'default',
         preferredLanguage: sanitizeInput(selectedLanguage)
       }
@@ -261,7 +260,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
 
     // Handle preferred_language with validation
     if (updates.preferred_language) {
-      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn'] as const;
+      const validLanguages = ['en', 'hi', 'mr', 'pa', 'gu', 'te', 'ta', 'kn', 'ml', 'or', 'bn', 'ur', 'ne'] as const;
       const sanitizedLang = sanitizeInput(updates.preferred_language);
       if (validLanguages.includes(sanitizedLang as any)) {
         sanitizedUpdates.preferred_language = sanitizedLang as any;
