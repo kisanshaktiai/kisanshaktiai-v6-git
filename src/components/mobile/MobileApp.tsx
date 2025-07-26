@@ -13,7 +13,7 @@ import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
 import { InstaScan } from '@/pages/mobile/InstaScan';
-import { SatelliteMonitoring } from '@/pages/mobile/SatelliteMonitoring';
+import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
 import { Market } from '@/pages/mobile/Market';
 import { Analytics } from '@/pages/mobile/Analytics';
