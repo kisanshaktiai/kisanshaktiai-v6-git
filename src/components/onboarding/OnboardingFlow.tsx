@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
-import { SplashScreen } from '../splash/SplashScreen';
+import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
 import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
 
@@ -59,7 +59,7 @@ export const OnboardingFlow: React.FC = () => {
 
   // Show splash screen first
   if (currentStep === 'splash') {
-    return <SplashScreen onComplete={handleSplashComplete} />;
+    return <SkeletonSplashScreen onComplete={handleSplashComplete} />;
   }
 
   // Show loading if not initialized
