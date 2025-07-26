@@ -2,7 +2,9 @@
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from './storage/secureStorage';
-import { STORAGE_KEYS } from '@/config/constants';
+
+// Add SESSION constant locally since it's not in STORAGE_KEYS
+const SESSION_KEY = 'kisanshakti_session';
 
 interface SessionData {
   access_token: string;
@@ -11,6 +13,11 @@ interface SessionData {
   expires_in?: number;
   token_type?: string;
   user?: any;
+}
+
+interface SessionValidationResult {
+  isValid: boolean;
+  error?: string;
 }
 
 export class SessionService {
@@ -24,36 +31,36 @@ export class SessionService {
   }
 
   /**
-   * Enhanced session validation with better error handling
+   * Enhanced session validation with better error handling - now public
    */
-  private validateSessionData(session: any): boolean {
+  validateSessionData(session: any): SessionValidationResult {
     if (!session) {
       console.error('Session validation failed: Session is null or undefined');
-      return false;
+      return { isValid: false, error: 'Session is null or undefined' };
     }
 
     if (!session.access_token) {
       console.error('Session validation failed: Missing access_token');
-      return false;
+      return { isValid: false, error: 'Missing access_token' };
     }
 
     if (!session.refresh_token) {
       console.error('Session validation failed: Missing refresh_token');
-      return false;
+      return { isValid: false, error: 'Missing refresh_token' };
     }
 
     // Basic JWT structure check - just ensure it's a string with some content
     if (typeof session.access_token !== 'string' || session.access_token.length < 10) {
       console.error('Session validation failed: Invalid access_token format');
-      return false;
+      return { isValid: false, error: 'Invalid access_token format' };
     }
 
     if (typeof session.refresh_token !== 'string' || session.refresh_token.length < 10) {
       console.error('Session validation failed: Invalid refresh_token format');
-      return false;
+      return { isValid: false, error: 'Invalid refresh_token format' };
     }
 
-    return true;
+    return { isValid: true };
   }
 
   /**
@@ -63,8 +70,9 @@ export class SessionService {
     try {
       console.log('Setting session with enhanced security...');
       
-      if (!this.validateSessionData(session)) {
-        throw new Error('Invalid session data provided');
+      const validation = this.validateSessionData(session);
+      if (!validation.isValid) {
+        throw new Error(`Invalid session data provided: ${validation.error}`);
       }
 
       // Store session securely before setting in Supabase
@@ -106,7 +114,7 @@ export class SessionService {
         stored_at: Date.now()
       };
 
-      await secureStorage.set(STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
+      await secureStorage.set(SESSION_KEY, JSON.stringify(sessionData));
       console.log('Session stored in secure storage');
     } catch (error) {
       console.error('Error storing session:', error);
@@ -120,7 +128,7 @@ export class SessionService {
   async restoreSession(): Promise<Session | null> {
     try {
       console.log('Attempting to restore session from secure storage...');
-      const storedData = await secureStorage.get(STORAGE_KEYS.SESSION);
+      const storedData = await secureStorage.get(SESSION_KEY);
       
       if (!storedData) {
         console.log('No stored session found');
@@ -137,7 +145,8 @@ export class SessionService {
       }
 
       // Validate restored session
-      if (!this.validateSessionData(sessionData)) {
+      const validation = this.validateSessionData(sessionData);
+      if (!validation.isValid) {
         console.log('Stored session data is invalid, removing...');
         await this.clearSession();
         return null;
@@ -157,7 +166,7 @@ export class SessionService {
    */
   async clearSession(): Promise<void> {
     try {
-      await secureStorage.remove(STORAGE_KEYS.SESSION);
+      await secureStorage.remove(SESSION_KEY);
       console.log('Session cleared from secure storage');
     } catch (error) {
       console.error('Error clearing session:', error);
