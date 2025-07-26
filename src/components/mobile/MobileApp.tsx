@@ -12,6 +12,8 @@ import { MobileLayout } from './MobileLayout';
 import { DashboardHome } from './DashboardHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
+import { InstaScan } from '@/pages/mobile/InstaScan';
+import { SatelliteMonitoring } from '@/pages/mobile/SatelliteMonitoring';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
 import { Market } from '@/pages/mobile/Market';
 import { Analytics } from '@/pages/mobile/Analytics';
@@ -82,6 +84,8 @@ export const MobileApp: React.FC = () => {
         <Route path="/" element={<DashboardHome />} />
         <Route path="/my-lands" element={<MyLands />} />
         <Route path="/ai-chat" element={<AiChat />} />
+        <Route path="/instascan" element={<InstaScan />} />
+        <Route path="/satellite" element={<SatelliteMonitoring />} />
         <Route path="/crop-schedule" element={<CropSchedule />} />
         <Route path="/market" element={<Market />} />
         <Route path="/analytics" element={<Analytics />} />
