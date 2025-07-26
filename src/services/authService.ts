@@ -86,7 +86,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('mobile_number', cleanPhone)
+      .eq('mobile_number', cleanPhone) // Use mobile_number consistently
       .limit(1);
     
     if (error) {
@@ -124,7 +124,7 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     // Call enhanced mobile auth edge function with correct parameters
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: { 
-        mobile_number: cleanPhone, // Use mobile_number instead of phone
+        mobile_number: cleanPhone, // Use mobile_number consistently
         tenantId: currentTenant?.id || 'default',
         preferredLanguage: sanitizeInput(selectedLanguage)
       }
@@ -132,7 +132,7 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
     if (error) {
       console.error('Edge function error:', error);
-      throw new Error(error.message || 'Authentication failed. Please try again.');
+      throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
     }
 
     if (!data?.success) {
@@ -184,8 +184,8 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
         throw error; // Already user-friendly
       } else if (error.message.includes('Too many')) {
         throw error; // Rate limiting message
-      } else if (error.message.includes('Edge Function returned a non-2xx status code')) {
-        throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
+      } else if (error.message.includes('Unable to connect to KisanShakti AI servers')) {
+        throw error; // Connection error message
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         throw new Error('Network error. Please check your connection and try again.');
       } else if (error.message.includes('timeout')) {
@@ -193,7 +193,7 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
       } else if (error.message.includes('service temporarily unavailable')) {
         throw new Error('KisanShakti AI is currently under maintenance. Please try again in a few minutes.');
       } else {
-        throw new Error(error.message || 'Unable to access KisanShakti AI. Please try again.');
+        throw new Error('Unable to access KisanShakti AI. Please try again.');
       }
     } else {
       throw new Error('An unexpected error occurred. Please restart the app and try again.');
@@ -247,7 +247,7 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>): 
           value = sanitizeInput(value);
         }
         
-        // Special validation for phone numbers
+        // Special validation for mobile numbers
         if (field === 'mobile_number' && typeof value === 'string') {
           if (!validatePhoneNumber(value)) {
             throw new Error('Invalid phone number format');

@@ -28,14 +28,14 @@ export class EnhancedAuthService {
     tenantId: string
   ): Promise<AuthResponse> {
     try {
-      console.log('Starting enhanced mobile authentication for:', phone);
+      console.log('Starting enhanced mobile authentication for:', phone.replace(/\d/g, '*'));
 
-      // First test the connection
+      // First test the connection with enhanced error messages
       const connectionTest = await connectionService.testConnection();
       if (!connectionTest.isConnected) {
         return {
           success: false,
-          error: 'Cannot connect to servers. Please check your internet connection.',
+          error: connectionTest.error || 'Cannot connect to servers. Please check your internet connection.',
         };
       }
 
@@ -48,28 +48,32 @@ export class EnhancedAuthService {
         };
       }
 
-      // Clean phone number
+      // Clean and validate phone number
       const cleanPhone = phone.replace(/\D/g, '');
-      if (cleanPhone.length < 10) {
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
         return {
           success: false,
-          error: 'Please enter a valid phone number.',
+          error: 'Please enter a valid 10-digit Indian mobile number.',
         };
       }
 
+      // Get current selected language
+      const selectedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+
       // Log authentication attempt
       await authHealthService.logAuthEvent('mobile_auth_attempt', {
-        phone: cleanPhone,
+        phone: cleanPhone.replace(/\d/g, '*'),
         tenantId,
         timestamp: new Date().toISOString()
       });
 
-      // Call the mobile auth edge function with enhanced error handling
+      // Call the mobile auth edge function with correct field names
       const { data, error } = await connectionService.callEdgeFunction(
         'mobile-auth',
         {
-          phone: cleanPhone,
-          tenant_id: tenantId
+          mobile_number: cleanPhone, // Use mobile_number consistently
+          tenantId: tenantId,
+          preferredLanguage: selectedLanguage
         },
         {
           retries: 2,
@@ -81,41 +85,28 @@ export class EnhancedAuthService {
         console.error('Mobile auth edge function error:', error);
         
         await authHealthService.logAuthEvent('mobile_auth_error', {
-          phone: cleanPhone,
+          phone: cleanPhone.replace(/\d/g, '*'),
           error,
           tenantId
         });
 
-        // Provide user-friendly error messages
-        if (error.includes('timeout')) {
-          return {
-            success: false,
-            error: 'Request timed out. Please try again.',
-          };
-        } else if (error.includes('Database error')) {
-          return {
-            success: false,
-            error: 'Service temporarily unavailable. Please try again in a few minutes.',
-          };
-        } else {
-          return {
-            success: false,
-            error: 'Unable to connect to authentication service. Please try again.',
-          };
-        }
+        return {
+          success: false,
+          error: error,
+        };
       }
 
       if (data?.success) {
         await authHealthService.logAuthEvent('mobile_auth_success', {
-          phone: cleanPhone,
+          phone: cleanPhone.replace(/\d/g, '*'),
           tenantId,
-          requiresVerification: data.requiresVerification
+          isNewUser: data.isNewUser
         });
 
         return {
           success: true,
           data: data,
-          requiresVerification: data.requiresVerification
+          requiresVerification: false // Direct login, no OTP needed
         };
       }
 
@@ -128,7 +119,7 @@ export class EnhancedAuthService {
       console.error('Enhanced mobile auth error:', error);
       
       await authHealthService.logAuthEvent('mobile_auth_exception', {
-        phone,
+        phone: phone.replace(/\d/g, '*'),
         error: error instanceof Error ? error.message : 'Unknown error',
         tenantId
       });
@@ -154,14 +145,14 @@ export class EnhancedAuthService {
       if (!connectionTest.isConnected) {
         return {
           success: false,
-          error: 'Cannot connect to servers. Please check your internet connection.',
+          error: connectionTest.error || 'Cannot connect to servers. Please check your internet connection.',
         };
       }
 
       const { data, error } = await connectionService.callEdgeFunction(
         'mobile-auth',
         {
-          phone: cleanPhone,
+          mobile_number: cleanPhone,
           otp: otp,
           action: 'verify'
         },
@@ -195,7 +186,7 @@ export class EnhancedAuthService {
         }
 
         await authHealthService.logAuthEvent('otp_verify_success', {
-          phone: cleanPhone
+          phone: cleanPhone.replace(/\d/g, '*')
         });
 
         return {

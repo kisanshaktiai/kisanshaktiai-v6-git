@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Loader2, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { enhancedAuthService } from '../../services/EnhancedAuthService';
 import { connectionService } from '../../services/ConnectionService';
 import { useTenant } from '../../hooks/useTenant';
@@ -28,6 +29,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   const [connectionStatus, setConnectionStatus] = useState<{
     isConnected: boolean;
     latency?: number;
+    testing?: boolean;
   }>({ isConnected: true });
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,8 +48,18 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
   };
 
   const testConnection = async () => {
+    setConnectionStatus({ isConnected: true, testing: true });
     const result = await connectionService.testConnection();
-    setConnectionStatus(result);
+    setConnectionStatus({
+      isConnected: result.isConnected,
+      latency: result.latency,
+      testing: false
+    });
+    
+    if (!result.isConnected) {
+      setError(result.error || 'Connection test failed');
+    }
+    
     return result.isConnected;
   };
 
@@ -68,12 +80,13 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
     setError(null);
 
     try {
-      // Test connection first
-      const connected = await testConnection();
-      if (!connected) {
-        setError('Unable to connect to servers. Please check your internet connection.');
-        setLoading(false);
-        return;
+      // Test connection first if not already connected
+      if (!connectionStatus.isConnected) {
+        const connected = await testConnection();
+        if (!connected) {
+          setLoading(false);
+          return;
+        }
       }
 
       const result = await enhancedAuthService.authenticateWithMobile(
@@ -89,36 +102,43 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
       }
     } catch (error) {
       console.error('Phone auth error:', error);
-      setError('An unexpected error occurred. Please try again.');
-      onError('Authentication failed');
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      onError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const networkStatus = connectionService.getNetworkStatus();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            {isOnline && connectionStatus.isConnected ? (
+            {connectionStatus.testing ? (
+              <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+            ) : isOnline && connectionStatus.isConnected ? (
               <Wifi className="w-5 h-5 text-green-500" />
             ) : (
               <WifiOff className="w-5 h-5 text-red-500" />
             )}
             <span className="text-sm text-gray-600">
-              {isOnline && connectionStatus.isConnected 
-                ? `Connected${connectionStatus.latency ? ` (${connectionStatus.latency}ms)` : ''}` 
-                : 'Connection Issues'
+              {connectionStatus.testing 
+                ? 'Testing connection...'
+                : isOnline && connectionStatus.isConnected 
+                  ? `Connected${connectionStatus.latency ? ` (${connectionStatus.latency}ms)` : ''}`
+                  : 'Connection Issues'
               }
             </span>
           </div>
           
           <CardTitle className="text-2xl font-bold text-gray-900">
-            {t('auth.welcomeBack', 'Welcome Back')}
+            {t('auth.welcomeBack', 'Welcome to KisanShakti AI')}
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            {t('auth.enterPhoneToSignIn', 'Enter your phone number to sign in')}
+            {t('auth.enterPhoneToSignIn', 'Enter your phone number to continue')}
           </p>
         </CardHeader>
         
@@ -147,6 +167,7 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
 
             {error && (
               <Alert variant="destructive">
+                <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -156,6 +177,15 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
                 <WifiOff className="w-4 h-4" />
                 <AlertDescription>
                   You're currently offline. Please check your internet connection.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!connectionStatus.isConnected && isOnline && (
+              <Alert variant="destructive">
+                <AlertTriangle className="w-4 h-4" />
+                <AlertDescription>
+                  Unable to connect to KisanShakti AI servers. Please try testing your connection.
                 </AlertDescription>
               </Alert>
             )}
@@ -179,12 +209,21 @@ export const EnhancedPhoneAuthScreen: React.FC<EnhancedPhoneAuthScreenProps> = (
               <button
                 type="button"
                 onClick={testConnection}
-                className="text-sm text-blue-600 hover:text-blue-800"
-                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+                disabled={loading || connectionStatus.testing}
               >
-                {t('auth.testConnection', 'Test Connection')}
+                {connectionStatus.testing 
+                  ? 'Testing...'
+                  : t('auth.testConnection', 'Test Connection')
+                }
               </button>
             </div>
+
+            {networkStatus.connection && networkStatus.connection !== 'unknown' && (
+              <div className="text-center text-xs text-gray-500">
+                Network: {networkStatus.connection}
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

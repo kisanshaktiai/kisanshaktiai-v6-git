@@ -23,6 +23,7 @@ serve(async (req) => {
     console.log('Mobile auth request for:', mobile_number?.replace(/\d/g, '*'), 'tenant:', tenantId)
 
     if (!mobile_number) {
+      console.error('Mobile number is missing from request')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -38,6 +39,7 @@ serve(async (req) => {
     // Validate mobile number format
     const cleanMobile = mobile_number.replace(/\D/g, '')
     if (cleanMobile.length !== 10 || !/^[6-9]\d{9}$/.test(cleanMobile)) {
+      console.error('Invalid mobile number format:', cleanMobile.length, 'digits')
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -51,15 +53,32 @@ serve(async (req) => {
     }
 
     // Check if user exists in user_profiles
-    const { data: existingProfile } = await supabase
+    console.log('Checking if user exists in user_profiles')
+    const { data: existingProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id, mobile_number, full_name')
       .eq('mobile_number', cleanMobile)
       .single()
 
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Database error checking user profile:', profileError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Database error checking user existence' 
+        }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     let isNewUser = !existingProfile
     let userId = existingProfile?.id
     
+    console.log('User exists check result:', { isNewUser, userId: userId ? 'found' : 'not found' })
+
     // Generate temporary email and password for authentication
     const tempEmail = `${cleanMobile}@kisanshakti.temp`
     const tempPassword = `ks_${cleanMobile}_${Math.random().toString(36).slice(2)}`
@@ -67,7 +86,7 @@ serve(async (req) => {
     if (isNewUser) {
       console.log('Creating new user for mobile:', cleanMobile.replace(/\d/g, '*'))
       
-      // Create auth user
+      // Create auth user with proper metadata
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         email: tempEmail,
         password: tempPassword,
@@ -86,7 +105,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Failed to create user account' 
+            error: 'Failed to create user account: ' + authError.message 
           }), 
           { 
             status: 500, 
@@ -96,26 +115,42 @@ serve(async (req) => {
       }
 
       userId = authUser.user?.id
+      console.log('Auth user created successfully:', userId)
 
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: userId,
-          mobile_number: cleanMobile,
-          preferred_language: preferredLanguage || 'hi',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+      // Create farmer record if needed
+      if (tenantId) {
+        const { error: farmerError } = await supabase
+          .from('farmers')
+          .insert({
+            id: userId,
+            mobile_number: cleanMobile,
+            tenant_id: tenantId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
 
-      if (profileError) {
-        console.error('Error creating user profile:', profileError)
-        // Clean up auth user if profile creation fails
-        await supabase.auth.admin.deleteUser(userId!)
+        if (farmerError) {
+          console.log('Note: Could not create farmer record:', farmerError.message)
+          // This is not critical, user can still authenticate
+        } else {
+          console.log('Farmer record created successfully')
+        }
+      }
+
+    } else {
+      console.log('Existing user found:', userId)
+      
+      // For existing users, update their password for current session
+      const { error: updateError } = await supabase.auth.admin.updateUserById(userId!, {
+        password: tempPassword
+      })
+      
+      if (updateError) {
+        console.error('Error updating user password:', updateError)
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Failed to create user profile' 
+            error: 'Authentication setup failed: ' + updateError.message 
           }), 
           { 
             status: 500, 
@@ -123,58 +158,28 @@ serve(async (req) => {
           }
         )
       }
+    }
 
-      // Create farmer record if needed
-      const { error: farmerError } = await supabase
-        .from('farmers')
-        .insert({
-          id: userId,
-          mobile_number: cleanMobile,
-          tenant_id: tenantId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+    // Get tenant information if provided
+    let tenant = null
+    if (tenantId) {
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, name, tenant_branding(logo_url, app_name, app_tagline, primary_color, background_color)')
+        .eq('id', tenantId)
+        .eq('status', 'active')
+        .single()
 
-      if (farmerError) {
-        console.log('Note: Could not create farmer record:', farmerError)
-        // This is not critical, user can still authenticate
-      }
-
-    } else {
-      console.log('Existing user found:', userId)
-      
-      // For existing users, we need to get their auth record
-      const { data: authUser } = await supabase.auth.admin.getUserById(userId!)
-      
-      if (authUser.user) {
-        // Update the password for existing user
-        const { error: updateError } = await supabase.auth.admin.updateUserById(userId!, {
-          password: tempPassword
-        })
-        
-        if (updateError) {
-          console.error('Error updating user password:', updateError)
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'Authentication setup failed' 
-            }), 
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
+      if (tenantError) {
+        console.log('Warning: Could not fetch tenant data:', tenantError.message)
+      } else {
+        tenant = {
+          id: tenantData.id,
+          name: tenantData.name,
+          branding: tenantData.tenant_branding?.[0] || {}
         }
       }
     }
-
-    // Get tenant information
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('id, name, tenant_branding(logo_url, app_name, app_tagline, primary_color, background_color)')
-      .eq('id', tenantId)
-      .eq('status', 'active')
-      .single()
 
     console.log('Authentication successful for user:', userId)
 
@@ -188,11 +193,7 @@ serve(async (req) => {
           email: tempEmail,
           password: tempPassword
         },
-        tenant: tenant ? {
-          id: tenant.id,
-          name: tenant.name,
-          branding: tenant.tenant_branding?.[0] || {}
-        } : null
+        tenant
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -202,7 +203,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error' 
+        error: 'Internal server error: ' + error.message 
       }), 
       { 
         status: 500, 
