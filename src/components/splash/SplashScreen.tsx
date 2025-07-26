@@ -1,7 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { setLocation, setLanguageFromLocation } from '@/store/slices/authSlice';
 import { setTenantId } from '@/store/slices/farmerSlice';
 import { LocationService } from '@/services/LocationService';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -13,18 +14,19 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
-  const dispatch = useDispatch();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
-  const [currentLogo, setCurrentLogo] = useState('kisanshakti'); // 'kisanshakti' or 'tenant'
+  const [currentLogo, setCurrentLogo] = useState('kisanshakti');
   const [isInitialized, setIsInitialized] = useState(false);
   const [tenantBranding, setTenantBranding] = useState({
     logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
     appName: 'KisanShakti AI',
-    tagline: 'INTELLIGENT AI GURU FOR FARMERS',
-    primaryColor: '#8BC34A',
-    backgroundColor: '#FFFFFF'
+    tagline: 'Your Smart Farming Companion',
+    primaryColor: '#10b981',
+    secondaryColor: '#059669',
+    backgroundColor: '#f0fdf4'
   });
 
   useEffect(() => {
@@ -33,55 +35,68 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const initializeApp = async () => {
     try {
-      // Step 1: Show KisanShakti AI logo first
-      setStatus(t('common.initializing'));
-      setProgress(10);
+      console.log('Starting app initialization...');
       
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Show for 1.5 seconds
-
-      // Step 2: Initialize services
-      setStatus(t('splash.loadingServices'));
-      setProgress(25);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Step 3: Detect tenant
-      setStatus(t('splash.detectingOrganization'));
-      setProgress(40);
-      
-      const detectedTenant = await TenantDetectionService.getInstance().detectTenant();
-      if (detectedTenant) {
-        dispatch(setTenantId(detectedTenant.id));
-        
-        // Update branding with tenant-specific data
-        setTenantBranding({
-          logo: detectedTenant.branding?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
-          appName: detectedTenant.branding?.app_name || 'KisanShakti AI',
-          tagline: detectedTenant.branding?.app_tagline || 'INTELLIGENT AI GURU FOR FARMERS',
-          primaryColor: detectedTenant.branding?.primary_color || '#8BC34A',
-          backgroundColor: detectedTenant.branding?.background_color || '#FFFFFF'
-        });
-
-        // Switch to tenant logo if different from default
-        if (detectedTenant.id !== 'default' && detectedTenant.branding?.logo_url) {
-          setCurrentLogo('tenant');
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Show tenant logo for 1 second
-        }
-      }
-
-      setProgress(60);
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Step 4: Prepare location services
-      setStatus(t('splash.preparingLocationServices'));
-      setProgress(80);
+      // Step 1: Initialize location services
+      setStatus(t('common.detecting_location', { defaultValue: 'Detecting location...' }));
+      setProgress(20);
       
       try {
-        await LocationService.getInstance().requestPermissions();
-      } catch (error) {
-        console.log('Location permission not granted, will prompt later');
+        await LocationService.getInstance().initialize();
+        console.log('Location service initialized');
+      } catch (locationError) {
+        console.warn('Location service failed, continuing without location:', locationError);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Step 2: Detect tenant with better error handling
+      setStatus(t('common.configuring_app', { defaultValue: 'Configuring app...' }));
+      setProgress(40);
+      
+      let detectedTenant = null;
+      try {
+        const tenantService = TenantDetectionService.getInstance();
+        await tenantService.clearCache();
+        detectedTenant = await tenantService.detectTenant();
+        console.log('Tenant detected:', detectedTenant);
+      } catch (tenantError) {
+        console.warn('Tenant detection failed, using default:', tenantError);
+        // Continue with default tenant
       }
 
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Step 3: Set up branding
+      setStatus(t('common.loading_interface', { defaultValue: 'Loading interface...' }));
+      setProgress(60);
+      
+      if (detectedTenant?.tenant_branding?.[0]) {
+        const branding = detectedTenant.tenant_branding[0];
+        setTenantBranding({
+          logo: branding.logo_url || tenantBranding.logo,
+          appName: branding.app_name || detectedTenant.name || tenantBranding.appName,
+          tagline: branding.app_tagline || tenantBranding.tagline,
+          primaryColor: branding.primary_color || tenantBranding.primaryColor,
+          secondaryColor: branding.secondary_color || tenantBranding.secondaryColor,
+          backgroundColor: branding.background_color || tenantBranding.backgroundColor
+        });
+        setCurrentLogo('tenant');
+        console.log('Custom branding applied');
+      }
+
+      if (detectedTenant?.id) {
+        dispatch(setTenantId(detectedTenant.id));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Step 4: Finalize
+      setStatus(t('common.finalizing', { defaultValue: 'Finalizing...' }));
+      setProgress(80);
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setProgress(100);
       setStatus(t('common.ready'));
       
@@ -102,51 +117,52 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   };
 
   const getCurrentLogo = () => {
-    if (currentLogo === 'kisanshakti') {
-      return '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
+    if (currentLogo === 'tenant' && tenantBranding.logo) {
+      return tenantBranding.logo;
     }
-    return tenantBranding.logo;
-  };
-
-  const getCurrentAppName = () => {
-    if (currentLogo === 'kisanshakti') {
-      return 'KisanShakti AI';
-    }
-    return tenantBranding.appName;
-  };
-
-  const getCurrentTagline = () => {
-    if (currentLogo === 'kisanshakti') {
-      return 'INTELLIGENT AI GURU FOR FARMERS';
-    }
-    return tenantBranding.tagline;
+    return '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
   };
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-500"
+      className="min-h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden"
       style={{ backgroundColor: tenantBranding.backgroundColor }}
     >
-      {/* Logo and Branding */}
-      <div className="text-center mb-8">
-        <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-white shadow-lg flex items-center justify-center transition-all duration-500">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+          <defs>
+            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      {/* Logo Section */}
+      <div className="mb-8 relative">
+        <div className="relative w-32 h-32 mx-auto mb-6">
           <img 
-            src={getCurrentLogo()} 
-            alt="Logo" 
-            className="w-24 h-24 object-contain transition-all duration-500"
+            src={getCurrentLogo()}
+            alt={tenantBranding.appName}
+            className="w-full h-full object-contain rounded-2xl shadow-2xl"
             onError={(e) => {
-              e.currentTarget.src = '/placeholder.svg';
+              console.warn('Logo failed to load, using fallback');
+              e.currentTarget.src = '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
             }}
           />
+          <div 
+            className="absolute -inset-2 rounded-3xl opacity-20 blur-xl"
+            style={{ backgroundColor: tenantBranding.primaryColor }}
+          />
         </div>
-        <h1 
-          className="text-3xl font-bold mb-3 transition-all duration-500"
-          style={{ color: tenantBranding.primaryColor }}
-        >
-          {getCurrentAppName()}
+        
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          {tenantBranding.appName}
         </h1>
-        <p className="text-gray-600 text-base transition-all duration-500 font-medium">
-          {getCurrentTagline()}
+        <p className="text-lg text-gray-600 font-medium">
+          {tenantBranding.tagline}
         </p>
       </div>
 
@@ -203,7 +219,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
       {/* Version Info */}
       <div className="absolute bottom-6 text-sm text-gray-400">
-        {t('splash.version')}
+        v1.0.0 • {t('common.powered_by', { defaultValue: 'Powered by' })} KisanShakti AI
       </div>
     </div>
   );
