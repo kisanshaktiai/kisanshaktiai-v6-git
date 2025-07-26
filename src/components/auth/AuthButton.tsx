@@ -24,6 +24,20 @@ export const AuthButton = ({
   const isDisabled = loading || phone.length < 10 || checkingUser;
   const primaryColor = tenantBranding?.primary_color || '#8BC34A';
   
+  // Show different text based on state
+  const getButtonText = () => {
+    if (loading) {
+      return userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...';
+    }
+    
+    if (userCheckComplete) {
+      return isNewUser ? 'Get Started' : 'Continue';
+    }
+    
+    // Default text when user check hasn't completed (including connection errors)
+    return 'Continue';
+  };
+  
   return (
     <Button 
       type="submit" 
@@ -40,17 +54,10 @@ export const AuthButton = ({
       {loading ? (
         <div className="flex items-center space-x-2">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>
-            {userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...'}
-          </span>
+          <span>{getButtonText()}</span>
         </div>
       ) : (
-        <span>
-          {userCheckComplete 
-            ? (isNewUser ? 'Get Started' : 'Continue') 
-            : 'Continue'
-          }
-        </span>
+        <span>{getButtonText()}</span>
       )}
     </Button>
   );

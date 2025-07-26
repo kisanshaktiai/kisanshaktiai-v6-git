@@ -80,8 +80,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     const cleanPhone = sanitizeInput(phone.replace(/\D/g, ''));
     
     if (!validatePhoneNumber(cleanPhone)) {
-      console.error('Invalid phone number format');
-      return false;
+      throw new Error('Invalid phone number format');
     }
     
     const { data: profiles, error } = await supabase
@@ -92,13 +91,18 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     
     if (error) {
       console.error('Error checking user existence:', error);
-      return false;
+      // Re-throw with more specific error message
+      if (error.message.includes('connect') || error.message.includes('network')) {
+        throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection.');
+      }
+      throw new Error('Service temporarily unavailable. Please try again.');
     }
     
     return profiles && profiles.length > 0;
   } catch (error) {
     console.error('Error in checkUserExists:', error);
-    return false;
+    // Re-throw the error to be handled by the calling component
+    throw error;
   }
 };
 
@@ -133,7 +137,17 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
 
     if (error) {
       console.error('Edge function error:', error);
-      throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
+      
+      // Better error classification
+      if (error.message.includes('fetch') || error.message.includes('connect')) {
+        throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
+      } else if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      } else if (error.message.includes('503') || error.message.includes('502')) {
+        throw new Error('KisanShakti AI is currently under maintenance. Please try again in a few minutes.');
+      } else {
+        throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
+      }
     }
 
     if (!data?.success) {
@@ -188,12 +202,12 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
         throw error; // Rate limiting message
       } else if (error.message.includes('Unable to connect to KisanShakti AI servers')) {
         throw error; // Connection error message
+      } else if (error.message.includes('maintenance')) {
+        throw error; // Maintenance message
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
         throw new Error('Network error. Please check your connection and try again.');
       } else if (error.message.includes('timeout')) {
         throw new Error('Request timed out. Please try again.');
-      } else if (error.message.includes('service temporarily unavailable')) {
-        throw new Error('KisanShakti AI is currently under maintenance. Please try again in a few minutes.');
       } else {
         throw new Error('Unable to access KisanShakti AI. Please try again.');
       }
