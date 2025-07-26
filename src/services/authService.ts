@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -33,7 +34,7 @@ const safeJsonParse = (value: any, fallback: any = null) => {
 const convertToProfile = (data: UserProfileRow): Profile => {
   return {
     ...data,
-    mobile_number: data.mobile_number || '', // Ensure mobile_number is present
+    mobile_number: data.mobile_number || '',
     notification_preferences: safeJsonParse(data.notification_preferences, {
       sms: true,
       push: true,
@@ -86,7 +87,7 @@ export const checkUserExists = async (phone: string): Promise<boolean> => {
     const { data: profiles, error } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('mobile_number', cleanPhone) // Use mobile_number consistently
+      .eq('mobile_number', cleanPhone)
       .limit(1);
     
     if (error) {
@@ -121,10 +122,10 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
     
     console.log('Calling secure mobile auth edge function...');
     
-    // Call enhanced mobile auth edge function with correct parameters
+    // Call enhanced mobile auth edge function
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: { 
-        mobile_number: cleanPhone, // Use mobile_number consistently
+        mobile_number: cleanPhone,
         tenantId: currentTenant?.id || 'default',
         preferredLanguage: sanitizeInput(selectedLanguage)
       }
@@ -148,9 +149,10 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
       tenantId: data.tenantId
     });
 
-    // Handle authentication flow with enhanced security
+    // Handle authentication with improved error handling
     if (data.credentials) {
       console.log('Signing in user with secure credentials...');
+      
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.credentials.email,
         password: data.credentials.password
@@ -168,8 +170,8 @@ export const signInWithPhone = async (phone: string): Promise<void> => {
         throw new Error('Authentication failed. Please try again.');
       }
 
-      // Use enhanced session service to track the session
-      await sessionService.setSession(authData.session);
+      // Store session using the fixed session service
+      await sessionService.storeSession(authData.session);
       console.log('User authentication completed successfully');
     } else {
       throw new Error('Authentication failed - no credentials provided by server.');

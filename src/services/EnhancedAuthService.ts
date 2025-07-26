@@ -71,7 +71,7 @@ export class EnhancedAuthService {
       const { data, error } = await connectionService.callEdgeFunction(
         'mobile-auth',
         {
-          mobile_number: cleanPhone, // Use mobile_number consistently
+          mobile_number: cleanPhone,
           tenantId: tenantId,
           preferredLanguage: selectedLanguage
         },
@@ -92,7 +92,7 @@ export class EnhancedAuthService {
 
         return {
           success: false,
-          error: error,
+          error: typeof error === 'string' ? error : 'Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.',
         };
       }
 
@@ -106,7 +106,7 @@ export class EnhancedAuthService {
         return {
           success: true,
           data: data,
-          requiresVerification: false // Direct login, no OTP needed
+          requiresVerification: false
         };
       }
 
@@ -126,7 +126,7 @@ export class EnhancedAuthService {
 
       return {
         success: false,
-        error: 'An unexpected error occurred. Please try again.',
+        error: 'Unable to access KisanShakti AI. Please try again.',
       };
     }
   }
