@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
-import { setLocation, setLanguageFromLocation } from '@/store/slices/authSlice';
 import { setTenantId } from '@/store/slices/farmerSlice';
 import { LocationService } from '@/services/LocationService';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -42,7 +41,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       setProgress(20);
       
       try {
-        await LocationService.getInstance().initialize();
+        const locationService = LocationService.getInstance();
+        await locationService.getCurrentLocation();
         console.log('Location service initialized');
       } catch (locationError) {
         console.warn('Location service failed, continuing without location:', locationError);
@@ -71,8 +71,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       setStatus(t('common.loading_interface', { defaultValue: 'Loading interface...' }));
       setProgress(60);
       
-      if (detectedTenant?.tenant_branding?.[0]) {
-        const branding = detectedTenant.tenant_branding[0];
+      if (detectedTenant?.branding) {
+        const branding = detectedTenant.branding;
         setTenantBranding({
           logo: branding.logo_url || tenantBranding.logo,
           appName: branding.app_name || detectedTenant.name || tenantBranding.appName,
