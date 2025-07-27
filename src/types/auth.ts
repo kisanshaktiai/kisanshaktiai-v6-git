@@ -45,7 +45,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   signInWithPhone: (phone: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<Profile>;
   checkUserExists: (phone: string) => Promise<boolean>;
   farmer?: any | null;
   currentAssociation?: any | null;
