@@ -1,12 +1,7 @@
 
 import React from 'react';
-import { MobileLayout } from '@/components/mobile/MobileLayout';
-import { DashboardHome } from '@/components/mobile/DashboardHome';
+import { ModernTenantDashboard } from '@/components/mobile/dashboard/ModernTenantDashboard';
 
 export default function MobileHome() {
-  return (
-    <MobileLayout showHeader={true}>
-      <DashboardHome />
-    </MobileLayout>
-  );
+  return <ModernTenantDashboard />;
 }
