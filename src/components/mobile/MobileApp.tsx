@@ -1,20 +1,21 @@
+
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
-import { MobileHome } from '@/pages/mobile/MobileHome';
+import MobileHome from '@/pages/mobile/MobileHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
 import { Market } from '@/pages/mobile/Market';
-import { Weather } from '@/pages/mobile/Weather';
+import Weather from '@/pages/mobile/Weather';
 import { Analytics } from '@/pages/mobile/Analytics';
 import { Profile } from '@/pages/mobile/Profile';
 import { Community } from '@/pages/mobile/Community';
 import { InstaScan } from '@/pages/mobile/InstaScan';
-import { SatelliteMonitoring } from '@/pages/mobile/SatelliteMonitoring';
+import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 import { ProfessionalFarmerProfileForm } from '@/components/mobile/profile/ProfessionalFarmerProfileForm';
 
 export const MobileApp: React.FC = () => {
