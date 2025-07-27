@@ -1,1 +1,91 @@
+
 project_id = "qfklkkzxemsbeniyugiz"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+enabled = true
+port = 54322
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+ip_version = "ipv4"
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://lovableproject.com"]
+jwt_expiry = 3600
+enable_signup = true
+
+[functions.ai-orchestrator]
+verify_jwt = false
+
+[functions.dashboard-data]
+verify_jwt = false
+
+[functions.detect-language]
+verify_jwt = false
+
+[functions.detect-tenant]
+verify_jwt = false
+
+[functions.farmer-profile]
+verify_jwt = false
+
+[functions.land-summary]
+verify_jwt = false
+
+[functions.mobile-auth-check]
+verify_jwt = false
+
+[functions.mobile-auth]
+verify_jwt = false
+
+[functions.satellite-processor]
+verify_jwt = false
+
+[functions.session-validate]
+verify_jwt = false
+
+[functions.text-to-speech]
+verify_jwt = false
+
+[functions.translate-text]
+verify_jwt = false
+
+[functions.voice-to-text]
+verify_jwt = false
+
+[functions.weather-alerts]
+verify_jwt = false
+
+[functions.weather-sync]
+verify_jwt = false

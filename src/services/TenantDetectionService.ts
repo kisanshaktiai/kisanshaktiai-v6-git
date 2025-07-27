@@ -1,6 +1,4 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
 interface TenantBranding {
   logo_url?: string;
   app_name?: string;
@@ -25,13 +23,19 @@ interface CacheEntry {
   expires: number;
 }
 
+interface DetectionResponse {
+  success: boolean;
+  data: TenantData;
+  method: string;
+  error?: string;
+}
+
 export class TenantDetectionService {
   private static instance: TenantDetectionService;
   private cache = new Map<string, CacheEntry>();
-  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (increased from 1 hour)
-  private readonly TIMEOUT_DURATION = 2000; // 2 seconds (reduced from 5)
-  private readonly MAX_RETRIES = 1; // Reduced from 3
-  private readonly RETRY_DELAY = 500; // Reduced from 1000ms
+  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly TIMEOUT_DURATION = 5000; // 5 seconds for Edge Function
+  private readonly MAX_RETRIES = 2; // Reduced since Edge Function is more reliable
 
   static getInstance(): TenantDetectionService {
     if (!this.instance) {
@@ -59,10 +63,10 @@ export class TenantDetectionService {
         return await this.withTimeout(operation(), this.TIMEOUT_DURATION);
       } catch (error) {
         lastError = error as Error;
-        console.warn(`Attempt ${attempt}/${maxRetries} failed:`, error);
+        console.warn(`Tenant detection attempt ${attempt}/${maxRetries} failed:`, error);
         
         if (attempt < maxRetries) {
-          await this.delay(this.RETRY_DELAY);
+          await this.delay(500 * attempt); // Progressive backoff
         }
       }
     }
@@ -83,6 +87,7 @@ export class TenantDetectionService {
   }
 
   private getCachedTenant(cacheKey: string): TenantData | null {
+    // Check memory cache first
     const entry = this.cache.get(cacheKey);
     if (entry && this.isValidCacheEntry(entry)) {
       return entry.data;
@@ -90,6 +95,23 @@ export class TenantDetectionService {
     
     if (entry) {
       this.cache.delete(cacheKey);
+    }
+    
+    // Check localStorage cache
+    try {
+      const cached = localStorage.getItem(`tenant_cache_${cacheKey}`);
+      if (cached) {
+        const storedEntry: CacheEntry = JSON.parse(cached);
+        if (this.isValidCacheEntry(storedEntry)) {
+          // Restore to memory cache
+          this.cache.set(cacheKey, storedEntry);
+          return storedEntry.data;
+        } else {
+          localStorage.removeItem(`tenant_cache_${cacheKey}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load tenant from localStorage:', error);
     }
     
     return null;
@@ -102,9 +124,10 @@ export class TenantDetectionService {
       expires: Date.now() + this.CACHE_DURATION
     };
     
+    // Store in memory cache
     this.cache.set(cacheKey, entry);
     
-    // Also store in localStorage as backup
+    // Store in localStorage as backup
     try {
       localStorage.setItem(`tenant_cache_${cacheKey}`, JSON.stringify(entry));
     } catch (error) {
@@ -112,187 +135,75 @@ export class TenantDetectionService {
     }
   }
 
-  private getLocalStorageTenant(cacheKey: string): TenantData | null {
+  private async callDetectTenantFunction(domain: string): Promise<TenantData> {
     try {
-      const cached = localStorage.getItem(`tenant_cache_${cacheKey}`);
-      if (cached) {
-        const entry: CacheEntry = JSON.parse(cached);
-        if (this.isValidCacheEntry(entry)) {
-          // Restore to memory cache
-          this.cache.set(cacheKey, entry);
-          return entry.data;
-        } else {
-          localStorage.removeItem(`tenant_cache_${cacheKey}`);
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to load tenant from localStorage:', error);
-    }
-    return null;
-  }
+      // Import supabase client only when needed
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('detect-tenant', {
+        body: { domain }
+      });
 
-  private isDevelopmentEnvironment(hostname: string): boolean {
-    return hostname === 'localhost' || 
-           hostname.includes('lovable.app') || 
-           hostname.includes('127.0.0.1') ||
-           hostname.includes('localhost:') ||
-           hostname.includes('.local');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Tenant detection failed: ${error.message}`);
+      }
+
+      const response = data as DetectionResponse;
+      
+      if (!response.success || !response.data) {
+        throw new Error('Invalid response from tenant detection service');
+      }
+
+      console.log(`Tenant detected via ${response.method}:`, response.data.slug);
+      
+      if (response.error) {
+        console.warn('Detection warning:', response.error);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to call detect-tenant function:', error);
+      throw error;
+    }
   }
 
   async detectTenant(): Promise<TenantData | null> {
     const hostname = window.location.hostname;
     const cacheKey = this.getCacheKey(hostname);
 
-    // PHASE 1: Check memory cache first
+    // Check cache first (memory + localStorage)
     const cachedTenant = this.getCachedTenant(cacheKey);
     if (cachedTenant) {
-      console.log('Tenant loaded from memory cache:', cachedTenant.slug);
+      console.log('Tenant loaded from cache:', cachedTenant.slug);
       return cachedTenant;
     }
 
-    // PHASE 2: Check localStorage cache
-    const localStorageTenant = this.getLocalStorageTenant(cacheKey);
-    if (localStorageTenant) {
-      console.log('Tenant loaded from localStorage cache:', localStorageTenant.slug);
-      return localStorageTenant;
-    }
-
-    // PHASE 3: Fast-track for development environments
-    if (this.isDevelopmentEnvironment(hostname)) {
-      console.log('Development environment detected, using default tenant');
-      const defaultTenant = await this.getDefaultTenant();
-      if (defaultTenant) {
-        this.setCachedTenant(cacheKey, defaultTenant);
-        return defaultTenant;
-      }
-    }
-
-    // PHASE 4: Try database detection with minimal retries
+    // Call Edge Function with retry logic
     try {
-      const tenant = await this.performTenantDetection(hostname);
+      const tenant = await this.withRetry(() => this.callDetectTenantFunction(hostname));
       
-      if (tenant) {
-        console.log('Tenant detected from database:', tenant.slug);
-        this.setCachedTenant(cacheKey, tenant);
-        return tenant;
+      // Cache the result
+      this.setCachedTenant(cacheKey, tenant);
+      
+      return tenant;
+    } catch (error) {
+      console.error('All tenant detection attempts failed:', error);
+      
+      // Try to get any cached tenant as last resort
+      const emergencyTenant = this.getEmergencyFallbackFromCache();
+      if (emergencyTenant) {
+        console.warn('Using emergency cached tenant:', emergencyTenant.slug);
+        return emergencyTenant;
       }
       
-      // PHASE 5: Fallback to default tenant
-      const defaultTenant = await this.getDefaultTenant();
-      if (defaultTenant) {
-        console.log('Using default tenant as fallback:', defaultTenant.slug);
-        this.setCachedTenant(this.getCacheKey('default'), defaultTenant);
-        return defaultTenant;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Tenant detection failed, using emergency fallback:', error);
-      return this.getEmergencyFallback();
+      // Return client-side emergency tenant
+      return this.createEmergencyTenant();
     }
   }
 
-  private async performTenantDetection(hostname: string): Promise<TenantData | null> {
-    try {
-      // Simplified query - get tenant first, branding separately
-      const { data: domainMapping } = await supabase
-        .from('domain_mappings')
-        .select(`
-          tenant_id,
-          tenants!inner(id, name, slug, type)
-        `)
-        .eq('domain', hostname)
-        .eq('is_active', true)
-        .single();
-
-      if (domainMapping?.tenants) {
-        const tenant = Array.isArray(domainMapping.tenants) 
-          ? domainMapping.tenants[0] 
-          : domainMapping.tenants;
-        
-        // Load branding separately and in parallel
-        const brandingPromise = this.loadTenantBranding(tenant.id);
-        const branding = await brandingPromise.catch(() => null);
-        
-        return {
-          ...tenant,
-          branding
-        };
-      }
-
-      // Try subdomain lookup with simplified query
-      const subdomain = hostname.split('.')[0];
-      const { data: subdomainTenant } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type')
-        .eq('subdomain', subdomain)
-        .eq('status', 'active')
-        .single();
-
-      if (subdomainTenant) {
-        // Load branding separately
-        const branding = await this.loadTenantBranding(subdomainTenant.id).catch(() => null);
-        return {
-          ...subdomainTenant,
-          branding
-        };
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Tenant detection query failed:', error);
-      throw error;
-    }
-  }
-
-  private async loadTenantBranding(tenantId: string): Promise<TenantBranding | null> {
-    const { data: branding } = await supabase
-      .from('tenant_branding')
-      .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color')
-      .eq('tenant_id', tenantId)
-      .single();
-
-    return branding;
-  }
-
-  private async getDefaultTenant(): Promise<TenantData | null> {
-    const defaultCacheKey = this.getCacheKey('default');
-    
-    // Check caches first
-    const cached = this.getCachedTenant(defaultCacheKey) || this.getLocalStorageTenant(defaultCacheKey);
-    if (cached) return cached;
-
-    try {
-      // Simplified query for default tenant
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('id, name, slug, type')
-        .eq('is_default', true)
-        .eq('status', 'active')
-        .single();
-
-      if (tenant) {
-        // Load branding separately
-        const branding = await this.loadTenantBranding(tenant.id).catch(() => null);
-        
-        const defaultTenant = {
-          ...tenant,
-          is_default: true,
-          branding
-        };
-        
-        this.setCachedTenant(defaultCacheKey, defaultTenant);
-        return defaultTenant;
-      }
-    } catch (error) {
-      console.error('Failed to load default tenant:', error);
-    }
-
-    return this.createEmergencyTenant();
-  }
-
-  private getEmergencyFallback(): TenantData | null {
-    // Try to get any cached tenant first
+  private getEmergencyFallbackFromCache(): TenantData | null {
+    // Try to get any valid cached tenant
     for (const [key, entry] of this.cache.entries()) {
       if (this.isValidCacheEntry(entry)) {
         console.warn('Using emergency fallback tenant from cache:', entry.data.slug);
@@ -300,7 +211,7 @@ export class TenantDetectionService {
       }
     }
 
-    // Try localStorage entries
+    // Check localStorage for any cached tenant
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -319,15 +230,15 @@ export class TenantDetectionService {
       console.warn('Failed to check localStorage for emergency fallback:', error);
     }
 
-    return this.createEmergencyTenant();
+    return null;
   }
 
   private createEmergencyTenant(): TenantData {
-    console.warn('Creating emergency fallback tenant');
+    console.warn('Creating client-side emergency fallback tenant');
     const emergencyTenant = {
-      id: 'emergency-tenant',
+      id: 'emergency-client-tenant',
       name: 'KisanShakti AI',
-      slug: 'emergency',
+      slug: 'emergency-client',
       type: 'default',
       is_default: true,
       branding: {
@@ -341,14 +252,14 @@ export class TenantDetectionService {
     };
 
     // Cache the emergency tenant
-    this.setCachedTenant('emergency', emergencyTenant);
+    this.setCachedTenant('emergency-client', emergencyTenant);
     return emergencyTenant;
   }
 
   async clearCache(): Promise<void> {
     this.cache.clear();
     
-    // Also clear localStorage cache
+    // Clear localStorage cache
     try {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -367,13 +278,11 @@ export class TenantDetectionService {
 
   async preloadTenant(domain: string): Promise<void> {
     const cacheKey = this.getCacheKey(domain);
-    if (!this.getCachedTenant(cacheKey) && !this.getLocalStorageTenant(cacheKey)) {
+    if (!this.getCachedTenant(cacheKey)) {
       try {
-        const tenant = await this.performTenantDetection(domain);
-        if (tenant) {
-          this.setCachedTenant(cacheKey, tenant);
-          console.log('Tenant preloaded:', tenant.slug);
-        }
+        const tenant = await this.callDetectTenantFunction(domain);
+        this.setCachedTenant(cacheKey, tenant);
+        console.log('Tenant preloaded:', tenant.slug);
       } catch (error) {
         console.warn('Failed to preload tenant for domain:', domain, error);
       }
