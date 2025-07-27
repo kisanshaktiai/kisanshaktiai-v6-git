@@ -29,7 +29,7 @@ export const AuthHeader = ({ userCheckComplete, isNewUser }: AuthHeaderProps) =>
       </div>
       
       <h1 className="text-2xl font-bold text-gray-900 mb-2">
-        {t('common.welcome')} {t('common.back')}
+        {t('common.welcome')}
       </h1>
       
       <p className="text-gray-600 text-base whitespace-nowrap overflow-hidden">

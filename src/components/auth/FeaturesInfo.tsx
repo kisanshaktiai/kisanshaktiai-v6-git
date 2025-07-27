@@ -1,9 +1,11 @@
 
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { MessageCircle, Users, Leaf, Shield } from 'lucide-react';
 
 export const FeaturesInfo = () => {
+  const { t } = useTranslation();
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
   
   // Use tenant icons if available, fallback to default icons
@@ -18,23 +20,23 @@ export const FeaturesInfo = () => {
   const features = [
     {
       icon: getFeatureIcon('ai_chat', MessageCircle),
-      title: "AI Chat",
-      description: "Get instant farming advice"
+      title: t('features.aiChat.title'),
+      description: t('features.aiChat.shortDesc')
     },
     {
       icon: getFeatureIcon('community', Users),
-      title: "Community", 
-      description: "Connect with farmers"
+      title: t('features.community.title'), 
+      description: t('features.community.shortDesc')
     },
     {
       icon: getFeatureIcon('smart_farming', Leaf),
-      title: "Smart Farming",
-      description: "Advanced agriculture insights"
+      title: t('features.cropSchedule.title'),
+      description: t('features.cropSchedule.shortDesc')
     },
     {
       icon: getFeatureIcon('secure', Shield),
-      title: "Secure",
-      description: "Your data is protected"
+      title: t('common.secure'),
+      description: t('auth.dataProtected')
     }
   ];
 
@@ -58,7 +60,7 @@ export const FeaturesInfo = () => {
       
       <div className="text-center">
         <p className="text-xs text-gray-500 line-clamp-2">
-          Secure authentication powered by KisanShakti AI
+          {t('auth.secureAuth')}
         </p>
       </div>
     </div>

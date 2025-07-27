@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { supabase } from '@/config/supabase';
 import { LocationService } from '@/services/LocationService';
@@ -31,9 +33,9 @@ interface FormData {
 }
 
 const steps = [
-  { id: 1, title: 'Personal Info', icon: User },
-  { id: 2, title: 'Location', icon: MapPin },
-  { id: 3, title: 'IDs & Verification', icon: IdCard }
+  { id: 1, title: 'forms.personalInfo.title', icon: User },
+  { id: 2, title: 'forms.locationInfo.title', icon: MapPin },
+  { id: 3, title: 'forms.documents.title', icon: IdCard }
 ];
 
 export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
@@ -42,6 +44,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   onComplete,
   featureName = 'this feature'
 }) => {
+  const { t } = useTranslation();
   const { userId } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -94,8 +97,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       const hasPermission = await locationService.requestPermissions();
       if (!hasPermission) {
         toast({
-          title: "Location Permission Required",
-          description: "Please allow location access to auto-fill location details",
+          title: t('forms.locationInfo.locationPermissionRequired'),
+          description: t('profile.completion.allowLocationAccess'),
           variant: "destructive"
         });
         return;
@@ -119,14 +122,14 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       }));
 
       toast({
-        title: "Location Retrieved",
-        description: "Location details have been auto-filled",
+        title: t('profile.completion.locationRetrieved'),
+        description: t('profile.completion.locationDetailsAutoFilled'),
       });
     } catch (error) {
       console.error('Error getting location:', error);
       toast({
-        title: "Location Error",
-        description: "Unable to get location. Please enter manually.",
+        title: t('profile.completion.locationError'),
+        description: t('profile.completion.locationErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -164,8 +167,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     
     if (!validateStep(currentStep)) {
       toast({
-        title: "Please fill required fields",
-        description: "All required fields must be completed",
+        title: t('profile.completion.fillRequired'),
+        description: t('profile.completion.allRequiredFields'),
         variant: "destructive"
       });
       return;
@@ -177,8 +180,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       // Use userId from Redux store instead of session
       if (!userId) {
         toast({
-          title: "Authentication Required",
-          description: "Please log in to save your profile",
+          title: t('profile.completion.authRequired'),
+          description: t('profile.completion.loginToSave'),
           variant: "destructive"
         });
         setLoading(false);
@@ -268,8 +271,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       setShowSuccess(true);
       
       toast({
-        title: "Profile Completed!",
-        description: "Your profile has been successfully saved.",
+        title: t('profile.completion.profileCompleted'),
+        description: t('profile.completion.profileCompletedDesc'),
       });
 
       // Auto close after animation
@@ -281,8 +284,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: "Save Failed",
-        description: "Failed to save profile. Please try again.",
+        title: t('profile.completion.saveFailed'),
+        description: t('profile.completion.saveFailedDesc'),
         variant: "destructive"
       });
     } finally {
@@ -297,17 +300,17 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <User className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <h3 className="text-base font-semibold text-foreground">Personal Information</h3>
-              <p className="text-xs text-muted-foreground">Tell us about yourself</p>
+              <h3 className="text-base font-semibold text-foreground">{t('forms.personalInfo.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('forms.personalInfo.subtitle')}</p>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="fullName" className="text-xs font-medium">Full Name *</Label>
+                <Label htmlFor="fullName" className="text-xs font-medium">{t('forms.personalInfo.fullName')} *</Label>
                 <Input
                   id="fullName"
                   type="text"
-                  placeholder="Enter your full name"
+                  placeholder={t('forms.personalInfo.fullNamePlaceholder')}
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                   className="h-10 text-sm"
@@ -315,7 +318,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="dateOfBirth" className="text-xs font-medium">Date of Birth *</Label>
+                <Label htmlFor="dateOfBirth" className="text-xs font-medium">{t('forms.personalInfo.dateOfBirth')} *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -333,8 +336,8 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <MapPin className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <h3 className="text-base font-semibold text-foreground">Location Details</h3>
-              <p className="text-xs text-muted-foreground">Where are you located?</p>
+              <h3 className="text-base font-semibold text-foreground">{t('forms.locationInfo.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('forms.locationInfo.subtitle')}</p>
             </div>
 
             <div className="mb-3">
@@ -346,17 +349,17 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                 className="w-full h-9 text-xs"
               >
                 <MapPin className="w-3 h-3 mr-1" />
-                {gettingLocation ? 'Getting Location...' : 'Auto-fill from GPS'}
+                {gettingLocation ? t('forms.locationInfo.gettingLocation') : t('forms.locationInfo.getLocationFromGPS')}
               </Button>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="village" className="text-xs font-medium">Village *</Label>
+                <Label htmlFor="village" className="text-xs font-medium">{t('forms.locationInfo.village')} *</Label>
                 <Input
                   id="village"
                   type="text"
-                  placeholder="Enter your village"
+                  placeholder={t('forms.locationInfo.villagePlaceholder')}
                   value={formData.village}
                   onChange={(e) => handleInputChange('village', e.target.value)}
                   className="h-10 text-sm"
@@ -364,11 +367,11 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="tahsil" className="text-xs font-medium">Tahsil</Label>
+                <Label htmlFor="tahsil" className="text-xs font-medium">{t('forms.locationInfo.tehsil')}</Label>
                 <Input
                   id="tahsil"
                   type="text"
-                  placeholder="Enter your tahsil"
+                  placeholder={t('forms.locationInfo.tehsilPlaceholder')}
                   value={formData.tahsil}
                   onChange={(e) => handleInputChange('tahsil', e.target.value)}
                   className="h-10 text-sm"
@@ -376,11 +379,11 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="district" className="text-xs font-medium">District *</Label>
+                <Label htmlFor="district" className="text-xs font-medium">{t('forms.locationInfo.district')} *</Label>
                 <Input
                   id="district"
                   type="text"
-                  placeholder="Enter your district"
+                  placeholder={t('forms.locationInfo.districtPlaceholder')}
                   value={formData.district}
                   onChange={(e) => handleInputChange('district', e.target.value)}
                   className="h-10 text-sm"
@@ -388,11 +391,11 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="state" className="text-xs font-medium">State *</Label>
+                <Label htmlFor="state" className="text-xs font-medium">{t('forms.locationInfo.state')} *</Label>
                 <Input
                   id="state"
                   type="text"
-                  placeholder="Enter your state"
+                  placeholder={t('forms.locationInfo.statePlaceholder')}
                   value={formData.state}
                   onChange={(e) => handleInputChange('state', e.target.value)}
                   className="h-10 text-sm"
@@ -407,17 +410,17 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <IdCard className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <h3 className="text-base font-semibold text-foreground">ID & Verification</h3>
-              <p className="text-xs text-muted-foreground">Your identification details</p>
+              <h3 className="text-base font-semibold text-foreground">{t('forms.documents.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('forms.documents.subtitle')}</p>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="aadhaarNumber" className="text-xs font-medium">Aadhaar Number (Optional)</Label>
+                <Label htmlFor="aadhaarNumber" className="text-xs font-medium">{t('forms.documents.aadhaarNumber')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="aadhaarNumber"
                   type="text"
-                  placeholder="Enter 12-digit Aadhaar number"
+                  placeholder={t('forms.documents.aadhaarPlaceholder')}
                   value={formData.aadhaarNumber}
                   onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
                   maxLength={12}
@@ -426,11 +429,11 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="farmerId" className="text-xs font-medium">Farmer ID (Optional)</Label>
+                <Label htmlFor="farmerId" className="text-xs font-medium">{t('forms.documents.farmerId')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="farmerId"
                   type="text"
-                  placeholder="Enter your farmer ID"
+                  placeholder={t('forms.documents.farmerIdPlaceholder')}
                   value={formData.farmerId}
                   onChange={(e) => handleInputChange('farmerId', e.target.value)}
                   className="h-10 text-sm"
@@ -438,16 +441,16 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="shcId" className="text-xs font-medium">SHC ID (Optional)</Label>
+                <Label htmlFor="shcId" className="text-xs font-medium">{t('forms.documents.shcId')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="shcId"
                   type="text"
-                  placeholder="Enter your SHC ID"
+                  placeholder={t('forms.documents.shcIdPlaceholder')}
                   value={formData.shcId}
                   onChange={(e) => handleInputChange('shcId', e.target.value)}
                   className="h-10 text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground">Soil Health Card ID (if available)</p>
+                <p className="text-[10px] text-muted-foreground">{t('forms.documents.shcIdDesc')}</p>
               </div>
             </div>
           </div>
@@ -463,17 +466,17 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       <DialogContent className="w-full max-w-sm mx-2 p-0 gap-0 h-[90vh] flex flex-col">
         {/* Header */}
         <DialogHeader className="px-4 py-3 text-center border-b border-border shrink-0">
-          <DialogTitle className="text-lg font-semibold text-foreground">Complete Your Profile</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-foreground">{t('profile.completion.title')}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Complete your profile to access {featureName} and get personalized farming insights
+            {t('profile.completion.subtitle')}
           </DialogDescription>
         </DialogHeader>
 
         {/* Progress Bar */}
         <div className="px-4 py-3 border-b border-border shrink-0">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-medium text-foreground">Step {currentStep} of {steps.length}</span>
-            <span className="text-xs text-muted-foreground">{Math.round(progress)}% Complete</span>
+            <span className="text-xs font-medium text-foreground">{t('profile.completion.step')} {currentStep} {t('profile.completion.of')} {steps.length}</span>
+            <span className="text-xs text-muted-foreground">{Math.round(progress)}% {t('profile.completion.complete')}</span>
           </div>
           <Progress value={progress} className="h-1.5" />
           
@@ -490,7 +493,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                   }`}>
                     <Icon className="w-3 h-3" />
                   </div>
-                  <span className="text-[10px] text-muted-foreground text-center leading-tight">{step.title}</span>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">{t(step.title)}</span>
                 </div>
               );
             })}
@@ -507,10 +510,10 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                 <div className="absolute inset-0 w-16 h-16 bg-green-500/20 rounded-full animate-ping"></div>
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-foreground">Profile Completed!</h3>
+                <h3 className="text-lg font-semibold text-foreground">{t('profile.completion.profileCompleted')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Your profile has been successfully saved.<br />
-                  Redirecting to dashboard...
+                  {t('profile.completion.profileCompletedDesc')}<br />
+                  {t('profile.completion.redirecting')}
                 </p>
               </div>
             </div>
@@ -530,7 +533,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                     className="flex-1 h-10 text-sm"
                   >
                     <ChevronLeft className="w-3 h-3 mr-1" />
-                    Previous
+                    {t('profile.completion.previous')}
                   </Button>
                 )}
                 
@@ -541,7 +544,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                     onClick={onClose}
                     className="flex-1 h-10 text-sm"
                   >
-                    Skip for now
+                    {t('profile.completion.skip')}
                   </Button>
                 )}
 
@@ -552,7 +555,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                     disabled={!validateStep(currentStep)}
                     className="flex-1 h-10 text-sm"
                   >
-                    Next
+                    {t('profile.completion.next')}
                     <ChevronRight className="w-3 h-3 ml-1" />
                   </Button>
                 ) : (
@@ -561,7 +564,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
                     disabled={loading || !validateStep(currentStep)}
                     className="flex-1 h-10 text-sm"
                   >
-                    {loading ? 'Saving...' : 'Complete Profile'}
+                    {loading ? t('profile.completion.saving') : t('profile.completion.completeProfile')}
                   </Button>
                 )}
               </div>

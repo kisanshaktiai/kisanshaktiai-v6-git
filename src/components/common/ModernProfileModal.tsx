@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { supabase } from '@/config/supabase';
 import { LocationService } from '@/services/LocationService';
@@ -32,9 +33,9 @@ interface FormData {
 }
 
 const steps = [
-  { id: 1, title: 'Personal Info', icon: User },
-  { id: 2, title: 'Location', icon: MapPin },
-  { id: 3, title: 'Documents', icon: IdCard }
+  { id: 1, title: 'forms.personalInfo.title', icon: User },
+  { id: 2, title: 'forms.locationInfo.title', icon: MapPin },
+  { id: 3, title: 'forms.documents.title', icon: IdCard }
 ];
 
 export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
@@ -43,6 +44,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
   onComplete,
   featureName = 'this feature'
 }) => {
+  const { t } = useTranslation();
   const { userId } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -94,8 +96,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
       const hasPermission = await locationService.requestPermissions();
       if (!hasPermission) {
         toast({
-          title: "Location Permission Required",
-          description: "Please allow location access to auto-fill location details",
+          title: t('forms.locationInfo.locationPermissionRequired'),
+          description: t('profile.completion.allowLocationAccess'),
           variant: "destructive"
         });
         return;
@@ -115,14 +117,14 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
       }));
 
       toast({
-        title: "Location Retrieved",
-        description: "Location details have been auto-filled",
+        title: t('profile.completion.locationRetrieved'),
+        description: t('profile.completion.locationDetailsAutoFilled'),
       });
     } catch (error) {
       console.error('Error getting location:', error);
       toast({
-        title: "Location Error",
-        description: "Unable to get location. Please enter manually.",
+        title: t('profile.completion.locationError'),
+        description: t('profile.completion.locationErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -160,8 +162,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
     
     if (!validateStep(currentStep)) {
       toast({
-        title: "Please fill required fields",
-        description: "All required fields must be completed",
+        title: t('profile.completion.fillRequired'),
+        description: t('profile.completion.allRequiredFields'),
         variant: "destructive"
       });
       return;
@@ -172,8 +174,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
     try {
       if (!userId) {
         toast({
-          title: "Authentication Required",
-          description: "Please log in to save your profile",
+          title: t('profile.completion.authRequired'),
+          description: t('profile.completion.loginToSave'),
           variant: "destructive"
         });
         setLoading(false);
@@ -255,8 +257,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
       setShowSuccess(true);
       
       toast({
-        title: "Profile Completed!",
-        description: "Your profile has been successfully saved.",
+        title: t('profile.completion.profileCompleted'),
+        description: t('profile.completion.profileCompletedDesc'),
       });
 
       setTimeout(() => {
@@ -267,8 +269,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: "Save Failed",
-        description: "Failed to save profile. Please try again.",
+        title: t('profile.completion.saveFailed'),
+        description: t('profile.completion.saveFailedDesc'),
         variant: "destructive"
       });
     } finally {
@@ -285,17 +287,17 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <User className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Personal Information</h3>
-              <p className="text-sm text-muted-foreground">Tell us about yourself to unlock personalized features</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">{t('forms.personalInfo.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('forms.personalInfo.subtitle')}</p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm font-medium">Full Name *</Label>
+                <Label htmlFor="fullName" className="text-sm font-medium">{t('forms.personalInfo.fullName')} *</Label>
                 <Input
                   id="fullName"
                   type="text"
-                  placeholder="Enter your full name"
+                  placeholder={t('forms.personalInfo.fullNamePlaceholder')}
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
                   className="h-12 text-sm"
@@ -303,7 +305,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="text-sm font-medium">Date of Birth *</Label>
+                <Label htmlFor="dateOfBirth" className="text-sm font-medium">{t('forms.personalInfo.dateOfBirth')} *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
@@ -323,8 +325,8 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Location Details</h3>
-              <p className="text-sm text-muted-foreground">Help us provide location-specific farming advice</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">{t('forms.locationInfo.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('forms.locationInfo.subtitle')}</p>
             </div>
 
             <div className="mb-4">
@@ -336,18 +338,18 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                 className="w-full h-12 text-sm"
               >
                 <MapPin className="w-4 h-4 mr-2" />
-                {gettingLocation ? 'Getting Location...' : 'Auto-fill from GPS'}
+                {gettingLocation ? t('forms.locationInfo.gettingLocation') : t('forms.locationInfo.getLocationFromGPS')}
               </Button>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="village" className="text-sm font-medium">Village *</Label>
+                  <Label htmlFor="village" className="text-sm font-medium">{t('forms.locationInfo.village')} *</Label>
                   <Input
                     id="village"
                     type="text"
-                    placeholder="Your village"
+                    placeholder={t('forms.locationInfo.villagePlaceholder')}
                     value={formData.village}
                     onChange={(e) => handleInputChange('village', e.target.value)}
                     className="h-12 text-sm"
@@ -355,11 +357,11 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tahsil" className="text-sm font-medium">Tahsil</Label>
+                  <Label htmlFor="tahsil" className="text-sm font-medium">{t('forms.locationInfo.tehsil')}</Label>
                   <Input
                     id="tahsil"
                     type="text"
-                    placeholder="Your tahsil"
+                    placeholder={t('forms.locationInfo.tehsilPlaceholder')}
                     value={formData.tahsil}
                     onChange={(e) => handleInputChange('tahsil', e.target.value)}
                     className="h-12 text-sm"
@@ -369,11 +371,11 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="district" className="text-sm font-medium">District *</Label>
+                  <Label htmlFor="district" className="text-sm font-medium">{t('forms.locationInfo.district')} *</Label>
                   <Input
                     id="district"
                     type="text"
-                    placeholder="Your district"
+                    placeholder={t('forms.locationInfo.districtPlaceholder')}
                     value={formData.district}
                     onChange={(e) => handleInputChange('district', e.target.value)}
                     className="h-12 text-sm"
@@ -381,11 +383,11 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="state" className="text-sm font-medium">State *</Label>
+                  <Label htmlFor="state" className="text-sm font-medium">{t('forms.locationInfo.state')} *</Label>
                   <Input
                     id="state"
                     type="text"
-                    placeholder="Your state"
+                    placeholder={t('forms.locationInfo.statePlaceholder')}
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     className="h-12 text-sm"
@@ -403,17 +405,17 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <IdCard className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Documents (Optional)</h3>
-              <p className="text-sm text-muted-foreground">Add documents for verification and government schemes</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">{t('forms.documents.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('forms.documents.subtitle')}</p>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="aadhaarNumber" className="text-sm font-medium">Aadhaar Number</Label>
+                <Label htmlFor="aadhaarNumber" className="text-sm font-medium">{t('forms.documents.aadhaarNumber')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="aadhaarNumber"
                   type="text"
-                  placeholder="12-digit Aadhaar number"
+                  placeholder={t('forms.documents.aadhaarPlaceholder')}
                   value={formData.aadhaarNumber}
                   onChange={(e) => handleInputChange('aadhaarNumber', e.target.value)}
                   maxLength={12}
@@ -422,11 +424,11 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="farmerId" className="text-sm font-medium">Farmer ID</Label>
+                <Label htmlFor="farmerId" className="text-sm font-medium">{t('forms.documents.farmerId')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="farmerId"
                   type="text"
-                  placeholder="Your farmer ID"
+                  placeholder={t('forms.documents.farmerIdPlaceholder')}
                   value={formData.farmerId}
                   onChange={(e) => handleInputChange('farmerId', e.target.value)}
                   className="h-12 text-sm"
@@ -434,16 +436,16 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shcId" className="text-sm font-medium">SHC ID</Label>
+                <Label htmlFor="shcId" className="text-sm font-medium">{t('forms.documents.shcId')} ({t('forms.documents.optional')})</Label>
                 <Input
                   id="shcId"
                   type="text"
-                  placeholder="Soil Health Card ID"
+                  placeholder={t('forms.documents.shcIdPlaceholder')}
                   value={formData.shcId}
                   onChange={(e) => handleInputChange('shcId', e.target.value)}
                   className="h-12 text-sm"
                 />
-                <p className="text-xs text-muted-foreground">Required for soil analysis features</p>
+                <p className="text-xs text-muted-foreground">{t('forms.documents.shcIdDesc')}</p>
               </div>
             </div>
           </div>
@@ -461,9 +463,9 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl font-bold text-foreground">Complete Profile</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-foreground">{t('profile.completion.title')}</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-1">
-                Unlock {featureName} with a quick profile setup
+                {t('profile.completion.subtitle')}
               </DialogDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
@@ -475,8 +477,10 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
         {/* Progress */}
         <div className="px-6 py-4 border-b border-border shrink-0">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-medium text-foreground">Step {currentStep} of {steps.length}</span>
-            <span className="text-sm text-muted-foreground">{Math.round(progress)}% Complete</span>
+            <span className="text-sm font-medium text-foreground">
+              {t('profile.completion.step')} {currentStep} {t('profile.completion.of')} {steps.length}
+            </span>
+            <span className="text-sm text-muted-foreground">{Math.round(progress)}% {t('profile.completion.complete')}</span>
           </div>
           <Progress value={progress} className="h-2 mb-4" />
           
@@ -492,7 +496,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                   }`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className="text-xs text-muted-foreground text-center">{step.title}</span>
+                  <span className="text-xs text-muted-foreground text-center">{t(step.title)}</span>
                 </div>
               );
             })}
@@ -508,9 +512,9 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                 <div className="absolute inset-0 w-20 h-20 bg-green-500/20 rounded-full animate-ping"></div>
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-foreground">Profile Completed!</h3>
+                <h3 className="text-2xl font-bold text-foreground">{t('profile.completion.profileCompleted')}</h3>
                 <p className="text-muted-foreground">
-                  Welcome to KisanShakti AI! You now have access to all features.
+                  {t('profile.completion.welcomeToKisanShakti')}
                 </p>
               </div>
             </div>
@@ -529,7 +533,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                     onClick={prevStep}
                     className="flex-1 h-12"
                   >
-                    Previous
+                    {t('profile.completion.previous')}
                   </Button>
                 )}
                 
@@ -540,7 +544,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                     onClick={onClose}
                     className="flex-1 h-12 text-muted-foreground hover:text-foreground"
                   >
-                    Skip for now
+                    {t('profile.completion.skip')}
                   </Button>
                 )}
 
@@ -551,7 +555,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                     disabled={!validateStep(currentStep)}
                     className="flex-1 h-12"
                   >
-                    Next
+                    {t('profile.completion.next')}
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 ) : (
@@ -560,7 +564,7 @@ export const ModernProfileModal: React.FC<ModernProfileModalProps> = ({
                     disabled={loading || !validateStep(currentStep)}
                     className="flex-1 h-12"
                   >
-                    {loading ? 'Saving...' : 'Complete Profile'}
+                    {loading ? t('profile.completion.saving') : t('profile.completion.completeProfile')}
                   </Button>
                 )}
               </div>
