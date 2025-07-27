@@ -3,7 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CompactWeatherCard } from '@/components/weather/CompactWeatherCard';
 import { QuickSummaryTiles } from './dashboard/QuickSummaryTiles';
-import { FeatureGrid } from './dashboard/FeatureGrid';
+import { ProfessionalFeatureGrid } from './dashboard/ProfessionalFeatureGrid';
 import { SeasonalCalendar } from './dashboard/SeasonalCalendar';
 import { DynamicRecommendations } from './dashboard/DynamicRecommendations';
 import { DashboardFooter } from './dashboard/DashboardFooter';
@@ -19,7 +19,7 @@ export const DashboardHome: React.FC = () => {
         <CompactWeatherCard />
         
         <QuickSummaryTiles />
-        <FeatureGrid />
+        <ProfessionalFeatureGrid />
         <SeasonalCalendar />
         <DynamicRecommendations />
       </div>

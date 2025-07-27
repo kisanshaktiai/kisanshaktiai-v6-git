@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Sprout, MessageCircle, Calendar, TrendingUp } from 'lucide-react';
 
 export const MobileHome: React.FC = () => {
@@ -52,7 +54,7 @@ export const MobileHome: React.FC = () => {
 
   return (
     <div className="pt-4 space-y-6">
-      {/* Status indicator (compact since header now shows status) */}
+      {/* Status indicator */}
       <div className="px-4">
         <div className="flex items-center justify-center">
           <Badge variant={isOnline ? 'default' : 'secondary'} className="bg-green-100 text-green-700">
@@ -61,68 +63,67 @@ export const MobileHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Rest of existing content... */}
       {/* Quick Actions */}
-      <div>
+      <div className="px-4">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('home.quickActions')}</h2>
         <div className="grid grid-cols-2 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
-              
-                
-                  
-                    
-                      
-                    
-                    
-                      {action.title}
-                    
-                    
-                      {action.description}
-                    
-                  
-                
-              
+              <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${action.color}`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {action.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {action.description}
+                  </p>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
       </div>
 
       {/* Today's Summary */}
-      
-        
-          
-            {t('home.todaysSummary')}
-          
-        
-        
-          
-            
-              {t('home.weather')}
-            
-            
-              28°C, Sunny
-            
-          
-          
-            
-              {t('home.tasksPending')}
-            
-            
-              3
-            
-          
-          
-            
-              {t('home.aiMessages')}
-            
-            
-              2 {t('home.newMessages')}
-            
-          
-        
-      
+      <div className="px-4">
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-gray-900 mb-4">
+              {t('home.todaysSummary')}
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">
+                  {t('home.weather')}
+                </div>
+                <div className="font-semibold text-gray-900">
+                  28°C, Sunny
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-1">
+                  {t('home.tasksPending')}
+                </div>
+                <div className="font-semibold text-gray-900">
+                  3
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-1">
+                  {t('home.aiMessages')}
+                </div>
+                <div className="font-semibold text-gray-900">
+                  2 {t('home.newMessages')}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
