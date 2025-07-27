@@ -7,6 +7,7 @@
       "goodAfternoon": "Good Afternoon", 
       "goodEvening": "Good Evening",
       "goodNight": "Good Night",
+      "lateNight": "Good Night",
       "welcomeMessage": "Welcome back to your farming dashboard",
       "subtitle": "Your complete agricultural management platform"
     },
@@ -20,7 +21,8 @@
       "lastUpdated": "Last updated",
       "sync": "Sync",
       "syncing": "Syncing...",
-      "connectionStatus": "Connection Status"
+      "connectionStatus": "Connection Status",
+      "welcome": "back to your dashboard"
     },
     "quickOverview": {
       "title": "Quick Overview",
@@ -166,7 +168,8 @@
       "markComplete": "Mark as Complete",
       "reschedule": "Reschedule",
       "loading": "Loading tasks...",
-      "error": "Unable to load calendar"
+      "error": "Unable to load calendar",
+      "upcomingTasks": "Upcoming Tasks"
     },
     "footer": {
       "quickActions": "Quick Actions",
@@ -205,7 +208,8 @@
       "loading": "Loading",
       "ready": "Ready",
       "maintenance": "Maintenance",
-      "updating": "Updating"
+      "updating": "Updating",
+      "lastUpdated": "Last updated"
     },
     "notifications": {
       "weather": "Weather Alert",
@@ -249,6 +253,9 @@
       "notifications": "No notifications",
       "recommendations": "No recommendations available",
       "generic": "No data available"
+    },
+    "actions": {
+      "refresh": "Refresh"
     }
   },
   "features": {

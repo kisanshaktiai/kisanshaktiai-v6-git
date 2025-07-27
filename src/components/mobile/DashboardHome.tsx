@@ -104,7 +104,7 @@ export const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Priority Weather Card with Enhanced Design */}
+          {/* Priority Weather Card with Enhanced Design - MOVED ABOVE QUICK OVERVIEW */}
           <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
             <CompactWeatherCard />
           </div>
@@ -134,7 +134,7 @@ export const DashboardHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Footer without props */}
+      {/* Enhanced Footer */}
       <DashboardFooter />
 
       {/* Professional Floating Action Button */}

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEnhancedWeatherData } from '@/hooks/useEnhancedWeatherData';
 import { 
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 export const CompactWeatherCard: React.FC = () => {
+  const { t } = useTranslation();
   const { 
     currentWeather, 
     loading, 
@@ -28,7 +30,7 @@ export const CompactWeatherCard: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex items-center justify-center space-x-2">
             <MapPin className="w-5 h-5" />
-            <span className="text-sm">स्थान की जानकारी प्राप्त कर रहे हैं...</span>
+            <span className="text-sm">{t('common.fetchingLocation')}</span>
           </div>
         </CardContent>
       </Card>
@@ -41,7 +43,7 @@ export const CompactWeatherCard: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex items-center justify-center space-x-2">
             <RefreshCw className="w-5 h-5 animate-spin" />
-            <span className="text-sm">मौसम की जानकारी लोड हो रही है...</span>
+            <span className="text-sm">{t('weather.loadingWeather')}</span>
           </div>
         </CardContent>
       </Card>
@@ -56,9 +58,9 @@ export const CompactWeatherCard: React.FC = () => {
             <div className="flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5" />
               <div>
-                <p className="text-sm font-medium">मौसम डेटा उपलब्ध नहीं</p>
+                <p className="text-sm font-medium">{t('weather.dataUnavailable')}</p>
                 <p className="text-xs opacity-90">
-                  {error || 'कृपया बाद में पुनः प्रयास करें'}
+                  {error || t('common.tryAgain')}
                 </p>
               </div>
             </div>
@@ -116,7 +118,7 @@ export const CompactWeatherCard: React.FC = () => {
               </div>
               <div className="flex items-center space-x-1">
                 <Thermometer className="w-3 h-3" />
-                <span>महसूस {Math.round(currentWeather.feels_like_celsius)}°</span>
+                <span>{t('weather.feelsLike')} {Math.round(currentWeather.feels_like_celsius)}°</span>
               </div>
             </div>
           </div>
@@ -132,7 +134,7 @@ export const CompactWeatherCard: React.FC = () => {
             {lastFetch && (
               <div className="flex items-center space-x-1 text-xs opacity-75">
                 <Clock className="w-3 h-3" />
-                <span>{lastFetch.toLocaleTimeString('hi-IN', { 
+                <span>{lastFetch.toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })}</span>
