@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { CompactWeatherCard } from '@/components/weather/CompactWeatherCard';
-import { QuickSummaryTiles } from './dashboard/QuickSummaryTiles';
-import { ProfessionalFeatureGrid } from './dashboard/ProfessionalFeatureGrid';
-import { SeasonalCalendar } from './dashboard/SeasonalCalendar';
+import { HorizontalQuickOverview } from './dashboard/HorizontalQuickOverview';
+import { CompactTaskCard } from './dashboard/CompactTaskCard';
+import { CoreFeatureGrid } from './dashboard/CoreFeatureGrid';
 import { DynamicRecommendations } from './dashboard/DynamicRecommendations';
 import { DashboardFooter } from './dashboard/DashboardFooter';
 import { applyTenantTheme } from '@/utils/tenantTheme';
@@ -39,7 +39,7 @@ export const DashboardHome: React.FC = () => {
     };
 
     updateGreeting();
-    const interval = setInterval(updateGreeting, 60000); // Update every minute
+    const interval = setInterval(updateGreeting, 60000);
     
     return () => clearInterval(interval);
   }, [t]);
@@ -49,13 +49,11 @@ export const DashboardHome: React.FC = () => {
     if (tenantBranding) {
       applyTenantTheme(tenantBranding);
       
-      // Apply additional CSS custom properties for advanced theming
       const root = document.documentElement;
       root.style.setProperty('--tenant-primary', tenantBranding.primary_color || '#10b981');
       root.style.setProperty('--tenant-secondary', tenantBranding.secondary_color || '#059669');
       root.style.setProperty('--tenant-accent', tenantBranding.accent_color || '#34d399');
       
-      // Create dynamic gradients
       root.style.setProperty(
         '--tenant-gradient-primary',
         `linear-gradient(135deg, ${tenantBranding.primary_color || '#10b981'}, ${tenantBranding.secondary_color || '#059669'})`
@@ -69,7 +67,6 @@ export const DashboardHome: React.FC = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate refresh with realistic timing
     await new Promise(resolve => setTimeout(resolve, 1200));
     setLastRefresh(new Date());
     setIsRefreshing(false);
@@ -90,14 +87,6 @@ export const DashboardHome: React.FC = () => {
             animationDelay: '2s' 
           }}
         ></div>
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl animate-pulse"
-          style={{ 
-            background: 'var(--tenant-primary, #10b981)',
-            opacity: '0.1',
-            animationDelay: '4s' 
-          }}
-        ></div>
       </div>
 
       {/* Professional Pull-to-refresh indicator */}
@@ -115,11 +104,11 @@ export const DashboardHome: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content with Professional Layout */}
+      {/* Main Content with New Layout */}
       <div className="relative z-10 pb-safe">
-        <div className="space-y-6 p-4 pt-6">
+        <div className="space-y-6 pb-6">
           {/* Professional Welcome Section */}
-          <div className="text-center space-y-3 animate-fade-in">
+          <div className="text-center space-y-3 animate-fade-in p-4">
             <div className="text-lg font-semibold text-foreground">
               {timeBasedGreeting}
             </div>
@@ -133,28 +122,28 @@ export const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Priority Weather Card - MOVED ABOVE QUICK OVERVIEW */}
-          <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+          {/* Weather Card - MOVED BELOW HEADER as requested */}
+          <div className="animate-fade-in px-4" style={{ animationDelay: '100ms' }}>
             <CompactWeatherCard />
           </div>
           
-          {/* Enhanced Quick Summary with Professional Styling */}
+          {/* Horizontal Quick Overview - Small cards in horizontal layout */}
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <QuickSummaryTiles />
+            <HorizontalQuickOverview />
           </div>
 
-          {/* Professional Feature Grid */}
+          {/* Compact Task Cards - Small expandable cards */}
           <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <ProfessionalFeatureGrid />
+            <CompactTaskCard />
           </div>
 
-          {/* Enhanced Calendar Component */}
+          {/* Core Features Grid - Small rounded cards */}
           <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
-            <SeasonalCalendar />
+            <CoreFeatureGrid />
           </div>
 
           {/* Smart Recommendations */}
-          <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
+          <div className="animate-fade-in px-4" style={{ animationDelay: '500ms' }}>
             <DynamicRecommendations />
           </div>
 
@@ -175,12 +164,10 @@ export const DashboardHome: React.FC = () => {
           style={{ background: 'var(--tenant-gradient-primary, linear-gradient(135deg, #10b981, #059669))' }}
           aria-label={t('actions.refresh')}
         >
-          {/* Glassmorphism overlay */}
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           
           <RefreshCw className={`w-7 h-7 z-10 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
           
-          {/* Professional ripple effect on click */}
           <div className="absolute inset-0 rounded-2xl opacity-0 group-active:animate-ping bg-white/20"></div>
         </button>
       </div>

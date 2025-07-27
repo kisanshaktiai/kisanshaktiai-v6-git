@@ -50,7 +50,7 @@
     "ago": "ago"
   },
   "features": {
-    "title": "Farm Tools",
+    "title": "Core Features",
     "subtitle": "Everything you need to manage your farm",
     "description": "Professional farming tools powered by AI",
     "viewAll": "View All Features",
@@ -60,7 +60,37 @@
     "popular": "Popular",
     "premium": "Premium",
     "free": "Free",
-    "beta": "Beta"
+    "beta": "Beta",
+    "myLands": {
+      "title": "My Lands",
+      "description": "Manage your agricultural fields",
+      "shortDesc": "Field management"
+    },
+    "cropSchedule": {
+      "title": "Crop Schedule",
+      "description": "AI-powered crop planning",
+      "shortDesc": "Smart planning"
+    },
+    "fertilizerGuide": {
+      "title": "Fertilizer Guide",
+      "description": "Soil nutrition guidance",
+      "shortDesc": "Nutrient advice"
+    },
+    "aiChat": {
+      "title": "AI Assistant",
+      "description": "Instant farming advice",
+      "shortDesc": "Smart advisor"
+    },
+    "satelliteData": {
+      "title": "Satellite Data",
+      "description": "Crop monitoring from space",
+      "shortDesc": "Space monitoring"
+    },
+    "market": {
+      "title": "Market Prices",
+      "description": "Real-time crop prices",
+      "shortDesc": "Price tracker"
+    }
   },
   "weather": {
     "title": "Weather Insights",
@@ -92,7 +122,52 @@
     "lastUpdated": "Last updated",
     "refreshing": "Refreshing weather data...",
     "offline": "Weather data unavailable offline",
-    "error": "Unable to load weather data"
+    "error": "Unable to load weather data",
+    "dataUnavailable": "Weather data unavailable",
+    "loadingWeather": "Loading weather data...",
+    "weatherUnavailableOffline": "Weather data unavailable offline",
+    "unableToLoad": "Unable to load weather data"
+  },
+  "tasks": {
+    "title": "Today's Tasks",
+    "subtitle": "Upcoming farming activities",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "thisWeek": "This Week",
+    "nextWeek": "Next Week",
+    "overdue": "Overdue",
+    "completed": "Completed",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "scheduled": "Scheduled",
+    "priority": {
+      "high": "High Priority",
+      "medium": "Medium Priority",
+      "low": "Low Priority"
+    },
+    "taskTypes": {
+      "sowing": "Sowing",
+      "watering": "Watering",
+      "fertilizer": "Fertilizer Application",
+      "pesticide": "Pest Control",
+      "harvest": "Harvesting",
+      "soilTest": "Soil Testing",
+      "irrigation": "Irrigation Maintenance",
+      "pruning": "Pruning",
+      "weeding": "Weeding",
+      "monitoring": "Field Monitoring"
+    },
+    "noTasks": "No upcoming tasks",
+    "allCaughtUp": "All caught up! Great work.",
+    "viewCalendar": "View Full Calendar",
+    "addTask": "Add New Task",
+    "markComplete": "Mark as Complete",
+    "reschedule": "Reschedule",
+    "loading": "Loading tasks...",
+    "error": "Unable to load tasks",
+    "upcomingTasks": "Upcoming Tasks",
+    "expandTasks": "View All Tasks",
+    "collapseTasks": "Show Less"
   },
   "recommendations": {
     "title": "Smart Recommendations",
@@ -143,60 +218,7 @@
     "pending": "Pending",
     "inProgress": "In Progress",
     "scheduled": "Scheduled",
-    "priority": {
-      "high": "High Priority",
-      "medium": "Medium Priority",
-      "low": "Low Priority"
-    },
-    "taskTypes": {
-      "sowing": "Sowing",
-      "watering": "Watering",
-      "fertilizer": "Fertilizer Application",
-      "pesticide": "Pest Control",
-      "harvest": "Harvesting",
-      "soilTest": "Soil Testing",
-      "irrigation": "Irrigation Maintenance",
-      "pruning": "Pruning",
-      "weeding": "Weeding",
-      "monitoring": "Field Monitoring"
-    },
-    "noTasks": "No upcoming tasks this week",
-    "allCaughtUp": "All caught up! Great work.",
-    "viewCalendar": "View Full Calendar",
-    "addTask": "Add New Task",
-    "markComplete": "Mark as Complete",
-    "reschedule": "Reschedule",
-    "loading": "Loading tasks...",
-    "error": "Unable to load calendar",
     "upcomingTasks": "Upcoming Tasks"
-  },
-  "footer": {
-    "quickActions": "Quick Actions",
-    "addCrop": "Add Crop",
-    "recordExpense": "Record Expense",
-    "takePhoto": "Take Photo",
-    "callExpert": "Call Expert",
-    "helpCenter": "Help Center",
-    "support": "Support",
-    "feedback": "Feedback",
-    "version": "Version",
-    "lastSync": "Last Sync",
-    "dataUsage": "Data Usage",
-    "storageUsed": "Storage Used",
-    "offlineMode": "Offline Mode",
-    "onlineMode": "Online Mode"
-  },
-  "navigation": {
-    "home": "Home",
-    "myLands": "My Lands",
-    "aiChat": "AI Assistant",
-    "schedule": "Schedule",
-    "market": "Market",
-    "community": "Community",
-    "analytics": "Analytics",
-    "profile": "Profile",
-    "settings": "Settings",
-    "help": "Help"
   },
   "status": {
     "online": "Online",
@@ -210,18 +232,12 @@
     "updating": "Updating",
     "lastUpdated": "Last updated"
   },
-  "notifications": {
-    "weather": "Weather Alert",
-    "market": "Market Update",
-    "task": "Task Reminder", 
-    "system": "System Notice",
-    "achievement": "Achievement",
-    "social": "Community Update",
-    "markAllRead": "Mark All Read",
-    "clear": "Clear All",
-    "viewAll": "View All",
-    "noNotifications": "No new notifications",
-    "loading": "Loading notifications..."
+  "actions": {
+    "refresh": "Refresh",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "viewMore": "View More",
+    "viewLess": "Show Less"
   },
   "errors": {
     "loadingFailed": "Failed to load data",
@@ -236,24 +252,5 @@
     "refresh": "Refresh",
     "contact": "Contact Support",
     "offline": "You're currently offline"
-  },
-  "loading": {
-    "dashboard": "Loading your dashboard...",
-    "weather": "Loading weather data...",
-    "recommendations": "Loading recommendations...",
-    "calendar": "Loading calendar...",
-    "profile": "Loading profile...",
-    "generic": "Loading..."
-  },
-  "empty": {
-    "dashboard": "Welcome to your farming dashboard",
-    "weather": "Weather data unavailable",
-    "tasks": "No tasks scheduled",
-    "notifications": "No notifications",
-    "recommendations": "No recommendations available",
-    "generic": "No data available"
-  },
-  "actions": {
-    "refresh": "Refresh"
   }
 }

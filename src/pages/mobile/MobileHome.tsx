@@ -1,26 +1,12 @@
 
 import React from 'react';
 import { MobileLayout } from '@/components/mobile/MobileLayout';
-import { QuickSummaryTiles } from '@/components/mobile/dashboard/QuickSummaryTiles';
-import { SeasonalCalendar } from '@/components/mobile/dashboard/SeasonalCalendar';
-import { ProfessionalFeatureGrid } from '@/components/mobile/dashboard/ProfessionalFeatureGrid';
-import { DynamicRecommendations } from '@/components/mobile/dashboard/DynamicRecommendations';
-import { WeatherDebugPanel } from '@/components/mobile/dashboard/WeatherDebugPanel';
+import { DashboardHome } from '@/components/mobile/DashboardHome';
 
 export default function MobileHome() {
   return (
-    <MobileLayout>
-      <div className="space-y-4">
-        <QuickSummaryTiles />
-        <SeasonalCalendar />
-        <ProfessionalFeatureGrid />
-        <DynamicRecommendations />
-        
-        {/* Weather Debug Panel - only in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <WeatherDebugPanel />
-        )}
-      </div>
+    <MobileLayout showHeader={false}>
+      <DashboardHome />
     </MobileLayout>
   );
 }
