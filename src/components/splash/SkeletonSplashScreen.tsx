@@ -199,7 +199,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
               }}
             >
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-semibold">2025 Modern Design</span>
+              <span className="text-sm font-semibold">Your Ai Guru Inside</span>
               <Zap className="w-4 h-4" />
             </div>
           </div>
