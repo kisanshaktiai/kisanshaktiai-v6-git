@@ -25,17 +25,17 @@ export const useTenantData = (tenantId?: string) => {
         let tenant;
         
         if (tenantId) {
-          // Load specific tenant by ID with optimized query
+          // Load specific tenant by ID with versioning support
           const { data: tenantData, error: tenantError } = await supabase
             .from('tenants')
-            .select('id, name, slug, type, status')
+            .select('id, name, slug, type, status, branding_version, branding_updated_at')
             .eq('id', tenantId)
             .single();
 
           if (tenantError) throw tenantError;
           tenant = tenantData;
         } else {
-          // Use optimized tenant detection service
+          // Use optimized tenant detection service with versioning
           const tenantService = TenantDetectionService.getInstance();
           const detectedTenant = await tenantService.detectTenant();
           
@@ -43,18 +43,18 @@ export const useTenantData = (tenantId?: string) => {
             throw new Error('No tenant configuration found');
           }
           
-          // If we got tenant from cache, we might already have full data
-          if (detectedTenant.branding) {
+          // If we got tenant from cache with full branding data, use it directly
+          if (detectedTenant.branding && detectedTenant.branding_version) {
             dispatch(setCurrentTenant(detectedTenant));
             dispatch(setTenantBranding(detectedTenant.branding));
             dispatch(setLoading(false));
             return;
           }
           
-          // Otherwise, get basic tenant data from database
+          // Otherwise, get tenant data from database with versioning
           const { data: tenantData, error: tenantError } = await supabase
             .from('tenants')
-            .select('id, name, slug, type, status')
+            .select('id, name, slug, type, status, branding_version, branding_updated_at')
             .eq('id', detectedTenant.id)
             .single();
 
@@ -64,12 +64,12 @@ export const useTenantData = (tenantId?: string) => {
 
         dispatch(setCurrentTenant(tenant));
 
-        // Load branding and features in parallel for better performance
+        // Load branding and features with version information
         const brandingPromise = supabase
           .from('tenant_branding')
-          .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color, accent_color, text_color, font_family, neutral_color, muted_color, gray_50, gray_100, gray_200, gray_300, gray_400, gray_500, gray_600, gray_700, gray_800, gray_900')
+          .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color, accent_color, text_color, font_family, neutral_color, muted_color, gray_50, gray_100, gray_200, gray_300, gray_400, gray_500, gray_600, gray_700, gray_800, gray_900, version')
           .eq('tenant_id', tenant.id)
-          .maybeSingle(); // Use maybeSingle instead of single to handle missing records
+          .maybeSingle();
 
         const featuresPromise = supabase
           .from('tenant_features')
@@ -80,9 +80,17 @@ export const useTenantData = (tenantId?: string) => {
         // Execute queries in parallel
         const [brandingResult, featuresResult] = await Promise.allSettled([brandingPromise, featuresPromise]);
         
-        // Handle branding result
+        // Handle branding result with version tracking
         if (brandingResult.status === 'fulfilled' && brandingResult.value.data) {
-          dispatch(setTenantBranding(brandingResult.value.data));
+          const brandingData = brandingResult.value.data;
+          dispatch(setTenantBranding(brandingData));
+          
+          // Update cache with fresh branding version if available
+          if (brandingData.version && tenant.branding_version) {
+            const tenantService = TenantDetectionService.getInstance();
+            // This will update the cache with the latest version information
+            await tenantService.preloadTenant(window.location.hostname);
+          }
         } else if (brandingResult.status === 'rejected') {
           console.warn('Branding query failed:', brandingResult.reason);
         }
@@ -98,7 +106,7 @@ export const useTenantData = (tenantId?: string) => {
         console.error('Error loading tenant data:', error);
         dispatch(setError(error instanceof Error ? error.message : 'Failed to load tenant data'));
         
-        // Try to use emergency fallback
+        // Try to use emergency fallback with version support
         const tenantService = TenantDetectionService.getInstance();
         const emergencyTenant = tenantService['createEmergencyTenant']?.();
         if (emergencyTenant) {
@@ -112,20 +120,50 @@ export const useTenantData = (tenantId?: string) => {
       }
     };
 
-    // Only load if we don't have tenant data or if tenantId changed
-    if (!currentTenant || (tenantId && currentTenant.id !== tenantId)) {
-      loadTenantData();
-    } else if (currentTenant && !loading) {
-      // We have tenant data, ensure loading is false
-      dispatch(setLoading(false));
-    }
+    // Validate cache version before loading if we have current tenant
+    const validateAndLoad = async () => {
+      if (currentTenant && !tenantId) {
+        const tenantService = TenantDetectionService.getInstance();
+        const isValid = await tenantService.validateCacheVersion();
+        
+        if (!isValid) {
+          console.log('Cache version invalid, refreshing tenant data');
+          await loadTenantData();
+          return;
+        }
+      }
+      
+      // Only load if we don't have tenant data or if tenantId changed
+      if (!currentTenant || (tenantId && currentTenant.id !== tenantId)) {
+        await loadTenantData();
+      } else if (currentTenant && !loading) {
+        // We have tenant data, ensure loading is false
+        dispatch(setLoading(false));
+      }
+    };
+
+    validateAndLoad();
   }, [tenantId, dispatch, currentTenant?.id, loading]);
+
+  // Add method to force refresh tenant data
+  const refreshTenant = async () => {
+    const tenantService = TenantDetectionService.getInstance();
+    const refreshedTenant = await tenantService.forceRefreshTenant();
+    
+    if (refreshedTenant) {
+      dispatch(setCurrentTenant(refreshedTenant));
+      if (refreshedTenant.branding) {
+        dispatch(setTenantBranding(refreshedTenant.branding));
+      }
+    }
+  };
 
   return {
     currentTenant,
     tenantBranding,
     tenantFeatures,
     loading,
-    error
+    error,
+    refreshTenant
   };
 };

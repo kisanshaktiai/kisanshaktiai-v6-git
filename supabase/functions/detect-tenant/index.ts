@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0';
 
 const corsHeaders = {
@@ -13,6 +12,7 @@ interface TenantBranding {
   primary_color?: string;
   secondary_color?: string;
   background_color?: string;
+  version?: number;
 }
 
 interface TenantResponse {
@@ -22,6 +22,8 @@ interface TenantResponse {
   type: string;
   is_default?: boolean;
   branding?: TenantBranding;
+  branding_version?: number;
+  branding_updated_at?: string;
 }
 
 // Rate limiting map (in production, use Redis or similar)
@@ -114,7 +116,8 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
       .from('domain_mappings')
       .select(`
         tenant_id,
-        tenants!inner(id, name, slug, type, status)
+        version,
+        tenants!inner(id, name, slug, type, status, branding_version, branding_updated_at)
       `)
       .eq('domain', fullDomain)
       .eq('is_active', true)
@@ -130,7 +133,12 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
       
       console.log('Found tenant by exact domain mapping:', tenant.slug);
       return {
-        tenant: { ...tenant, branding },
+        tenant: { 
+          ...tenant, 
+          branding,
+          branding_version: tenant.branding_version,
+          branding_updated_at: tenant.branding_updated_at
+        },
         method: 'exact-domain-mapping'
       };
     }
@@ -142,7 +150,8 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         .from('domain_mappings')
         .select(`
           tenant_id,
-          tenants!inner(id, name, slug, type, status)
+          version,
+          tenants!inner(id, name, slug, type, status, branding_version, branding_updated_at)
         `)
         .eq('domain', wildcardDomain)
         .eq('is_active', true)
@@ -158,7 +167,12 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         
         console.log('Found tenant by wildcard domain mapping:', tenant.slug);
         return {
-          tenant: { ...tenant, branding },
+          tenant: { 
+            ...tenant, 
+            branding,
+            branding_version: tenant.branding_version,
+            branding_updated_at: tenant.branding_updated_at
+          },
           method: 'wildcard-domain-mapping'
         };
       }
@@ -170,7 +184,8 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         .from('domain_mappings')
         .select(`
           tenant_id,
-          tenants!inner(id, name, slug, type, status)
+          version,
+          tenants!inner(id, name, slug, type, status, branding_version, branding_updated_at)
         `)
         .eq('domain', domain)
         .eq('is_active', true)
@@ -186,7 +201,12 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         
         console.log('Found tenant by base domain mapping:', tenant.slug);
         return {
-          tenant: { ...tenant, branding },
+          tenant: { 
+            ...tenant, 
+            branding,
+            branding_version: tenant.branding_version,
+            branding_updated_at: tenant.branding_updated_at
+          },
           method: 'base-domain-mapping'
         };
       }
@@ -196,7 +216,7 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
     if (subdomain) {
       const { data: subdomainTenant } = await supabase
         .from('tenants')
-        .select('id, name, slug, type, status')
+        .select('id, name, slug, type, status, branding_version, branding_updated_at')
         .eq('subdomain', subdomain)
         .eq('status', 'active')
         .single();
@@ -206,7 +226,12 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         
         console.log('Found tenant by subdomain:', subdomainTenant.slug);
         return {
-          tenant: { ...subdomainTenant, branding },
+          tenant: { 
+            ...subdomainTenant, 
+            branding,
+            branding_version: subdomainTenant.branding_version,
+            branding_updated_at: subdomainTenant.branding_updated_at
+          },
           method: 'subdomain-mapping'
         };
       }
@@ -216,7 +241,7 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
     if (subdomain) {
       const { data: slugTenant } = await supabase
         .from('tenants')
-        .select('id, name, slug, type, status')
+        .select('id, name, slug, type, status, branding_version, branding_updated_at')
         .eq('slug', subdomain)
         .eq('status', 'active')
         .single();
@@ -226,7 +251,12 @@ async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ 
         
         console.log('Found tenant by slug mapping:', slugTenant.slug);
         return {
-          tenant: { ...slugTenant, branding },
+          tenant: { 
+            ...slugTenant, 
+            branding,
+            branding_version: slugTenant.branding_version,
+            branding_updated_at: slugTenant.branding_updated_at
+          },
           method: 'slug-mapping'
         };
       }
@@ -243,7 +273,7 @@ async function getDefaultTenant(supabase: any): Promise<TenantResponse | null> {
   try {
     const { data: tenant } = await supabase
       .from('tenants')
-      .select('id, name, slug, type, status')
+      .select('id, name, slug, type, status, branding_version, branding_updated_at')
       .eq('is_default', true)
       .eq('status', 'active')
       .single();
@@ -254,7 +284,9 @@ async function getDefaultTenant(supabase: any): Promise<TenantResponse | null> {
       return {
         ...tenant,
         is_default: true,
-        branding
+        branding,
+        branding_version: tenant.branding_version,
+        branding_updated_at: tenant.branding_updated_at
       };
     }
     
@@ -269,7 +301,7 @@ async function loadTenantBranding(supabase: any, tenantId: string): Promise<Tena
   try {
     const { data: branding } = await supabase
       .from('tenant_branding')
-      .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color')
+      .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color, version')
       .eq('tenant_id', tenantId)
       .single();
 
@@ -287,13 +319,16 @@ function getEmergencyTenant(): TenantResponse {
     slug: 'emergency',
     type: 'default',
     is_default: true,
+    branding_version: 1,
+    branding_updated_at: new Date().toISOString(),
     branding: {
       app_name: 'KisanShakti AI',
       app_tagline: 'Your smart farming journey starts here',
       primary_color: '#8BC34A',
       secondary_color: '#4CAF50',
       background_color: '#FFFFFF',
-      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
+      logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+      version: 1
     }
   };
 }

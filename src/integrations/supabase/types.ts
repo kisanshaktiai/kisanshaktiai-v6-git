@@ -1142,6 +1142,7 @@ export type Database = {
           ssl_status: string | null
           tenant_id: string | null
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           created_at?: string | null
@@ -1153,6 +1154,7 @@ export type Database = {
           ssl_status?: string | null
           tenant_id?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           created_at?: string | null
@@ -1164,6 +1166,7 @@ export type Database = {
           ssl_status?: string | null
           tenant_id?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -3819,6 +3822,7 @@ export type Database = {
           tenant_id: string | null
           text_color: string | null
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           accent_color?: string | null
@@ -3841,6 +3845,7 @@ export type Database = {
           tenant_id?: string | null
           text_color?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           accent_color?: string | null
@@ -3863,6 +3868,7 @@ export type Database = {
           tenant_id?: string | null
           text_color?: string | null
           updated_at?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -4082,6 +4088,8 @@ export type Database = {
       }
       tenants: {
         Row: {
+          branding_updated_at: string | null
+          branding_version: number | null
           business_address: Json | null
           business_registration: string | null
           created_at: string | null
@@ -4114,6 +4122,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          branding_updated_at?: string | null
+          branding_version?: number | null
           business_address?: Json | null
           business_registration?: string | null
           created_at?: string | null
@@ -4146,6 +4156,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          branding_updated_at?: string | null
+          branding_version?: number | null
           business_address?: Json | null
           business_registration?: string | null
           created_at?: string | null
@@ -5532,6 +5544,10 @@ export type Database = {
         Args: { land_uuid: string }
         Returns: number
       }
+      calculate_onboarding_progress: {
+        Args: { workflow_id: string }
+        Returns: number
+      }
       can_self_insert: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -6073,6 +6089,10 @@ export type Database = {
       get_jwt_farmer_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_onboarding_template: {
+        Args: { tenant_type: string; subscription_plan: string }
+        Returns: Json
       }
       get_proj4_from_srid: {
         Args: { "": number }

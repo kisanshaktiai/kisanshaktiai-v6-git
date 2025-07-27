@@ -5,6 +5,7 @@ interface TenantBranding {
   primary_color?: string;
   secondary_color?: string;
   background_color?: string;
+  version?: number;
 }
 
 interface TenantData {
@@ -14,12 +15,16 @@ interface TenantData {
   type: string;
   is_default?: boolean;
   branding?: TenantBranding;
+  branding_version?: number;
+  branding_updated_at?: string;
 }
 
 interface CacheEntry {
   data: TenantData;
   timestamp: number;
   expires: number;
+  version: number;
+  branding_version?: number;
 }
 
 interface DetectionResponse {
@@ -29,12 +34,23 @@ interface DetectionResponse {
   error?: string;
 }
 
+interface VersionCheckResponse {
+  success: boolean;
+  needsRefresh: boolean;
+  currentVersion?: number;
+  cachedVersion?: number;
+  reason?: string;
+  error?: string;
+}
+
 export class TenantDetectionService {
   private static instance: TenantDetectionService;
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private readonly TIMEOUT_DURATION = 5000; // 5 seconds for Edge Function
   private readonly MAX_RETRIES = 2;
+  private readonly VERSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private versionCheckTimers = new Map<string, number>();
 
   static getInstance(): TenantDetectionService {
     if (!this.instance) {
@@ -112,8 +128,87 @@ export class TenantDetectionService {
     return `tenant:${hostname}`;
   }
 
-  private isValidCacheEntry(entry: CacheEntry): boolean {
-    return Date.now() < entry.expires;
+  private isValidCacheEntry(entry: CacheEntry, skipVersionCheck: boolean = false): boolean {
+    const isTimeValid = Date.now() < entry.expires;
+    if (!isTimeValid) return false;
+    
+    // Skip version check if explicitly requested (to avoid infinite loops)
+    if (skipVersionCheck) return true;
+    
+    // Check if we should validate version
+    const hostname = this.getHostnameFromCacheKey(entry);
+    if (hostname && this.shouldCheckVersion(hostname)) {
+      this.scheduleVersionCheck(hostname, entry);
+    }
+    
+    return true;
+  }
+
+  private getHostnameFromCacheKey(entry: CacheEntry): string | null {
+    // Extract hostname from cache key - this is a simplified approach
+    for (const [key, cachedEntry] of this.cache.entries()) {
+      if (cachedEntry === entry) {
+        return key.replace('tenant:', '');
+      }
+    }
+    return null;
+  }
+
+  private shouldCheckVersion(hostname: string): boolean {
+    const lastCheck = this.versionCheckTimers.get(hostname);
+    return !lastCheck || (Date.now() - lastCheck) > this.VERSION_CHECK_INTERVAL;
+  }
+
+  private scheduleVersionCheck(hostname: string, entry: CacheEntry): void {
+    // Don't check too frequently
+    if (!this.shouldCheckVersion(hostname)) return;
+    
+    this.versionCheckTimers.set(hostname, Date.now());
+    
+    // Perform version check asynchronously
+    this.checkCacheVersion(hostname, entry.branding_version || entry.version)
+      .then(needsRefresh => {
+        if (needsRefresh) {
+          console.log(`Cache version mismatch for ${hostname}, invalidating cache`);
+          this.invalidateCacheForHostname(hostname);
+        }
+      })
+      .catch(error => {
+        console.warn(`Version check failed for ${hostname}:`, error);
+      });
+  }
+
+  private async checkCacheVersion(hostname: string, cachedVersion?: number): Promise<boolean> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('check-tenant-version', {
+        body: { domain: hostname, cachedVersion }
+      });
+
+      if (error) {
+        console.warn('Version check error:', error);
+        return false; // Don't invalidate on error
+      }
+
+      const response = data as VersionCheckResponse;
+      return response.success ? response.needsRefresh : false;
+    } catch (error) {
+      console.warn('Failed to check cache version:', error);
+      return false; // Don't invalidate on error
+    }
+  }
+
+  private invalidateCacheForHostname(hostname: string): void {
+    const cacheKey = this.getCacheKey(hostname);
+    this.cache.delete(cacheKey);
+    
+    // Also remove from localStorage
+    try {
+      localStorage.removeItem(`tenant_cache_${cacheKey}`);
+    } catch (error) {
+      console.warn('Failed to remove from localStorage:', error);
+    }
   }
 
   private getCachedTenant(cacheKey: string): TenantData | null {
@@ -123,7 +218,7 @@ export class TenantDetectionService {
       return entry.data;
     }
     
-    if (entry) {
+    if (entry && !this.isValidCacheEntry(entry, true)) {
       this.cache.delete(cacheKey);
     }
     
@@ -151,7 +246,9 @@ export class TenantDetectionService {
     const entry: CacheEntry = {
       data,
       timestamp: Date.now(),
-      expires: Date.now() + this.CACHE_DURATION
+      expires: Date.now() + this.CACHE_DURATION,
+      version: 1, // Cache entry version
+      branding_version: data.branding_version
     };
     
     // Store in memory cache
@@ -273,19 +370,66 @@ export class TenantDetectionService {
       slug: 'emergency-client',
       type: 'default',
       is_default: true,
+      branding_version: 1,
+      branding_updated_at: new Date().toISOString(),
       branding: {
         app_name: 'KisanShakti AI',
         app_tagline: 'Your smart farming journey starts here',
         primary_color: '#8BC34A',
         secondary_color: '#4CAF50',
         background_color: '#FFFFFF',
-        logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png'
+        logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+        version: 1
       }
     };
 
     // Cache the emergency tenant
     this.setCachedTenant('emergency-client', emergencyTenant);
     return emergencyTenant;
+  }
+
+  async forceRefreshTenant(hostname?: string): Promise<TenantData | null> {
+    const targetHostname = hostname || this.parseHostname().hostname;
+    const cacheKey = this.getCacheKey(targetHostname);
+    
+    // Clear existing cache
+    this.invalidateCacheForHostname(targetHostname);
+    
+    // Fetch fresh data
+    try {
+      const tenant = await this.callDetectTenantFunction(targetHostname);
+      this.setCachedTenant(cacheKey, tenant);
+      console.log('Tenant force refreshed:', tenant.slug);
+      return tenant;
+    } catch (error) {
+      console.error('Failed to force refresh tenant:', error);
+      return null;
+    }
+  }
+
+  async validateCacheVersion(hostname?: string): Promise<boolean> {
+    const targetHostname = hostname || this.parseHostname().hostname;
+    const cacheKey = this.getCacheKey(targetHostname);
+    const cachedEntry = this.cache.get(cacheKey);
+    
+    if (!cachedEntry) return false;
+    
+    try {
+      const needsRefresh = await this.checkCacheVersion(
+        targetHostname, 
+        cachedEntry.branding_version || cachedEntry.version
+      );
+      
+      if (needsRefresh) {
+        this.invalidateCacheForHostname(targetHostname);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn('Cache validation failed:', error);
+      return false;
+    }
   }
 
   async clearCache(): Promise<void> {
