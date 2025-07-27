@@ -132,12 +132,26 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
 export const QuickSummaryTiles: React.FC = () => {
   const { t } = useTranslation('dashboard');
-  const { data: dashboardData, isLoading } = useOptimizedDashboard();
+  const { data: dashboardData, isLoading, error } = useOptimizedDashboard();
+
+  console.log('Dashboard data in QuickSummaryTiles:', dashboardData);
+  console.log('Loading state:', isLoading);
+  console.log('Error state:', error);
+
+  // Format currency value
+  const formatCurrency = (amount: number) => {
+    if (amount >= 100000) {
+      return `${(amount / 100000).toFixed(1)}L`;
+    } else if (amount >= 1000) {
+      return `${(amount / 1000).toFixed(1)}K`;
+    }
+    return amount.toString();
+  };
 
   const metrics = [
     {
       title: t('quickOverview.totalLand'),
-      value: isLoading ? '---' : `${dashboardData?.totalLand || '12.5'} ${t('quickOverview.acres')}`,
+      value: isLoading ? '---' : `${dashboardData?.summary?.totalArea || '12.5'} ${t('quickOverview.acres')}`,
       subtitle: t('quickOverview.lastMonth'),
       icon: MapPin,
       trend: 'up' as const,
@@ -148,7 +162,7 @@ export const QuickSummaryTiles: React.FC = () => {
     },
     {
       title: t('quickOverview.activeCrops'),
-      value: isLoading ? '---' : `${dashboardData?.activeCrops || '8'} ${t('quickOverview.varieties')}`,
+      value: isLoading ? '---' : `${dashboardData?.summary?.activeCrops || '8'} ${t('quickOverview.varieties')}`,
       subtitle: t('quickOverview.thisMonth'),
       icon: Sprout,
       trend: 'neutral' as const,
@@ -159,7 +173,7 @@ export const QuickSummaryTiles: React.FC = () => {
     },
     {
       title: t('quickOverview.netIncome'),
-      value: isLoading ? '---' : `₹${dashboardData?.netIncome || '2.4L'}`,
+      value: isLoading ? '---' : `₹${formatCurrency(dashboardData?.summary?.netProfit || 155000)}`,
       subtitle: t('quickOverview.lastMonth'),
       icon: IndianRupee,
       trend: 'up' as const,
@@ -170,7 +184,7 @@ export const QuickSummaryTiles: React.FC = () => {
     },
     {
       title: t('quickOverview.efficiency'),
-      value: isLoading ? '---' : `${dashboardData?.efficiency || '87'}%`,
+      value: isLoading ? '---' : `87%`,
       subtitle: t('quickOverview.thisYear'),
       icon: Target,
       trend: 'up' as const,
@@ -180,6 +194,10 @@ export const QuickSummaryTiles: React.FC = () => {
       isLoading
     }
   ];
+
+  if (error) {
+    console.error('Dashboard error:', error);
+  }
 
   return (
     <div className="space-y-6">
@@ -198,7 +216,7 @@ export const QuickSummaryTiles: React.FC = () => {
           className="bg-primary/10 text-primary border-primary/20 font-medium"
         >
           <BarChart3 className="w-3 h-3 mr-1" />
-          {t('status.ready')}
+          {isLoading ? t('status.loading') : t('status.ready')}
         </Badge>
       </div>
 

@@ -17,6 +17,32 @@ export const DashboardHome: React.FC = () => {
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [timeBasedGreeting, setTimeBasedGreeting] = useState('');
+
+  // Get time-based greeting
+  useEffect(() => {
+    const updateGreeting = () => {
+      const hour = new Date().getHours();
+      let greeting = '';
+      
+      if (hour >= 5 && hour < 12) {
+        greeting = t('welcome.goodMorning');
+      } else if (hour >= 12 && hour < 17) {
+        greeting = t('welcome.goodAfternoon');
+      } else if (hour >= 17 && hour < 21) {
+        greeting = t('welcome.goodEvening');
+      } else {
+        greeting = t('welcome.goodNight');
+      }
+      
+      setTimeBasedGreeting(greeting);
+    };
+
+    updateGreeting();
+    const interval = setInterval(updateGreeting, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, [t]);
 
   // Apply tenant theming with enhanced CSS custom properties
   useEffect(() => {
@@ -94,6 +120,9 @@ export const DashboardHome: React.FC = () => {
         <div className="space-y-6 p-4 pt-6">
           {/* Professional Welcome Section */}
           <div className="text-center space-y-3 animate-fade-in">
+            <div className="text-lg font-semibold text-foreground">
+              {timeBasedGreeting}
+            </div>
             <div className="inline-flex items-center px-4 py-2 bg-muted/50 backdrop-blur-sm rounded-full border border-border/50">
               <span className="text-sm text-muted-foreground font-medium tracking-wide uppercase">
                 {t('welcome.subtitle')}
@@ -104,7 +133,7 @@ export const DashboardHome: React.FC = () => {
             </div>
           </div>
 
-          {/* Priority Weather Card with Enhanced Design - MOVED ABOVE QUICK OVERVIEW */}
+          {/* Priority Weather Card - MOVED ABOVE QUICK OVERVIEW */}
           <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
             <CompactWeatherCard />
           </div>

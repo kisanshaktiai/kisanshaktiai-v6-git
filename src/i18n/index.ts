@@ -30,33 +30,43 @@ const resources = {
   },
   mr: {
     translation: mrTranslations,
+    dashboard: {}, // Add empty dashboard namespace for other languages
   },
   pa: {
     translation: paTranslations,
+    dashboard: {},
   },
   te: {
     translation: teTranslations,
+    dashboard: {},
   },
   ta: {
     translation: taTranslations,
+    dashboard: {},
   },
   gu: {
     translation: guTranslations,
+    dashboard: {},
   },
   kn: {
     translation: knTranslations,
+    dashboard: {},
   },
   bn: {
     translation: bnTranslations,
+    dashboard: {},
   },
   ml: {
     translation: mlTranslations,
+    dashboard: {},
   },
   or: {
     translation: orTranslations,
+    dashboard: {},
   },
   ur: {
     translation: urTranslations,
+    dashboard: {},
   },
 };
 
@@ -67,6 +77,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'translation',
+    fallbackNS: 'translation',
     interpolation: {
       escapeValue: false,
     },
@@ -86,12 +97,16 @@ i18n
     saveMissing: false,
     updateMissing: false,
     missingKeyHandler: (lng, ns, key, fallbackValue) => {
-      console.warn(`Missing translation key: ${key} for language: ${lng}`);
+      console.warn(`Missing translation key: ${key} for language: ${lng}, namespace: ${ns}`);
+      return key; // Return the key itself as fallback
     },
     // Load all namespaces
     ns: ['translation', 'dashboard'],
     // Preload all supported languages for instant switching
     preload: ['en', 'hi', 'mr'],
+    // Ensure keys are properly interpolated
+    returnEmptyString: false,
+    returnNull: false,
   });
 
 export default i18n;

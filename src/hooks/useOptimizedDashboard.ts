@@ -11,5 +11,12 @@ export const useOptimizedDashboard = () => {
     refetchOnWindowFocus: false,
     refetchOnMount: 'always',
     retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    onError: (error) => {
+      console.error('Dashboard query error:', error);
+    },
+    onSuccess: (data) => {
+      console.log('Dashboard query success:', data);
+    }
   });
 };
