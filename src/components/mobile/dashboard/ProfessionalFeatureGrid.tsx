@@ -1,5 +1,6 @@
 
 import React, { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOptimizedDashboard } from '@/hooks/useOptimizedDashboard';
@@ -36,69 +37,70 @@ const LazyFeatureCard = React.lazy(() =>
 );
 
 export const ProfessionalFeatureGrid: React.FC = () => {
+  const { t } = useTranslation();
   const { data: dashboardData, isLoading } = useOptimizedDashboard();
 
   const features = [
     {
       icon: Satellite,
-      title: 'सैटेलाइट मॉनिटरिंग',
-      subtitle: 'फसल स्वास्थ्य देखें',
+      title: t('features.satelliteMonitoring'),
+      subtitle: t('features.satelliteMonitoringDesc'),
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       path: '/satellite'
     },
     {
       icon: MessageSquare,
-      title: 'AI सलाहकार',
-      subtitle: 'तुरंत सलाह पाएं',
+      title: t('features.aiAdvisor'),
+      subtitle: t('features.aiAdvisorDesc'),
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       path: '/ai-chat'
     },
     {
       icon: Calendar,
-      title: 'फसल कैलेंडर',
-      subtitle: 'कार्यक्रम व्यवस्थित करें',
+      title: t('features.cropCalendar'),
+      subtitle: t('features.cropCalendarDesc'),
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       path: '/crop-schedule'
     },
     {
       icon: TrendingUp,
-      title: 'बाज़ार मूल्य',
-      subtitle: 'आज की दरें देखें',
+      title: t('features.marketPrice'),
+      subtitle: t('features.marketPriceDesc'),
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       path: '/market'
     },
     {
       icon: Camera,
-      title: 'इंस्टा स्कैन',
-      subtitle: 'रोग पहचान',
+      title: t('features.instaScan'),
+      subtitle: t('features.instaScanDesc'),
       color: 'text-red-600',
       bgColor: 'bg-red-50',
       path: '/insta-scan'
     },
     {
       icon: Users,
-      title: 'समुदाय',
-      subtitle: 'किसान नेटवर्क',
+      title: t('features.community'),
+      subtitle: t('features.communityDesc'),
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
       path: '/community'
     },
     {
       icon: ShoppingCart,
-      title: 'बाज़ार',
-      subtitle: 'खरीदें व बेचें',
+      title: t('features.marketplace'),
+      subtitle: t('features.marketplaceDesc'),
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
       path: '/market'
     },
     {
       icon: BarChart3,
-      title: 'रिपोर्ट',
-      subtitle: 'व्यापार विश्लेषण',
+      title: t('features.reports'),
+      subtitle: t('features.reportsDesc'),
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
       path: '/analytics'

@@ -76,7 +76,22 @@ i18n
     },
     react: {
       useSuspense: false,
+      bindI18n: 'languageChanged loaded',
+      bindI18nStore: 'added removed',
+      transEmptyNodeValue: '',
+      transSupportBasicHtmlNodes: true,
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i'],
     },
+    // Enable real-time updates
+    saveMissing: false,
+    updateMissing: false,
+    missingKeyHandler: (lng, ns, key, fallbackValue) => {
+      console.warn(`Missing translation key: ${key} for language: ${lng}`);
+    },
+    // Load all namespaces
+    ns: ['translation', 'dashboard'],
+    // Preload all supported languages for instant switching
+    preload: ['en', 'hi', 'mr'],
   });
 
 export default i18n;

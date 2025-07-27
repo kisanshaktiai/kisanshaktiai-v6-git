@@ -1,4 +1,5 @@
 
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
@@ -19,6 +20,7 @@ export const AuthButton = ({
   userCheckComplete, 
   isNewUser 
 }: AuthButtonProps) => {
+  const { t } = useTranslation();
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
   
   const isDisabled = loading || phone.length < 10 || checkingUser;
@@ -27,15 +29,15 @@ export const AuthButton = ({
   // Show different text based on state
   const getButtonText = () => {
     if (loading) {
-      return userCheckComplete && isNewUser ? 'Creating Account...' : 'Signing In...';
+      return userCheckComplete && isNewUser ? t('auth.creatingAccount') : t('auth.signingIn');
     }
     
     if (userCheckComplete) {
-      return isNewUser ? 'Get Started' : 'Continue';
+      return isNewUser ? t('auth.getStarted') : t('common.continue');
     }
     
     // Default text when user check hasn't completed (including connection errors)
-    return 'Continue';
+    return t('common.continue');
   };
   
   return (

@@ -1,13 +1,25 @@
 
 {
   "common": {
-    "welcome": "स्वागत",
-    "continue": "पुढे",
-    "cancel": "रद्द करा",
-    "save": "जतन करा",
     "loading": "लोड होत आहे...",
     "error": "त्रुटी",
     "success": "यश",
+    "cancel": "रद्द करा",
+    "save": "जतन करा",
+    "delete": "हटवा",
+    "edit": "संपादित करा",
+    "submit": "सबमिट करा",
+    "next": "पुढे",
+    "previous": "मागे",
+    "close": "बंद करा",
+    "ok": "ठीक आहे",
+    "yes": "होय",
+    "no": "नाही",
+    "farmer": "शेतकरी",
+    "initializing": "सुरुवात होत आहे...",
+    "welcome": "स्वागत",
+    "back": "मागे",
+    "continue": "पुढे",
     "offline": "ऑफलाइन",
     "online": "ऑनलाइन",
     "new": "नवीन",
@@ -19,11 +31,9 @@
     "shopNow": "आता खरेदी करा",
     "viewAll": "सर्व पहा",
     "viewCalendar": "दिनदर्शिका पहा",
-    "back": "मागे",
-    "farmer": "शेतकरी",
-    "initializing": "सुरुवात होत आहे...",
     "ready": "तयार!",
-    "tryAgain": "पुन्हा प्रयत्न करा"
+    "tryAgain": "पुन्हा प्रयत्न करा",
+    "pleaseWait": "कृपया प्रतीक्षा करा..."
   },
   "onboarding": {
     "welcome_title": "KisanShaktiAI मध्ये आपले स्वागत आहे",
@@ -32,13 +42,24 @@
     "location_subtitle": "चांगल्या सल्ल्यासाठी आपले स्थान सामायिक करा",
     "language_title": "भाषा निवडा",
     "language_subtitle": "आपली पसंतीची भाषा निवडा",
+    "detecting_language": "आपली भाषा शोधत आहे",
+    "location_language_subtitle": "आपल्यासाठी सर्वोत्तम भाषा सुचविण्यासाठी आम्ही आपले स्थान शोधत आहोत",
+    "choose_language": "आपली भाषा निवडा",
+    "language_description": "सर्वोत्तम शेती अनुभवासाठी आपली पसंतीची भाषा निवडा",
+    "detected_location": "शोधलेले स्थान",
+    "recommended_for_you": "आपल्यासाठी शिफारसीत",
+    "other_languages": "इतर भाषा",
+    "skip_for_now": "आत्तासाठी वगळा",
     "autoDetected": "आपोआप ओळखले"
   },
   "auth": {
     "phone_number": "फोन नंबर",
     "enter_phone": "आपला फोन नंबर टाका",
     "login": "लॉगिन",
-    "register": "नोंदणी"
+    "register": "नोंदणी",
+    "creatingAccount": "खाते तयार करत आहे...",
+    "signingIn": "साइन इन करत आहे...",
+    "getStarted": "सुरुवात करा"
   },
   "navigation": {
     "home": "मुख्यपृष्ठ",
@@ -53,7 +74,23 @@
     "aiPoweredAdvice": "AI-चालित सल्ला",
     "aiPoweredAdviceDesc": "वैयक्तिक शेती शिफारसी मिळवा",
     "communitySupport": "समुदाय समर्थन",
-    "communitySupportDesc": "सहकारी शेतकऱ्यांशी जोडा"
+    "communitySupportDesc": "सहकारी शेतकऱ्यांशी जोडा",
+    "satelliteMonitoring": "सैटेलाइट मॉनिटरिंग",
+    "satelliteMonitoringDesc": "पीक आरोग्य तपासा",
+    "aiAdvisor": "AI सल्लागार",
+    "aiAdvisorDesc": "त्वरित सल्ला मिळवा",
+    "cropCalendar": "पीक दिनदर्शिका",
+    "cropCalendarDesc": "आपले वेळापत्रक व्यवस्थित करा",
+    "marketPrice": "बाजार मूल्य",
+    "marketPriceDesc": "आजचे दर पहा",
+    "instaScan": "इन्स्टा स्कॅन",
+    "instaScanDesc": "रोग ओळख",
+    "community": "समुदाय",
+    "communityDesc": "शेतकरी नेटवर्क",
+    "marketplace": "बाजारपेठ",
+    "marketplaceDesc": "खरेदी आणि विक्री",
+    "reports": "अहवाल",
+    "reportsDesc": "व्यापार विश्लेषण"
   },
   "home": {
     "quickActions": "त्वरित क्रिया",
@@ -65,7 +102,11 @@
     "getFarmingAdvice": "शेती सल्ला मिळवा",
     "viewUpcomingTasks": "आगामी कार्ये पहा",
     "checkLatestRates": "नवीनतम दर तपासा",
-    "manageYourFields": "आपल्या शेतांचे व्यवस्थापन करा"
+    "manageYourFields": "आपल्या शेतांचे व्यवस्थापन करा",
+    "lands": "जमिनी",
+    "activeTasks": "सक्रिय कार्ये",
+    "weatherToday": "आजचे हवामान",
+    "marketAlerts": "बाजार अलर्ट"
   },
   "market": {
     "title": "बाजार",
@@ -126,6 +167,14 @@
     "notificationsDesc": "सूचना सेटिंग्ज कॉन्फिगर करा",
     "privacySecurity": "गोपनीयता आणि सुरक्षा",
     "privacySecurityDesc": "आपल्या गोपनीयता सेटिंग्जचे व्यवस्थापन करा",
+    "languageSettings": "भाषा सेटिंग्ज",
+    "preferredLanguage": "पसंतीची भाषा",
+    "preferredLanguageDesc": "अॅपसाठी आपली पसंतीची भाषा निवडा",
+    "languageNote": "भाषा बदल तुरंत संपूर्ण अॅपमध्ये लागू होतील",
+    "languageUpdated": "भाषा अपडेट केली",
+    "languageUpdatedDesc": "आपली भाषा प्राधान्य जतन केली गेली आहे",
+    "languageUpdateError": "अपडेट अयशस्वी",
+    "languageUpdateErrorDesc": "भाषा प्राधान्य अपडेट करण्यात अयशस्वी",
     "language": "भाषा",
     "languageDesc": "अॅप भाषा बदला",
     "logout": "लॉगआउट"
@@ -140,5 +189,13 @@
     "detectingOrganization": "संस्था ओळखत आहे...",
     "preparingLocationServices": "स्थान सेवा तयार करत आहे...",
     "version": "v6.0.0 • टेनंट तयार • ऑफलाइन सक्षम"
+  },
+  "weather": {
+    "temperature": "तापमान",
+    "humidity": "आर्द्रता",
+    "windSpeed": "वाऱ्याचा वेग",
+    "rainfall": "पाऊस",
+    "forecast": "अंदाज",
+    "alerts": "अलर्ट"
   }
 }
