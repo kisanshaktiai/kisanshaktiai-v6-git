@@ -34,7 +34,7 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { i18n } = useTranslation();
   const dispatch = useDispatch();
-  const { language } = useSelector((state: RootState) => state.farmer);
+  const { selectedLanguage } = useSelector((state: RootState) => state.farmer);
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   
   const languageService = LanguageService.getInstance();
@@ -69,7 +69,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   // Initialize language on mount
   useEffect(() => {
     const initializeLanguage = async () => {
-      const storedLanguage = language || localStorage.getItem('i18nextLng') || 'en';
+      const storedLanguage = selectedLanguage || localStorage.getItem('i18nextLng') || 'en';
       
       if (storedLanguage !== i18n.language) {
         await changeLanguage(storedLanguage);
@@ -82,7 +82,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   // Listen for language changes from other sources
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
-      if (lng !== language) {
+      if (lng !== selectedLanguage) {
         dispatch(setLanguage(lng));
         document.documentElement.lang = lng;
       }
@@ -93,7 +93,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
-  }, [language, dispatch]);
+  }, [selectedLanguage, dispatch]);
 
   const contextValue: LanguageContextType = {
     currentLanguage: i18n.language,
