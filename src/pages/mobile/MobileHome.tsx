@@ -5,7 +5,7 @@ import { DashboardHome } from '@/components/mobile/DashboardHome';
 
 export default function MobileHome() {
   return (
-    <MobileLayout showHeader={false}>
+    <MobileLayout showHeader={true}>
       <DashboardHome />
     </MobileLayout>
   );

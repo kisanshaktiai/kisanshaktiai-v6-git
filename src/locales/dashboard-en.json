@@ -1,256 +1,124 @@
 
 {
   "welcome": {
-    "defaultFarmerName": "Farmer",
     "goodMorning": "Good Morning",
     "goodAfternoon": "Good Afternoon", 
     "goodEvening": "Good Evening",
     "goodNight": "Good Night",
-    "lateNight": "Good Night",
-    "welcomeMessage": "Welcome back to your farming dashboard",
-    "subtitle": "Your complete agricultural management platform"
+    "lateNight": "Late Night",
+    "subtitle": "Smart Farming Dashboard",
+    "defaultFarmerName": "Farmer"
   },
   "header": {
-    "notifications": "Notifications",
-    "profile": "Profile",
-    "settings": "Settings",
-    "logout": "Logout",
-    "searchPlaceholder": "Search anything...",
-    "todaysDate": "Today's Date",
-    "lastUpdated": "Last updated",
-    "sync": "Sync",
-    "syncing": "Syncing...",
-    "connectionStatus": "Connection Status",
-    "welcome": "back to your dashboard"
+    "welcome": "Welcome back",
+    "search": "Search",
+    "notifications": "Notifications"
+  },
+  "weather": {
+    "loadingWeather": "Loading weather...",
+    "dataUnavailable": "Weather data unavailable",
+    "feelsLike": "Feels like",
+    "precipitation": "Precipitation",
+    "windSpeed": "Wind Speed",
+    "humidity": "Humidity",
+    "location": "Current Location"
   },
   "quickOverview": {
     "title": "Quick Overview",
-    "subtitle": "Key metrics at a glance",
+    "subtitle": "Your farm at a glance",
     "totalLand": "Total Land",
-    "acres": "acres",
-    "hectares": "hectares",
     "activeCrops": "Active Crops",
-    "varieties": "varieties",
-    "crops": "crops",
-    "lastYield": "Last Yield",
-    "perAcre": "per acre",
-    "perHectare": "per hectare",
     "netIncome": "Net Income",
-    "grossIncome": "Gross Income",
-    "lastMonth": "last 30 days",
-    "thisMonth": "this month",
-    "thisYear": "this year",
-    "growthRate": "Growth Rate",
-    "profitMargin": "Profit Margin",
-    "efficiency": "Farm Efficiency",
-    "productivity": "Productivity Index",
-    "noData": "No data available",
-    "calculating": "Calculating...",
-    "updated": "Updated",
-    "ago": "ago"
+    "efficiency": "Efficiency",
+    "productivity": "Productivity",
+    "thisMonth": "This Month",
+    "acres": "Acres",
+    "varieties": "Varieties",
+    "crops": "Crops"
   },
-  "features": {
-    "title": "Core Features",
-    "subtitle": "Everything you need to manage your farm",
-    "description": "Professional farming tools powered by AI",
-    "viewAll": "View All Features",
-    "comingSoon": "Coming Soon",
-    "new": "New",
-    "updated": "Updated",
-    "popular": "Popular",
-    "premium": "Premium",
-    "free": "Free",
-    "beta": "Beta",
-    "myLands": {
-      "title": "My Lands",
-      "description": "Manage your agricultural fields",
-      "shortDesc": "Field management"
+  "myFields": {
+    "title": "My Fields",
+    "subtitle": "Manage your crop fields",
+    "categories": {
+      "fruit": "Fruit",
+      "vegetable": "Vegetable", 
+      "grain": "Grain",
+      "orchards": "Orchards",
+      "other": "Other"
     },
-    "cropSchedule": {
-      "title": "Crop Schedule",
-      "description": "AI-powered crop planning",
-      "shortDesc": "Smart planning"
+    "fields": {
+      "appleField": "Apple Field",
+      "grapeField": "Grape Field",
+      "wheatField": "Wheat Field",
+      "tomatoField": "Tomato Field"
     },
-    "fertilizerGuide": {
-      "title": "Fertilizer Guide",
-      "description": "Soil nutrition guidance",
-      "shortDesc": "Nutrient advice"
+    "harvest": {
+      "ready": "Ready for Harvest",
+      "days": "days",
+      "inDays": "in {{count}} days"
     },
-    "aiChat": {
-      "title": "AI Assistant",
-      "description": "Instant farming advice",
-      "shortDesc": "Smart advisor"
-    },
-    "satelliteData": {
-      "title": "Satellite Data",
-      "description": "Crop monitoring from space",
-      "shortDesc": "Space monitoring"
-    },
-    "market": {
-      "title": "Market Prices",
-      "description": "Real-time crop prices",
-      "shortDesc": "Price tracker"
+    "health": {
+      "good": "Good Health",
+      "excellent": "Excellent",
+      "average": "Average"
     }
-  },
-  "weather": {
-    "title": "Weather Insights",
-    "subtitle": "Real-time agricultural weather data",
-    "currentConditions": "Current Conditions",
-    "forecast": "Forecast",
-    "alerts": "Weather Alerts",
-    "temperature": "Temperature",
-    "humidity": "Humidity",
-    "windSpeed": "Wind Speed",
-    "rainfall": "Rainfall",
-    "pressure": "Pressure",
-    "uvIndex": "UV Index",
-    "visibility": "Visibility",
-    "feelsLike": "Feels Like",
-    "dewPoint": "Dew Point",
-    "sunrise": "Sunrise",
-    "sunset": "Sunset",
-    "moonPhase": "Moon Phase",
-    "soilTemperature": "Soil Temperature",
-    "soilMoisture": "Soil Moisture",
-    "evapotranspiration": "Evapotranspiration",
-    "growingDegreeDays": "Growing Degree Days",
-    "sprayConditions": "Spray Conditions",
-    "optimal": "Optimal",
-    "moderate": "Moderate",
-    "poor": "Poor",
-    "notRecommended": "Not Recommended",
-    "lastUpdated": "Last updated",
-    "refreshing": "Refreshing weather data...",
-    "offline": "Weather data unavailable offline",
-    "error": "Unable to load weather data",
-    "dataUnavailable": "Weather data unavailable",
-    "loadingWeather": "Loading weather data...",
-    "weatherUnavailableOffline": "Weather data unavailable offline",
-    "unableToLoad": "Unable to load weather data"
   },
   "tasks": {
     "title": "Today's Tasks",
-    "subtitle": "Upcoming farming activities",
-    "today": "Today",
-    "tomorrow": "Tomorrow",
-    "thisWeek": "This Week",
-    "nextWeek": "Next Week",
-    "overdue": "Overdue",
-    "completed": "Completed",
-    "pending": "Pending",
-    "inProgress": "In Progress",
-    "scheduled": "Scheduled",
-    "priority": {
-      "high": "High Priority",
-      "medium": "Medium Priority",
-      "low": "Low Priority"
-    },
-    "taskTypes": {
-      "sowing": "Sowing",
-      "watering": "Watering",
-      "fertilizer": "Fertilizer Application",
-      "pesticide": "Pest Control",
-      "harvest": "Harvesting",
-      "soilTest": "Soil Testing",
-      "irrigation": "Irrigation Maintenance",
-      "pruning": "Pruning",
-      "weeding": "Weeding",
-      "monitoring": "Field Monitoring"
-    },
-    "noTasks": "No upcoming tasks",
-    "allCaughtUp": "All caught up! Great work.",
-    "viewCalendar": "View Full Calendar",
-    "addTask": "Add New Task",
-    "markComplete": "Mark as Complete",
+    "subtitle": "Your farming activities",
+    "expandTasks": "Show more tasks",
+    "markComplete": "Mark Complete",
     "reschedule": "Reschedule",
-    "loading": "Loading tasks...",
-    "error": "Unable to load tasks",
-    "upcomingTasks": "Upcoming Tasks",
-    "expandTasks": "View All Tasks",
-    "collapseTasks": "Show Less"
-  },
-  "recommendations": {
-    "title": "Smart Recommendations",
-    "subtitle": "AI-powered insights for your farm",
+    "noTasks": "No tasks for today",
+    "allCaughtUp": "You're all caught up!",
     "priority": {
-      "high": "High Priority",
-      "medium": "Medium Priority",
-      "low": "Low Priority",
-      "urgent": "Urgent",
-      "normal": "Normal"
-    },
-    "categories": {
-      "weather": "Weather Alert",
-      "market": "Market Insight",
-      "crop": "Crop Management",
-      "soil": "Soil Health",
-      "pest": "Pest Control",
-      "irrigation": "Irrigation",
-      "fertilizer": "Fertilization",
-      "harvest": "Harvest Planning",
-      "financial": "Financial Advice",
-      "general": "General Farming"
-    },
-    "actions": {
-      "viewDetails": "View Details",
-      "schedule": "Add to Schedule",
-      "dismiss": "Dismiss",
-      "remind": "Remind Later",
-      "apply": "Apply Recommendation",
-      "learnMore": "Learn More"
-    },
-    "empty": {
-      "title": "No recommendations available",
-      "subtitle": "Check back later for personalized farming advice"
-    },
-    "loading": "Loading recommendations...",
-    "error": "Unable to load recommendations"
+      "high": "High",
+      "medium": "Medium", 
+      "low": "Low"
+    }
   },
-  "calendar": {
-    "title": "This Week's Tasks",
-    "subtitle": "Upcoming farming activities",
-    "today": "Today",
-    "tomorrow": "Tomorrow",
-    "thisWeek": "This Week",
-    "nextWeek": "Next Week",
-    "overdue": "Overdue",
-    "completed": "Completed",
-    "pending": "Pending",
-    "inProgress": "In Progress",
-    "scheduled": "Scheduled",
-    "upcomingTasks": "Upcoming Tasks"
-  },
-  "status": {
-    "online": "Online",
-    "offline": "Offline",
-    "syncing": "Syncing",
-    "synced": "Synced",
-    "error": "Error",
-    "loading": "Loading",
-    "ready": "Ready",
-    "maintenance": "Maintenance",
-    "updating": "Updating",
-    "lastUpdated": "Last updated"
+  "features": {
+    "title": "Core Features",
+    "subtitle": "Essential farming tools",
+    "new": "NEW",
+    "myLands": {
+      "title": "My Lands",
+      "description": "Manage your farmland"
+    },
+    "aiChat": {
+      "title": "AI Chat", 
+      "description": "Get farming advice"
+    },
+    "cropSchedule": {
+      "title": "Crop Schedule",
+      "description": "Plan your crops"
+    },
+    "fertilizerGuide": {
+      "title": "Fertilizer Guide",
+      "description": "Soil nutrition advice"
+    },
+    "satelliteData": {
+      "title": "Satellite Data",
+      "description": "Crop monitoring"
+    },
+    "market": {
+      "title": "Market",
+      "description": "Prices & trading"
+    }
   },
   "actions": {
     "refresh": "Refresh",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "viewMore": "View More",
-    "viewLess": "Show Less"
+    "viewAll": "View All",
+    "viewLess": "View Less"
   },
-  "errors": {
-    "loadingFailed": "Failed to load data",
-    "networkError": "Network connection error",
-    "serverError": "Server temporarily unavailable",
-    "unauthorized": "Session expired. Please login again.",
-    "forbidden": "Access denied",
-    "notFound": "Data not found",
-    "validationError": "Invalid data provided",
-    "unknownError": "Something went wrong",
-    "tryAgain": "Try Again",
-    "refresh": "Refresh",
-    "contact": "Contact Support",
-    "offline": "You're currently offline"
+  "status": {
+    "online": "Online",
+    "offline": "Offline", 
+    "syncing": "Syncing...",
+    "lastUpdated": "Last updated"
+  },
+  "common": {
+    "fetchingLocation": "Getting location...",
+    "tryAgain": "Tap to retry"
   }
 }
