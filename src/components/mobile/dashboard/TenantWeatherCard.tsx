@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CloudSun, Droplets, Wind, Eye } from 'lucide-react';
+import { CloudSun, Droplets, Wind } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEnhancedWeatherData } from '@/hooks/useEnhancedWeatherData';
 
@@ -54,7 +54,7 @@ export const TenantWeatherCard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-2 gap-4 text-xs">
           <div className="flex items-center space-x-1">
             <Droplets className="w-3 h-3 text-blue-500" />
             <span className="text-muted-foreground">
@@ -65,12 +65,6 @@ export const TenantWeatherCard: React.FC = () => {
             <Wind className="w-3 h-3 text-gray-500" />
             <span className="text-muted-foreground">
               {currentWeather?.wind_speed_kmh || 12} km/h
-            </span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Eye className="w-3 h-3 text-purple-500" />
-            <span className="text-muted-foreground">
-              {currentWeather?.visibility_km || 10} km
             </span>
           </div>
         </div>
