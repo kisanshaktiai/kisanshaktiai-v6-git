@@ -117,9 +117,16 @@ export const useTenantAuth = () => {
         id: 'default',
         name: 'KisanShakti AI',
         slug: 'default',
-        type: 'default',
+        type: 'agri_company',
         status: 'active',
-        subscription_plan: 'basic',
+        subscription_plan: 'starter',
+        subscription_start_date: new Date().toISOString(),
+        max_farmers: 1000,
+        max_dealers: 100,
+        max_products: 500,
+        max_storage_gb: 10,
+        max_api_calls_per_day: 10000,
+        metadata: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -128,12 +135,12 @@ export const useTenantAuth = () => {
         id: 'default-user-tenant',
         user_id: user.id,
         tenant_id: 'default',
-        role: 'user',
+        role: 'farmer',
         is_active: true,
+        is_primary: true,
         permissions: [],
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        tenant: defaultTenant
+        updated_at: new Date().toISOString()
       };
 
       // Set default branding and features
@@ -144,7 +151,10 @@ export const useTenantAuth = () => {
         logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
         primary_color: '#10b981',
         secondary_color: '#059669',
+        accent_color: '#34d399',
         background_color: '#ffffff',
+        text_color: '#111827',
+        font_family: 'Inter',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -153,12 +163,25 @@ export const useTenantAuth = () => {
         id: 'default-features',
         tenant_id: 'default',
         ai_chat: true,
-        weather_monitoring: true,
-        crop_management: true,
+        weather_forecast: true,
         marketplace: true,
-        financial_tracking: true,
-        satellite_monitoring: true,
-        community_features: true,
+        community_forum: true,
+        satellite_imagery: true,
+        soil_testing: true,
+        drone_monitoring: false,
+        iot_integration: false,
+        ecommerce: true,
+        payment_gateway: false,
+        inventory_management: true,
+        logistics_tracking: false,
+        basic_analytics: true,
+        advanced_analytics: false,
+        predictive_analytics: false,
+        custom_reports: false,
+        api_access: false,
+        webhook_support: false,
+        third_party_integrations: false,
+        white_label_mobile_app: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
