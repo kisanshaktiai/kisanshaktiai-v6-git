@@ -19,7 +19,6 @@ import { Profile } from '@/pages/mobile/Profile';
 import { Community } from '@/pages/mobile/Community';
 import { InstaScan } from '@/pages/mobile/InstaScan';
 import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
-import { ProfessionalFarmerProfileForm } from '@/components/mobile/profile/ProfessionalFarmerProfileForm';
 
 export const MobileApp: React.FC = () => {
   const dispatch = useDispatch();
@@ -39,11 +38,11 @@ export const MobileApp: React.FC = () => {
       dispatch(setAuthenticated({ userId: user.id, phoneNumber: user.phone }));
     }
     
-    // If user has a profile, mark onboarding as completed
-    if (user && profile && !onboardingCompleted) {
+    // Mark onboarding as completed when user is authenticated (no profile requirement)
+    if (user && !onboardingCompleted) {
       dispatch(setOnboardingCompleted());
     }
-  }, [user, profile, reduxIsAuthenticated, onboardingCompleted, dispatch]);
+  }, [user, reduxIsAuthenticated, onboardingCompleted, dispatch]);
 
   useEffect(() => {
     console.log('MobileApp: Location state updated:', { location, locationLoading, locationError });
@@ -72,29 +71,7 @@ export const MobileApp: React.FC = () => {
     );
   }
 
-  // Show profile setup if authenticated but no profile
-  if (isAuthenticated && !profile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Routes>
-          <Route 
-            path="*" 
-            element={
-              <ProfessionalFarmerProfileForm 
-                onComplete={() => {
-                  dispatch(setOnboardingCompleted());
-                  window.location.reload();
-                }} 
-                onBack={() => {}} 
-              />
-            } 
-          />
-        </Routes>
-      </div>
-    );
-  }
-
-  // Show main app
+  // Show main app immediately after authentication (no profile gate)
   return (
     <div className="min-h-screen bg-background">
       <Routes>

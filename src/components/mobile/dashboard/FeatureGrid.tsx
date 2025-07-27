@@ -7,7 +7,7 @@ import { RootState } from '@/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
-import { ProfileCompletionModal } from '@/components/common/ProfileCompletionModal';
+import { ModernProfileModal } from '@/components/common/ModernProfileModal';
 import { 
   MapPin, 
   Calendar, 
@@ -57,7 +57,7 @@ const FeatureCard: React.FC<{
         relative cursor-pointer transition-all duration-500 hover:shadow-2xl active:scale-95 
         border-0 shadow-lg backdrop-blur-sm overflow-hidden group animate-fade-in
         ${feature.isComingSoon ? 'opacity-75' : ''} 
-        ${isLocked ? 'opacity-80' : 'hover:scale-105'}
+        ${isLocked ? 'opacity-90' : 'hover:scale-105'}
       `}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -97,9 +97,12 @@ const FeatureCard: React.FC<{
           )}
         </div>
         
+        {/* Lock Overlay */}
         {isLocked && (
-          <div className="absolute top-2 left-2 bg-orange-100 border border-orange-200 rounded-full p-1.5">
-            <Lock className="w-3 h-3 text-orange-600" />
+          <div className="absolute inset-0 bg-black/5 backdrop-blur-[1px] rounded-lg flex items-center justify-center z-10">
+            <div className="bg-white/95 backdrop-blur-sm rounded-full p-3 shadow-lg border border-white/50">
+              <Lock className="w-5 h-5 text-orange-600" />
+            </div>
           </div>
         )}
         
@@ -110,7 +113,7 @@ const FeatureCard: React.FC<{
             <div className={`
               w-14 h-14 rounded-2xl flex items-center justify-center 
               shadow-xl border border-white/30 backdrop-blur-sm
-              transition-transform duration-300 ${isHovered ? 'scale-110 rotate-3' : ''}
+              transition-transform duration-300 ${isHovered && !isLocked ? 'scale-110 rotate-3' : ''}
               ${isLocked ? 'opacity-70' : ''}
             `}
             style={{ 
@@ -147,15 +150,21 @@ const FeatureCard: React.FC<{
             </div>
             
             <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
-              {isLocked ? 'Complete your profile to unlock this feature' : feature.description}
+              {isLocked ? 'Complete your profile to unlock this premium feature' : feature.description}
             </p>
           </div>
 
           {/* Action Indicator */}
-          {!feature.isComingSoon && !isLocked && (
+          {!feature.isComingSoon && (
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <span className="text-xs text-gray-500">Tap to open</span>
-              <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+              {isLocked ? (
+                <span className="text-xs text-orange-600 font-medium">Complete Profile</span>
+              ) : (
+                <span className="text-xs text-gray-500">Tap to open</span>
+              )}
+              <div className={`w-2 h-2 rounded-full animate-pulse ${
+                isLocked ? 'bg-orange-400' : 'bg-gradient-to-r from-blue-500 to-purple-500'
+              }`}></div>
             </div>
           )}
           
@@ -178,7 +187,30 @@ export const FeatureGrid: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string>('');
 
+  // Define features with profile requirements for premium features
   const features: FeatureModule[] = [
+    {
+      id: 'weather',
+      icon: CloudSun,
+      title: t('features.weather', 'Weather Hub'),
+      description: t('features.weatherDesc', 'Hyperlocal weather forecasts & farming alerts'),
+      route: '/weather',
+      gradient: 'from-yellow-400/20 via-orange-500/10 to-red-500/20',
+      tenantFeature: 'weather_forecast',
+      usageCount: 5,
+      // Basic feature - no profile required
+    },
+    {
+      id: 'marketplace',
+      icon: ShoppingCart,
+      title: t('features.marketplace', 'Marketplace'),
+      description: t('features.marketplaceDesc', 'Buy inputs & sell produce directly'),
+      route: '/market',
+      gradient: 'from-orange-400/20 via-red-500/10 to-pink-500/20',
+      tenantFeature: 'marketplace',
+      usageCount: 15,
+      // Basic feature - no profile required
+    },
     {
       id: 'my-lands',
       icon: MapPin,
@@ -188,7 +220,8 @@ export const FeatureGrid: React.FC = () => {
       gradient: 'from-emerald-400/20 via-green-500/10 to-teal-500/20',
       requiresProfile: true,
       usageCount: 12,
-      popularRank: 1
+      popularRank: 1,
+      isPremium: true
     },
     {
       id: 'ai-chat',
@@ -201,17 +234,8 @@ export const FeatureGrid: React.FC = () => {
       requiresProfile: true,
       usageCount: 28,
       popularRank: 2,
-      isNew: true
-    },
-    {
-      id: 'weather',
-      icon: CloudSun,
-      title: t('features.weather', 'Weather Hub'),
-      description: t('features.weatherDesc', 'Hyperlocal weather forecasts & farming alerts'),
-      route: '/weather',
-      gradient: 'from-yellow-400/20 via-orange-500/10 to-red-500/20',
-      tenantFeature: 'weather_forecast',
-      usageCount: 5
+      isNew: true,
+      isPremium: true
     },
     {
       id: 'crop-schedule',
@@ -222,30 +246,8 @@ export const FeatureGrid: React.FC = () => {
       gradient: 'from-green-400/20 via-lime-500/10 to-emerald-500/20',
       requiresProfile: true,
       usageCount: 8,
-      popularRank: 3
-    },
-    {
-      id: 'satellite',
-      icon: Satellite,
-      title: t('features.satellite', 'Satellite Intel'),
-      description: t('features.satelliteDesc', 'NDVI analysis & crop health monitoring'),
-      route: '/satellite',
-      gradient: 'from-indigo-400/20 via-purple-500/10 to-pink-500/20',
-      tenantFeature: 'satellite_imagery',
-      requiresProfile: true,
-      isPremium: true,
-      usageCount: 3
-    },
-    {
-      id: 'marketplace',
-      icon: ShoppingCart,
-      title: t('features.marketplace', 'Marketplace'),
-      description: t('features.marketplaceDesc', 'Buy inputs & sell produce directly'),
-      route: '/marketplace',
-      gradient: 'from-orange-400/20 via-red-500/10 to-pink-500/20',
-      tenantFeature: 'marketplace',
-      requiresProfile: true,
-      usageCount: 15
+      popularRank: 3,
+      isPremium: true
     },
     {
       id: 'analytics',
@@ -256,7 +258,20 @@ export const FeatureGrid: React.FC = () => {
       gradient: 'from-purple-400/20 via-violet-500/10 to-indigo-500/20',
       tenantFeature: 'basic_analytics',
       requiresProfile: true,
-      usageCount: 6
+      usageCount: 6,
+      isPremium: true
+    },
+    {
+      id: 'satellite',
+      icon: Satellite,
+      title: t('features.satellite', 'Satellite Intel'),
+      description: t('features.satelliteDesc', 'NDVI analysis & crop health monitoring'),
+      route: '/satellite-monitoring',
+      gradient: 'from-indigo-400/20 via-purple-500/10 to-pink-500/20',
+      tenantFeature: 'satellite_imagery',
+      requiresProfile: true,
+      isPremium: true,
+      usageCount: 3
     },
     {
       id: 'community',
@@ -267,25 +282,7 @@ export const FeatureGrid: React.FC = () => {
       gradient: 'from-pink-400/20 via-rose-500/10 to-red-500/20',
       tenantFeature: 'community_forum',
       usageCount: 22
-    },
-    {
-      id: 'reports',
-      icon: FileText,
-      title: t('features.reports', 'Smart Reports'),
-      description: t('features.reportsDesc', 'Generate yield logs & compliance docs'),
-      route: '/reports',
-      gradient: 'from-gray-400/20 via-slate-500/10 to-zinc-500/20',
-      requiresProfile: true,
-      usageCount: 4
-    },
-    {
-      id: 'schemes',
-      icon: Shield,
-      title: t('features.schemes', 'Govt Schemes'),
-      description: t('features.schemesDesc', 'Access subsidies & insurance programs'),
-      route: '/schemes',
-      gradient: 'from-teal-400/20 via-cyan-500/10 to-blue-500/20',
-      usageCount: 7
+      // Basic feature - no profile required
     }
   ];
 
@@ -299,12 +296,14 @@ export const FeatureGrid: React.FC = () => {
   const handleFeatureClick = (feature: FeatureModule) => {
     if (feature.isComingSoon) return;
     
+    // Check if feature requires profile completion
     if (feature.requiresProfile && !isProfileComplete) {
       setSelectedFeature(feature.title);
       setShowProfileModal(true);
       return;
     }
     
+    // Navigate to feature
     navigate(feature.route);
   };
 
@@ -315,6 +314,11 @@ export const FeatureGrid: React.FC = () => {
   const isFeatureLocked = (feature: FeatureModule): boolean => {
     return feature.requiresProfile && !isProfileComplete;
   };
+
+  // Separate features into basic and premium
+  const basicFeatures = availableFeatures.filter(f => !f.requiresProfile);
+  const premiumFeatures = availableFeatures.filter(f => f.requiresProfile);
+  const unlockedPremiumFeatures = premiumFeatures.filter(f => isProfileComplete);
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -335,18 +339,65 @@ export const FeatureGrid: React.FC = () => {
           {availableFeatures.length} {t('dashboard.tools', 'tools')}
         </Badge>
       </div>
-      
-      {/* Feature Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {availableFeatures.map((feature, index) => (
-          <FeatureCard
-            key={feature.id}
-            feature={feature}
-            isLocked={isFeatureLocked(feature)}
-            onClick={() => handleFeatureClick(feature)}
-            index={index}
-          />
-        ))}
+
+      {/* Basic Features (Always Available) */}
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-gray-800 flex items-center">
+          Free Features
+          <Badge className="ml-2 text-xs bg-green-100 text-green-700 border-green-200">
+            {basicFeatures.length} available
+          </Badge>
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          {basicFeatures.map((feature, index) => (
+            <FeatureCard
+              key={feature.id}
+              feature={feature}
+              isLocked={false}
+              onClick={() => handleFeatureClick(feature)}
+              index={index}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Premium Features */}
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-gray-800 flex items-center">
+          Premium Features
+          <Badge className="ml-2 text-xs bg-orange-100 text-orange-700 border-orange-200">
+            {unlockedPremiumFeatures.length}/{premiumFeatures.length} unlocked
+          </Badge>
+        </h3>
+        
+        {!isProfileComplete && (
+          <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-orange-800">Unlock Premium Features</h4>
+                <p className="text-xs text-orange-600 mt-1">Complete your profile to access advanced farming tools</p>
+              </div>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                Complete Profile
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          {premiumFeatures.map((feature, index) => (
+            <FeatureCard
+              key={feature.id}
+              feature={feature}
+              isLocked={isFeatureLocked(feature)}
+              onClick={() => handleFeatureClick(feature)}
+              index={index}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -355,7 +406,7 @@ export const FeatureGrid: React.FC = () => {
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-green-600">
-                {availableFeatures.filter(f => !isFeatureLocked(f)).length}
+                {basicFeatures.length + unlockedPremiumFeatures.length}
               </div>
               <div className="text-xs text-gray-600">Available</div>
             </div>
@@ -367,15 +418,15 @@ export const FeatureGrid: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-600">
-                {availableFeatures.filter(f => f.isNew || f.isPremium).length}
+                {premiumFeatures.length - unlockedPremiumFeatures.length}
               </div>
-              <div className="text-xs text-gray-600">Premium</div>
+              <div className="text-xs text-gray-600">Locked</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <ProfileCompletionModal
+      <ModernProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         onComplete={handleProfileComplete}
