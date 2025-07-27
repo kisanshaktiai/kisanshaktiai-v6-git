@@ -1,197 +1,207 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { HamburgerMenu } from '../navigation/HamburgerMenu';
 import { 
   Bell, 
+  Search, 
+  Menu,
   Wifi, 
   WifiOff,
-  AlertTriangle,
-  TrendingUp,
-  MessageSquare
+  Sun,
+  Moon,
+  Cloud,
+  User,
+  Settings
 } from 'lucide-react';
 
 export const DashboardHeader: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('dashboard');
   const { profile } = useSelector((state: RootState) => state.farmer);
-  const { isOnline } = useSelector((state: RootState) => state.sync);
-  const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [greeting, setGreeting] = useState('');
 
-  // Mock notification data for professional look
-  const notifications = [
-    {
-      id: 1,
-      type: 'weather',
-      icon: AlertTriangle,
-      title: 'Weather Alert',
-      message: 'Heavy rainfall expected tomorrow',
-      priority: 'high',
-      time: '2 min ago'
-    },
-    {
-      id: 2,
-      type: 'market',
-      icon: TrendingUp,
-      title: 'Price Update',
-      message: 'Wheat prices increased by 5%',
-      priority: 'medium',
-      time: '1 hour ago'
-    },
-    {
-      id: 3,
-      type: 'message',
-      icon: MessageSquare,
-      title: 'AI Assistant',
-      message: 'New farming recommendations available',
-      priority: 'low',
-      time: '3 hours ago'
+  // Update connection status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Update time and greeting
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now);
+      
+      const hour = now.getHours();
+      if (hour < 12) {
+        setGreeting(t('welcome.goodMorning'));
+      } else if (hour < 17) {
+        setGreeting(t('welcome.goodAfternoon'));
+      } else if (hour < 21) {
+        setGreeting(t('welcome.goodEvening'));
+      } else {
+        setGreeting(t('welcome.goodNight'));
+      }
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, [t]);
+
+  const getGreetingIcon = () => {
+    const hour = currentTime.getHours();
+    if (hour >= 6 && hour < 18) {
+      return <Sun className="w-5 h-5 text-yellow-500" />;
+    } else {
+      return <Moon className="w-5 h-5 text-blue-400" />;
     }
-  ];
-
-  const getProfileName = (): string => {
-    if (!profile?.name) return t('common.farmer', 'Farmer');
-    if (typeof profile.name === 'string') return profile.name;
-    return profile.name.en || profile.name.hi || t('common.farmer', 'Farmer');
   };
 
-  const getCurrentTime = () => {
-    return new Date().toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit'
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
     });
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString([], { 
+      weekday: 'long',
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   return (
-    <>
-      {/* Compact Sticky Header */}
-      <div 
-        className="sticky top-0 z-50 px-4 py-2 backdrop-blur-xl bg-gradient-to-br from-white/95 to-white/85 border-b border-white/20 safe-area-top"
-        style={{
-          background: tenantBranding?.primary_color 
-            ? `linear-gradient(135deg, ${tenantBranding.background_color || '#ffffff'}f5, ${tenantBranding.primary_color}15)`
-            : 'linear-gradient(135deg, #ffffff95, #f0f9ff85)'
-        }}
-      >
-        {/* Floating Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-2 -right-2 w-12 h-12 bg-gradient-to-br from-green-200/20 to-blue-200/20 rounded-full blur-lg animate-float"></div>
-          <div className="absolute -bottom-1 -left-1 w-8 h-8 bg-gradient-to-br from-yellow-200/20 to-orange-200/20 rounded-full blur-md animate-float" style={{ animationDelay: '2s' }}></div>
-        </div>
-
-        {/* Header Content */}
-        <div className="relative z-10 flex items-center justify-between">
-          {/* Brand, Status and Welcome */}
-          <div className="flex items-center space-x-3 flex-1">
-            {tenantBranding?.logo_url && (
-              <div className="relative">
-                <img 
-                  src={tenantBranding.logo_url} 
-                  alt={tenantBranding.app_name || 'Logo'}
-                  className="w-7 h-7 rounded-md shadow-md ring-1 ring-white/50 object-cover"
-                />
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border border-white rounded-full animate-pulse"></div>
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center space-x-2 mb-0.5">
-                <h1 className="text-sm font-bold text-gray-900 tracking-tight truncate">
-                  {tenantBranding?.app_name || currentTenant?.name || 'KisanShakti AI'}
-                </h1>
-                <Badge 
-                  variant={isOnline ? 'default' : 'secondary'} 
-                  className={`text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm ${
-                    isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'
-                  }`}
-                >
-                  {isOnline ? <Wifi className="w-2.5 h-2.5 mr-1" /> : <WifiOff className="w-2.5 h-2.5 mr-1" />}
-                  {isOnline ? 'Live' : 'Offline'}
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-3 text-xs">
-                <span className="text-gray-700 truncate">
-                  {t('dashboard.hi', 'Hi')}, {getProfileName()} 👋
-                </span>
-                <span className="text-gray-500 font-mono">{getCurrentTime()}</span>
-              </div>
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50 safe-area-top">
+      {/* Status Bar */}
+      <div className="bg-primary/5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-4 py-1">
+          <div className="flex items-center space-x-2">
+            <div className={`flex items-center space-x-1 text-xs ${isOnline ? 'text-green-600' : 'text-orange-600'}`}>
+              {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              <span className="font-medium">
+                {isOnline ? t('status.online') : t('status.offline')}
+              </span>
             </div>
+            {tenantBranding?.app_name && (
+              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                {tenantBranding.app_name}
+              </Badge>
+            )}
           </div>
-
-          {/* Notifications and Menu */}
-          <div className="flex items-center space-x-1.5">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="relative bg-white/50 backdrop-blur-sm border border-white/30 shadow-md hover:bg-white/70 hover:shadow-lg transition-all duration-300 h-8 w-8 p-0"
-              onClick={() => setShowNotifications(!showNotifications)}
-            >
-              <Bell className="w-4 h-4" />
-              {notifications.length > 0 && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-md animate-pulse">
-                  <span className="text-xs text-white font-bold">{notifications.length}</span>
-                </div>
-              )}
-            </Button>
-            
-            <HamburgerMenu />
+          <div className="text-xs text-muted-foreground font-medium">
+            {formatTime(currentTime)}
           </div>
         </div>
       </div>
 
-      {/* Notification Panel */}
-      {showNotifications && (
-        <div className="absolute top-full left-0 right-0 z-40 mx-4 mt-1">
-          <Card className="bg-white/95 backdrop-blur-xl border-white/30 shadow-2xl">
-            <CardContent className="p-0">
-              <div className="p-3 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setShowNotifications(false)} className="h-6 w-6 p-0">
-                    ×
-                  </Button>
-                </div>
+      {/* Main Header */}
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Left Section - Greeting & Profile */}
+          <div className="flex items-center space-x-3 flex-1">
+            {/* Profile Avatar */}
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-white shadow-lg backdrop-blur-sm">
+                {tenantBranding?.logo_url ? (
+                  <img 
+                    src={tenantBranding.logo_url} 
+                    alt="Logo" 
+                    className="w-8 h-8 rounded-xl object-contain"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-primary" />
+                )}
               </div>
-              <div className="max-h-72 overflow-y-auto">
-                {notifications.map((notification) => {
-                  const Icon = notification.icon;
-                  return (
-                    <div key={notification.id} className="p-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <div className="flex items-start space-x-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${getPriorityColor(notification.priority)}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {notification.title}
-                            </p>
-                            <span className="text-xs text-gray-500 ml-2">{notification.time}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-0.5">{notification.message}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Greeting */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                {getGreetingIcon()}
+                <h1 className="text-lg font-bold text-foreground truncate">
+                  {greeting}, {profile?.full_name?.split(' ')[0] || t('welcome.defaultFarmerName')}!
+                </h1>
+              </div>
+              <p className="text-sm text-muted-foreground font-medium">
+                {formatDate(currentTime)}
+              </p>
+            </div>
+          </div>
+
+          {/* Right Section - Actions */}
+          <div className="flex items-center space-x-2">
+            {/* Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+
+            {/* Notifications */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm relative"
+            >
+              <Bell className="w-5 h-5" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-xs text-white font-bold">3</span>
+              </div>
+            </Button>
+
+            {/* Menu */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
-      )}
-    </>
+
+        {/* Quick Stats Bar */}
+        <div className="mt-4 p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-2xl border border-border/50 backdrop-blur-sm">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-sm font-bold text-primary">₹2.4L</div>
+              <div className="text-xs text-muted-foreground">{t('quickOverview.netIncome')}</div>
+            </div>
+            <div className="text-center border-x border-border/30">
+              <div className="text-sm font-bold text-green-600">12.5 Ac</div>
+              <div className="text-xs text-muted-foreground">{t('quickOverview.totalLand')}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-bold text-blue-600">8 {t('quickOverview.crops')}</div>
+              <div className="text-xs text-muted-foreground">{t('quickOverview.activeCrops')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 };
