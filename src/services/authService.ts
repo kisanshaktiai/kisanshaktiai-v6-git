@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Simple client-side cache for user existence checks
@@ -73,6 +74,10 @@ export const fetchProfile = async (userId: string) => {
       .single();
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        console.log('User profile not found, will be created by trigger');
+        return null;
+      }
       console.error('Error fetching profile:', error);
       throw new Error(`Failed to fetch profile: ${error.message}`);
     }
@@ -90,8 +95,12 @@ export const updateProfile = async (userId: string, updates: Partial<any>) => {
     console.log('Updating user profile for user:', userId, 'with updates:', updates);
     const { data, error } = await supabase
       .from('user_profiles')
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', userId)
+      .select()
       .single();
 
     if (error) {
@@ -110,6 +119,10 @@ export const updateProfile = async (userId: string, updates: Partial<any>) => {
 export const signOut = async () => {
   try {
     console.log('Signing out user...');
+    
+    // Clear cache
+    userExistenceCache.clear();
+    
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -124,17 +137,20 @@ export const signOut = async () => {
   }
 };
 
-export const signInWithPhone = async (phone: string) => {
+export const signInWithPhone = async (phone: string, tenantId?: string) => {
   try {
     const cleanPhone = phone.replace(/\D/g, '');
     console.log('Starting authentication process for:', cleanPhone.replace(/\d/g, '*'));
+
+    // Get current selected language
+    const selectedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
 
     const startTime = Date.now();
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: {
         mobile_number: cleanPhone,
-        tenantId: null, // Will be detected by the function
-        preferredLanguage: 'hi'
+        tenantId: tenantId || null,
+        preferredLanguage: selectedLanguage
       }
     });
 
@@ -151,9 +167,12 @@ export const signInWithPhone = async (phone: string) => {
       throw new Error(data?.error || 'Authentication failed');
     }
 
+    // Clear cache since user status might have changed
+    userExistenceCache.clear();
+
     // Sign in with the temporary credentials
     const signInStartTime = Date.now();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
       email: data.credentials.email,
       password: data.credentials.password,
     });
@@ -167,7 +186,12 @@ export const signInWithPhone = async (phone: string) => {
     }
 
     console.log('Authentication successful for user:', data.userId);
-    return data;
+    
+    return {
+      ...data,
+      session: authData.session,
+      user: authData.user
+    };
   } catch (error) {
     console.error('Error in signInWithPhone:', error);
     throw error;

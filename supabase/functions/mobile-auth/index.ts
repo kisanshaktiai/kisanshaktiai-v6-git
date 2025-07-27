@@ -52,36 +52,43 @@ serve(async (req) => {
       )
     }
 
-    // Check if user exists in user_profiles
-    console.log('Checking if user exists in user_profiles')
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, mobile_number, full_name')
-      .eq('mobile_number', cleanMobile)
-      .single()
+    // Check if user exists using the new RPC function
+    console.log('Checking if user exists using RPC function')
+    let existingUser = null
+    let isNewUser = true
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Database error checking user profile:', profileError)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Database error checking user existence' 
-        }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    try {
+      const { data: checkResult, error: checkError } = await supabase
+        .rpc('check_mobile_number_exists', { mobile_num: cleanMobile })
+        .single()
+
+      if (checkError) {
+        console.log('RPC check failed, using fallback:', checkError.message)
+        // Fallback to direct query
+        const { data: profileCheck } = await supabase
+          .from('user_profiles')
+          .select('id, mobile_number, full_name')
+          .eq('mobile_number', cleanMobile)
+          .single()
+        
+        if (profileCheck) {
+          existingUser = profileCheck
+          isNewUser = false
         }
-      )
+      } else if (checkResult?.exists) {
+        existingUser = checkResult.profile
+        isNewUser = false
+      }
+    } catch (error) {
+      console.log('User existence check failed:', error.message)
     }
 
-    let isNewUser = !existingProfile
-    let userId = existingProfile?.id
-    
-    console.log('User exists check result:', { isNewUser, userId: userId ? 'found' : 'not found' })
+    console.log('User exists check result:', { isNewUser, userId: existingUser?.id })
 
     // Generate temporary email and password for authentication
     const tempEmail = `${cleanMobile}@kisanshakti.temp`
     const tempPassword = `ks_${cleanMobile}_${Math.random().toString(36).slice(2)}`
+    let userId = existingUser?.id
 
     if (isNewUser) {
       console.log('Creating new user for mobile:', cleanMobile.replace(/\d/g, '*'))
@@ -96,7 +103,8 @@ serve(async (req) => {
         user_metadata: {
           mobile_number: cleanMobile,
           tenant_id: tenantId,
-          preferred_language: preferredLanguage || 'hi'
+          preferred_language: preferredLanguage || 'hi',
+          full_name: 'User' // Default name
         }
       })
 
@@ -117,23 +125,30 @@ serve(async (req) => {
       userId = authUser.user?.id
       console.log('Auth user created successfully:', userId)
 
-      // Create farmer record if needed
-      if (tenantId) {
-        const { error: farmerError } = await supabase
-          .from('farmers')
-          .insert({
-            id: userId,
-            mobile_number: cleanMobile,
-            tenant_id: tenantId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+      // The user_profiles record should be created automatically by the trigger
+      // Wait a moment for the trigger to execute
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-        if (farmerError) {
-          console.log('Note: Could not create farmer record:', farmerError.message)
-          // This is not critical, user can still authenticate
-        } else {
-          console.log('Farmer record created successfully')
+      // Create farmer record if needed and tenantId is provided
+      if (tenantId && userId) {
+        try {
+          const { error: farmerError } = await supabase
+            .from('farmers')
+            .insert({
+              id: userId,
+              mobile_number: cleanMobile,
+              tenant_id: tenantId,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+
+          if (farmerError) {
+            console.log('Note: Could not create farmer record:', farmerError.message)
+          } else {
+            console.log('Farmer record created successfully')
+          }
+        } catch (error) {
+          console.log('Non-critical error creating farmer record:', error)
         }
       }
 
@@ -141,43 +156,51 @@ serve(async (req) => {
       console.log('Existing user found:', userId)
       
       // For existing users, update their password for current session
-      const { error: updateError } = await supabase.auth.admin.updateUserById(userId!, {
-        password: tempPassword
-      })
-      
-      if (updateError) {
-        console.error('Error updating user password:', updateError)
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Authentication setup failed: ' + updateError.message 
-          }), 
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+      try {
+        const { error: updateError } = await supabase.auth.admin.updateUserById(userId!, {
+          password: tempPassword
+        })
+        
+        if (updateError) {
+          console.error('Error updating user password:', updateError)
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Authentication setup failed: ' + updateError.message 
+            }), 
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
+      } catch (error) {
+        console.error('Error updating existing user:', error)
       }
     }
 
     // Get tenant information if provided
     let tenant = null
     if (tenantId) {
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .select('id, name, tenant_branding(logo_url, app_name, app_tagline, primary_color, background_color)')
-        .eq('id', tenantId)
-        .eq('status', 'active')
-        .single()
+      try {
+        const { data: tenantData, error: tenantError } = await supabase
+          .from('tenants')
+          .select('id, name, tenant_branding(logo_url, app_name, app_tagline, primary_color, background_color)')
+          .eq('id', tenantId)
+          .eq('status', 'active')
+          .single()
 
-      if (tenantError) {
-        console.log('Warning: Could not fetch tenant data:', tenantError.message)
-      } else {
-        tenant = {
-          id: tenantData.id,
-          name: tenantData.name,
-          branding: tenantData.tenant_branding?.[0] || {}
+        if (tenantError) {
+          console.log('Warning: Could not fetch tenant data:', tenantError.message)
+        } else {
+          tenant = {
+            id: tenantData.id,
+            name: tenantData.name,
+            branding: tenantData.tenant_branding?.[0] || {}
+          }
         }
+      } catch (error) {
+        console.log('Non-critical error fetching tenant:', error)
       }
     }
 

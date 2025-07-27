@@ -85,47 +85,69 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== OPTIMIZED USER EXISTENCE CHECK ===')
+    console.log('=== USER EXISTENCE CHECK ===')
     console.log('Phone number to search:', cleanPhone.replace(/\d/g, '*'))
 
-    // Single optimized query using UNION to check both tables at once
     const startTime = Date.now()
-    const { data: userResults, error: userError } = await supabaseAdmin
-      .rpc('check_mobile_number_exists', { mobile_num: cleanPhone })
-      .single()
+    
+    // Try using the new database function first
+    try {
+      const { data: userResults, error: rpcError } = await supabaseAdmin
+        .rpc('check_mobile_number_exists', { mobile_num: cleanPhone })
+        .single()
 
-    if (userError) {
-      // Fallback to manual UNION query if RPC doesn't exist
-      console.log('RPC not found, using manual UNION query')
+      if (rpcError) {
+        console.log('RPC function error, falling back to direct query:', rpcError.message)
+        throw rpcError
+      }
+
+      const queryTime = Date.now() - startTime
+      console.log(`RPC query executed in ${queryTime}ms`)
+
+      const userExists = userResults?.exists || false
+      const existingUser = userResults?.profile || null
+
+      console.log('RPC query result:', {
+        found: userExists,
+        userId: existingUser?.id,
+        source: existingUser?.source,
+        queryTime: `${queryTime}ms`
+      })
+
+      const result = checkOnly 
+        ? { userExists } 
+        : { userExists, profile: existingUser }
+
+      // Cache the result
+      cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      })
+
+      return new Response(
+        JSON.stringify(result),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+
+    } catch (rpcError) {
+      console.log('RPC failed, using fallback query method')
       
-      const { data: unionResults, error: unionError } = await supabaseAdmin
+      // Fallback to direct queries
+      const { data: profileResults, error: profileError } = await supabaseAdmin
         .from('user_profiles')
-        .select(`
-          id, 
-          mobile_number, 
-          full_name,
-          'user_profile' as source
-        `)
+        .select('id, mobile_number, full_name')
         .eq('mobile_number', cleanPhone)
-        .union(
-          supabaseAdmin
-            .from('farmers')
-            .select(`
-              id,
-              mobile_number,
-              null as full_name,
-              'farmer' as source
-            `)
-            .eq('mobile_number', cleanPhone)
-        )
         .limit(1)
 
-      if (unionError && unionError.code !== 'PGRST116') {
-        console.error('Error in union query:', unionError)
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error in profile query:', profileError)
         return new Response(
           JSON.stringify({ 
             error: 'Database error while checking user existence',
-            details: unionError.message 
+            details: profileError.message 
           }),
           { 
             status: 500, 
@@ -134,17 +156,45 @@ serve(async (req) => {
         )
       }
 
+      let userExists = false
+      let existingUser = null
+
+      if (profileResults && profileResults.length > 0) {
+        userExists = true
+        existingUser = {
+          id: profileResults[0].id,
+          mobile_number: profileResults[0].mobile_number,
+          full_name: profileResults[0].full_name,
+          source: 'user_profile'
+        }
+      } else {
+        // Check farmers table as fallback
+        const { data: farmerResults, error: farmerError } = await supabaseAdmin
+          .from('farmers')
+          .select('id, mobile_number')
+          .eq('mobile_number', cleanPhone)
+          .limit(1)
+
+        if (farmerError && farmerError.code !== 'PGRST116') {
+          console.error('Error in farmer query:', farmerError)
+        } else if (farmerResults && farmerResults.length > 0) {
+          userExists = true
+          existingUser = {
+            id: farmerResults[0].id,
+            mobile_number: farmerResults[0].mobile_number,
+            full_name: null,
+            source: 'farmer'
+          }
+        }
+      }
+
       const queryTime = Date.now() - startTime
-      console.log(`Query executed in ${queryTime}ms`)
+      console.log(`Fallback query executed in ${queryTime}ms`)
 
-      const userExists = unionResults && unionResults.length > 0
-      const existingUser = unionResults?.[0] || null
-
-      console.log('Union query result:', {
+      console.log('Fallback query result:', {
         found: userExists,
         userId: existingUser?.id,
         source: existingUser?.source,
-        storedMobile: existingUser?.mobile_number?.replace(/\d/g, '*'),
         queryTime: `${queryTime}ms`
       })
 
@@ -176,35 +226,6 @@ serve(async (req) => {
         }
       )
     }
-
-    // If RPC exists and worked
-    const queryTime = Date.now() - startTime
-    console.log(`RPC executed in ${queryTime}ms`)
-    
-    const userExists = userResults?.exists || false
-    const result = checkOnly 
-      ? { userExists } 
-      : { userExists, profile: userResults?.profile || null }
-
-    // Cache the result
-    cache.set(cacheKey, {
-      data: result,
-      timestamp: Date.now()
-    })
-
-    console.log('=== FINAL USER EXISTS CHECK ===', {
-      phone: cleanPhone.replace(/\d/g, '*'),
-      userExists,
-      queryTime: `${queryTime}ms`
-    })
-
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
 
   } catch (error) {
     console.error('=== MOBILE AUTH CHECK ERROR ===')

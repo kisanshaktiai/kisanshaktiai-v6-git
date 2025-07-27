@@ -1,16 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthContextType } from '@/types/auth';
-import { AuthContext } from '@/contexts/AuthContext';
-import { fetchProfile, checkUserExists, updateProfile as updateProfileService, signOut as signOutService, signInWithPhone as signInWithPhoneService } from '@/services/authService';
+import { fetchProfile, updateProfile as updateUserProfile, signOut as authSignOut, checkUserExists, signInWithPhone } from '@/services/authService';
 import { LanguageService } from '@/services/LanguageService';
-import { sessionService } from '@/services/sessionService';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = React.useContext(AuthContext);
-  if (context === undefined) {
+  const context = useContext(AuthContext);
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const handleFetchProfile = async (userId: string, retryCount = 0) => {
+  const handleFetchProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
       console.log('Fetching profile for user:', userId);
       const rawProfile = await fetchProfile(userId);
@@ -76,155 +76,131 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         return parsedProfile;
       } else if (retryCount < 3) {
-        // Retry with exponential backoff
+        // Retry with exponential backoff for new users (profile might be created by trigger)
         const delay = Math.min((retryCount + 1) * 1000, 3000);
-        console.log(`Retrying profile fetch in ${delay}ms...`);
-        setTimeout(() => {
-          handleFetchProfile(userId, retryCount + 1);
-        }, delay);
+        console.log(`Profile not found, retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return handleFetchProfile(userId, retryCount + 1);
       } else {
-        console.log('Profile not found after retries');
+        console.log('Profile not found after retries, user might be new');
+        return null;
       }
-      
-      return null;
     } catch (error) {
       console.error('Error fetching profile:', error);
+      if (retryCount < 2) {
+        const delay = Math.min((retryCount + 1) * 1000, 2000);
+        console.log(`Retrying profile fetch in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return handleFetchProfile(userId, retryCount + 1);
+      }
       return null;
     }
-  };
+  }, []);
 
-  const signInWithPhone = async (phone: string) => {
-    try {
-      console.log('Starting sign in process...');
-      setLoading(true);
+  // Initialize auth state
+  useEffect(() => {
+    let mounted = true;
+
+    console.log('Setting up auth state listener...');
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+
+        if (session?.user) {
+          setUser(session.user);
+          setSession(session);
+          
+          // Fetch profile after a brief delay to allow trigger to execute
+          setTimeout(() => {
+            if (mounted) {
+              handleFetchProfile(session.user.id);
+            }
+          }, 500);
+        } else {
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+        }
+        
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       
-      await signInWithPhoneService(phone);
-      console.log('Sign in process completed successfully');
-    } catch (error) {
-      console.error('Sign in process failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      await signOutService();
-      setUser(null);
-      setSession(null);
-      setProfile(null);
+      console.log('Initial session check:', session?.user?.id);
       
-      // Clear language preference
-      localStorage.removeItem('languageSelectedAt');
-    } catch (error) {
-      console.error('Error during sign out:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (session?.user) {
+        setUser(session.user);
+        setSession(session);
+        handleFetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error('Error getting initial session:', error);
+      if (mounted) {
+        setLoading(false);
+      }
+    });
 
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) return;
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [handleFetchProfile]);
+
+  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
+    if (!user) throw new Error('No user logged in');
     
     try {
-      // Apply language preference immediately if being updated
-      if (updates.preferred_language) {
-        await LanguageService.getInstance().changeLanguage(updates.preferred_language);
-        localStorage.setItem('selectedLanguage', updates.preferred_language);
-        localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      const updatedProfile = await updateUserProfile(user.id, updates);
+      if (updatedProfile) {
+        const parsedProfile = parseProfileData(updatedProfile);
+        setProfile(parsedProfile);
+        return parsedProfile;
       }
-      
-      await updateProfileService(user.id, updates);
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
     }
-  };
+  }, [user]);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        console.log('Initializing auth...');
-        
-        // Set up auth state listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state changed:', event, !!session);
-          
-          // Update state immediately
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            console.log('User authenticated, fetching profile...');
-            // Use setTimeout to prevent auth callback deadlock
-            setTimeout(() => {
-              handleFetchProfile(session.user.id);
-            }, 100);
-          } else {
-            console.log('No user session, clearing profile');
-            setProfile(null);
-          }
-          
-          setLoading(false);
-        });
-
-        // Try to restore session from storage
-        console.log('Attempting to restore session...');
-        const restoredSession = await sessionService.restoreSession();
-        
-        if (restoredSession) {
-          console.log('Session restored from storage');
-          // Auth state change will be triggered automatically
-        } else {
-          // Check for existing session in Supabase
-          const { data: { session: initialSession } } = await supabase.auth.getSession();
-          
-          if (initialSession?.user) {
-            console.log('Found existing session');
-            setSession(initialSession);
-            setUser(initialSession.user);
-            await handleFetchProfile(initialSession.user.id);
-            
-            // Store the session for future restoration
-            await sessionService.storeSession(initialSession);
-          } else {
-            console.log('No existing session found');
-          }
-        }
-        
-        setLoading(false);
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Error during auth initialization:', error);
-        setLoading(false);
-      }
-    };
-
-    initAuth();
+  const signOut = useCallback(async () => {
+    try {
+      await authSignOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
   }, []);
 
-  const contextValue: AuthContextType = {
+  const value: AuthContextType = {
     user,
     session,
     profile,
     loading,
-    isAuthenticated: !!session?.user,
+    isAuthenticated: !!user,
     signInWithPhone,
     signOut,
     updateProfile,
-    checkUserExists,
-    farmer: null,
-    currentAssociation: null
+    checkUserExists
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
