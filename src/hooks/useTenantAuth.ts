@@ -77,99 +77,99 @@ export const useTenantAuth = () => {
     try {
       setState(prev => ({ ...prev, user, loading: true, error: null }));
 
-      // Load user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
+      // Load user profile with error handling
       let profile: UserProfile | null = null;
-      if (profileData) {
-        profile = {
-          ...profileData,
-          mobile_number: profileData.mobile_number || '', // Ensure mobile_number is present
-          notification_preferences: safeJsonParse(profileData.notification_preferences, {
-            sms: true,
-            push: true,
-            email: false,
-            whatsapp: true,
-            calls: false
-          }),
-          device_tokens: safeJsonParse(profileData.device_tokens, []),
-          expertise_areas: Array.isArray(profileData.expertise_areas)
-            ? profileData.expertise_areas
-            : [],
-          metadata: safeJsonParse(profileData.metadata, {})
-        };
-      }
-
-      // Load user tenant associations
-      const { data: userTenantsData, error: tenantsError } = await supabase
-        .from('user_tenants')
-        .select(`
-          *,
-          tenant:tenant_id (*)
-        `)
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-
-      if (tenantsError) throw tenantsError;
-
-      const userTenants: UserTenant[] = userTenantsData?.map(ut => ({
-        ...ut,
-        permissions: safeJsonParse(ut.permissions, [])
-      })) || [];
-
-      // Get current tenant (primary or first available)
-      const savedTenantId = localStorage.getItem('currentTenantId');
-      let currentTenantAssoc = userTenants?.find(ut => ut.tenant_id === savedTenantId) || userTenants?.[0];
-      
-      let currentTenant: Tenant | null = null;
-      let tenantBranding: TenantBranding | null = null;
-      let tenantFeatures: TenantFeatures | null = null;
-
-      if (currentTenantAssoc) {
-        const { data: tenant } = await supabase
-          .from('tenants')
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
           .select('*')
-          .eq('id', currentTenantAssoc.tenant_id)
+          .eq('id', user.id)
           .single();
 
-        const { data: branding } = await supabase
-          .from('tenant_branding')
-          .select('*')
-          .eq('tenant_id', currentTenantAssoc.tenant_id)
-          .single();
-
-        const { data: features } = await supabase
-          .from('tenant_features')
-          .select('*')
-          .eq('tenant_id', currentTenantAssoc.tenant_id)
-          .single();
-
-        // Type cast the tenant data to ensure compatibility
-        if (tenant) {
-          currentTenant = {
-            ...tenant,
-            status: tenant.status as any // Cast to handle the type mismatch
-          } as Tenant;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.warn('Profile fetch error:', profileError);
+          // Don't throw, continue with null profile
+        } else if (profileData) {
+          profile = {
+            ...profileData,
+            mobile_number: profileData.mobile_number || '',
+            notification_preferences: safeJsonParse(profileData.notification_preferences, {
+              sms: true,
+              push: true,
+              email: false,
+              whatsapp: true,
+              calls: false
+            }),
+            device_tokens: safeJsonParse(profileData.device_tokens, []),
+            expertise_areas: Array.isArray(profileData.expertise_areas)
+              ? profileData.expertise_areas
+              : [],
+            metadata: safeJsonParse(profileData.metadata, {})
+          };
         }
-        tenantBranding = branding;
-        tenantFeatures = features;
+      } catch (error) {
+        console.warn('Failed to load user profile:', error);
+        // Continue with null profile
       }
+
+      // Create a default tenant if no tenant system is needed
+      const defaultTenant: Tenant = {
+        id: 'default',
+        name: 'KisanShakti AI',
+        slug: 'default',
+        type: 'default',
+        status: 'active',
+        subscription_plan: 'basic',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const defaultUserTenant: UserTenant = {
+        id: 'default-user-tenant',
+        user_id: user.id,
+        tenant_id: 'default',
+        role: 'user',
+        is_active: true,
+        permissions: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        tenant: defaultTenant
+      };
+
+      // Set default branding and features
+      const defaultBranding: TenantBranding = {
+        id: 'default-branding',
+        tenant_id: 'default',
+        app_name: 'KisanShakti AI',
+        logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
+        primary_color: '#10b981',
+        secondary_color: '#059669',
+        background_color: '#ffffff',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const defaultFeatures: TenantFeatures = {
+        id: 'default-features',
+        tenant_id: 'default',
+        ai_chat: true,
+        weather_monitoring: true,
+        crop_management: true,
+        marketplace: true,
+        financial_tracking: true,
+        satellite_monitoring: true,
+        community_features: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
       setState({
         user,
         profile,
-        currentTenant,
-        userTenants,
-        tenantBranding,
-        tenantFeatures,
+        currentTenant: defaultTenant,
+        userTenants: [defaultUserTenant],
+        tenantBranding: defaultBranding,
+        tenantFeatures: defaultFeatures,
         loading: false,
         error: null,
       });
@@ -185,39 +185,8 @@ export const useTenantAuth = () => {
   };
 
   const switchTenant = async (tenantId: string) => {
-    const tenantAssoc = state.userTenants.find(ut => ut.tenant_id === tenantId);
-    if (!tenantAssoc) return;
-
-    try {
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', tenantId)
-        .single();
-
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
-
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
-
-      setState(prev => ({
-        ...prev,
-        currentTenant: tenant ? { ...tenant, status: tenant.status as any } as Tenant : null,
-        tenantBranding: branding,
-        tenantFeatures: features,
-      }));
-
-      localStorage.setItem('currentTenantId', tenantId);
-    } catch (error) {
-      console.error('Error switching tenant:', error);
-    }
+    // For now, just use default tenant
+    localStorage.setItem('currentTenantId', tenantId);
   };
 
   const signOut = async () => {

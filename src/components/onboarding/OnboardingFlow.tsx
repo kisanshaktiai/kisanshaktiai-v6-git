@@ -14,21 +14,19 @@ type OnboardingStep = 'splash' | 'language' | 'auth';
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
-  const { isAuthenticated: contextIsAuthenticated } = useAuth();
-  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user, profile } = useAuth();
+  const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Use the most reliable source of authentication state
-  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
-
-  // If user is already authenticated and onboarded, this component should not be rendered
+  // If user becomes authenticated during onboarding, complete the flow
   useEffect(() => {
-    if (isAuthenticated && onboardingCompleted) {
-      console.log('User is already authenticated and onboarded, OnboardingFlow should not be shown');
+    if (isAuthenticated && user) {
+      console.log('User authenticated during onboarding, completing flow');
+      handleAuthComplete();
     }
-  }, [isAuthenticated, onboardingCompleted]);
+  }, [isAuthenticated, user]);
 
   const handleSplashComplete = () => {
     setIsInitialized(true);
@@ -54,6 +52,7 @@ export const OnboardingFlow: React.FC = () => {
   };
 
   const handleAuthComplete = () => {
+    console.log('Completing onboarding flow');
     dispatch(setOnboardingCompleted());
   };
 
