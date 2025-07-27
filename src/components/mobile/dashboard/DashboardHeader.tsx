@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
@@ -6,16 +5,16 @@ import { RootState } from '@/store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { HamburgerMenu } from '../navigation/HamburgerMenu';
 import { 
   Bell, 
   Wifi, 
   WifiOff, 
   MapPin, 
   Calendar,
-  Thermometer,
   CloudSun,
-  TrendingUp,
   AlertTriangle,
+  TrendingUp,
   MessageSquare
 } from 'lucide-react';
 
@@ -91,7 +90,7 @@ export const DashboardHeader: React.FC = () => {
     <>
       {/* Professional Header with Glassmorphism */}
       <div 
-        className="relative px-4 py-6 backdrop-blur-xl bg-gradient-to-br from-white/90 to-white/70 border-b border-white/20"
+        className="relative px-4 py-6 backdrop-blur-xl bg-gradient-to-br from-white/90 to-white/70 border-b border-white/20 safe-area-top"
         style={{
           background: tenantBranding?.primary_color 
             ? `linear-gradient(135deg, ${tenantBranding.background_color || '#ffffff'}f0, ${tenantBranding.primary_color}20, ${tenantBranding.accent_color || tenantBranding.primary_color}10)`
@@ -106,7 +105,7 @@ export const DashboardHeader: React.FC = () => {
 
         {/* Header Content */}
         <div className="relative z-10 space-y-4">
-          {/* Top Row - Status and Notifications */}
+          {/* Top Row - Status, Notifications, and Menu */}
           <div className="flex items-center justify-between">
             {/* Brand and Status */}
             <div className="flex items-center space-x-3">
@@ -139,8 +138,8 @@ export const DashboardHeader: React.FC = () => {
               </div>
             </div>
 
-            {/* Notifications */}
-            <div className="relative">
+            {/* Notifications and Menu */}
+            <div className="flex items-center space-x-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -154,6 +153,8 @@ export const DashboardHeader: React.FC = () => {
                   </div>
                 )}
               </Button>
+              
+              <HamburgerMenu />
             </div>
           </div>
 

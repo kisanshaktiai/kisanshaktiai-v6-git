@@ -1,10 +1,7 @@
 
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
 import { ModernBottomNavigation } from './navigation/ModernBottomNavigation';
-import { ModernHeader } from './navigation/ModernHeader';
-import { StatusBar } from './StatusBar';
+import { DashboardHeader } from './dashboard/DashboardHeader';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -17,13 +14,9 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
   showBottomNav = true,
   showHeader = true 
 }) => {
-  const { isOnline } = useSelector((state: RootState) => state.sync);
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <StatusBar isOnline={isOnline} />
-      
-      {showHeader && <ModernHeader />}
+      {showHeader && <DashboardHeader />}
       
       <main className="flex-1 overflow-auto pb-safe">
         {children}
