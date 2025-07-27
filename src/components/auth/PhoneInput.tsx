@@ -23,7 +23,7 @@ export const PhoneInput = ({
   const [validationError, setValidationError] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean>(false);
 
-  // Enhanced phone number validation
+  // Enhanced phone number validation - only validate when 10 digits
   const validatePhoneNumber = (value: string): { isValid: boolean; error?: string } => {
     const cleaned = value.replace(/\D/g, '');
     
@@ -32,7 +32,7 @@ export const PhoneInput = ({
     }
     
     if (cleaned.length < 10) {
-      return { isValid: false, error: 'Phone number must be 10 digits' };
+      return { isValid: false }; // Don't show error until 10 digits
     }
     
     if (cleaned.length > 10) {
@@ -41,7 +41,7 @@ export const PhoneInput = ({
     
     // Indian mobile number validation (starts with 6-9)
     if (!cleaned.match(/^[6-9]\d{9}$/)) {
-      return { isValid: false, error: 'Enter a valid Indian mobile number' };
+      return { isValid: false, error: 'Enter a valid Indian mobile number (6-9 followed by 9 digits)' };
     }
     
     return { isValid: true };
@@ -57,8 +57,14 @@ export const PhoneInput = ({
     const formatted = formatPhoneNumber(e.target.value);
     const validation = validatePhoneNumber(formatted);
     
-    setValidationError(validation.error || '');
-    setIsValid(validation.isValid);
+    // Only show validation error if we have 10 digits or more
+    if (formatted.length === 10) {
+      setValidationError(validation.error || '');
+      setIsValid(validation.isValid);
+    } else {
+      setValidationError('');
+      setIsValid(false);
+    }
     
     onPhoneChange(formatted);
   };
@@ -67,8 +73,49 @@ export const PhoneInput = ({
   useEffect(() => {
     if (phone.length > 0 && phone.length < 10) {
       setValidationError('');
+      setIsValid(false);
     }
   }, [phone]);
+
+  const showStatusIcon = () => {
+    if (checkingUser) {
+      return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />;
+    }
+    
+    if (validationError && phone.length === 10) {
+      return <AlertCircle className="w-5 h-5 text-destructive" />;
+    }
+    
+    if (isValid && phone.length === 10) {
+      return <CheckCircle className="w-5 h-5 text-green-500" />;
+    }
+    
+    return null;
+  };
+
+  const getInputBorderClass = () => {
+    if (phone.length < 10) {
+      return 'focus:border-ring';
+    }
+    
+    if (validationError) {
+      return 'border-destructive focus:border-destructive';
+    }
+    
+    if (userCheckComplete && isNewUser) {
+      return 'focus:border-green-400 border-green-200';
+    }
+    
+    if (userCheckComplete && !isNewUser) {
+      return 'focus:border-blue-400 border-blue-200';
+    }
+    
+    if (isValid) {
+      return 'border-green-200 focus:border-green-400';
+    }
+    
+    return 'focus:border-ring';
+  };
 
   return (
     <div>
@@ -90,40 +137,33 @@ export const PhoneInput = ({
           onChange={handleChange}
           maxLength={10}
           disabled={loading || checkingUser}
-          className={`text-lg pl-28 pr-12 border-2 transition-all duration-300 bg-background text-foreground ${
-            validationError 
-              ? 'border-destructive focus:border-destructive' 
-              : userCheckComplete && isNewUser 
-              ? 'focus:border-green-400 border-green-200' 
-              : userCheckComplete && !isNewUser 
-              ? 'focus:border-blue-400 border-blue-200' 
-              : isValid
-              ? 'border-green-200 focus:border-green-400'
-              : 'focus:border-ring'
-          }`}
+          className={`text-lg pl-28 pr-12 border-2 transition-all duration-300 bg-background text-foreground ${getInputBorderClass()}`}
         />
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-          {checkingUser ? (
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          ) : validationError ? (
-            <AlertCircle className="w-5 h-5 text-destructive" />
-          ) : isValid && phone.length === 10 ? (
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          ) : null}
+          {showStatusIcon()}
         </div>
       </div>
       
-      {validationError && (
+      {/* Only show validation error for complete phone numbers (10 digits) */}
+      {validationError && phone.length === 10 && (
         <div className="mt-2 text-sm text-destructive flex items-center space-x-1">
           <AlertCircle className="w-4 h-4" />
           <span>{validationError}</span>
         </div>
       )}
       
-      {phone.length === 10 && !validationError && (
+      {/* Show success message for valid 10-digit numbers */}
+      {phone.length === 10 && !validationError && isValid && (
         <div className="mt-2 text-sm text-muted-foreground">
           <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
           Valid Indian mobile number
+        </div>
+      )}
+      
+      {/* Show digit counter for incomplete numbers */}
+      {phone.length > 0 && phone.length < 10 && (
+        <div className="mt-2 text-sm text-muted-foreground">
+          {phone.length}/10 digits entered
         </div>
       )}
     </div>

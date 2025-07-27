@@ -139,24 +139,32 @@ export class MobileNumberService {
     return false;
   }
 
-  // Check if user is already registered
+  // Updated to use the mobile-auth-check Edge Function for consistency
   async isRegisteredUser(mobileNumber: string): Promise<boolean> {
     try {
-      const syntheticEmail = this.generateSyntheticEmail(mobileNumber);
+      console.log('=== MOBILE NUMBER SERVICE: CHECKING USER REGISTRATION ===');
+      const cleanPhone = mobileNumber.replace(/\D/g, '');
       
-      // Check if user exists in Supabase Auth using the client method
-      const { data, error } = await supabase
-        .from('auth.users')
-        .select('email')
-        .eq('email', syntheticEmail)
-        .single();
+      // Use the mobile-auth-check Edge Function for consistent checking
+      const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+        body: { 
+          phone: cleanPhone,
+          checkOnly: true
+        }
+      });
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking user registration:', error);
+      if (error) {
+        console.error('Error checking user registration via Edge Function:', error);
         return false;
       }
 
-      return !!data;
+      const isRegistered = data?.userExists || false;
+      console.log('User registration check result:', {
+        phone: cleanPhone.replace(/\d/g, '*'),
+        isRegistered
+      });
+
+      return isRegistered;
     } catch (error) {
       console.error('Error checking user registration:', error);
       return false;

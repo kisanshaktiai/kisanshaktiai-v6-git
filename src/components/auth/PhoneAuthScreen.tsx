@@ -32,6 +32,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
     setIsNewUser(false);
     setConnectionError(null);
 
+    // Only check user existence when we have exactly 10 digits
     if (value.length === 10) {
       setCheckingUser(true);
       try {
@@ -81,6 +82,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
         setCheckingUser(false);
       }
     } else {
+      // Reset states when phone number is incomplete
       setIsNewUser(false);
       setUserCheckComplete(false);
       setConnectionError(null);
@@ -97,8 +99,8 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phone || phone.length < 10) {
-      toast.error('Please enter a valid 10-digit phone number');
+    if (!phone || phone.length !== 10) {
+      toast.error('Please enter a complete 10-digit phone number');
       return;
     }
 

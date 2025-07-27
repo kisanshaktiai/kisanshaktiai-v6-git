@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { TenantDetectionService } from '@/services/TenantDetectionService';
@@ -75,30 +74,39 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 
 export const checkUserExists = async (phone: string): Promise<boolean> => {
   try {
-    console.log('Checking if user exists for phone:', phone.replace(/\d/g, '*'));
+    console.log('=== CHECKING USER EXISTS ===');
+    console.log('Phone number:', phone.replace(/\d/g, '*'));
     
     const cleanPhone = sanitizeInput(phone.replace(/\D/g, ''));
     
     if (!validatePhoneNumber(cleanPhone)) {
       throw new Error('Invalid phone number format');
     }
-    
-    const { data: profiles, error } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('mobile_number', cleanPhone)
-      .limit(1);
-    
+
+    // Use the mobile-auth-check Edge Function for consistent user existence checking
+    const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
+      body: { 
+        phone: cleanPhone,
+        checkOnly: true
+      }
+    });
+
     if (error) {
-      console.error('Error checking user existence:', error);
+      console.error('Error calling mobile-auth-check:', error);
       // Re-throw with more specific error message
       if (error.message.includes('connect') || error.message.includes('network')) {
         throw new Error('Unable to connect to KisanShakti AI servers. Please check your internet connection.');
       }
       throw new Error('Service temporarily unavailable. Please try again.');
     }
+
+    const userExists = data?.userExists || false;
+    console.log('User exists check result:', {
+      phone: cleanPhone.replace(/\d/g, '*'),
+      exists: userExists
+    });
     
-    return profiles && profiles.length > 0;
+    return userExists;
   } catch (error) {
     console.error('Error in checkUserExists:', error);
     // Re-throw the error to be handled by the calling component
