@@ -7,7 +7,7 @@ export const useOptimizedProfile = () => {
     queryKey: ['optimized-profile'],
     queryFn: () => optimizedDataService.getFarmerProfile(),
     staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes (renamed from cacheTime)
     refetchOnWindowFocus: false,
     retry: 2,
   });

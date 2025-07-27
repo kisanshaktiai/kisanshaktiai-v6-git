@@ -7,7 +7,7 @@ export const useOptimizedDashboard = () => {
     queryKey: ['optimized-dashboard'],
     queryFn: () => optimizedDataService.getDashboardData(),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes (renamed from cacheTime)
     refetchOnWindowFocus: false,
     refetchOnMount: 'always',
     retry: 2,

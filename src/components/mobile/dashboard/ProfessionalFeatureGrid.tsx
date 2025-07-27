@@ -36,7 +36,7 @@ const LazyFeatureCard = React.lazy(() =>
 );
 
 export const ProfessionalFeatureGrid: React.FC = () => {
-  const { data: dashboardData, loading } = useOptimizedDashboard();
+  const { data: dashboardData, isLoading } = useOptimizedDashboard();
 
   const features = [
     {
@@ -105,7 +105,7 @@ export const ProfessionalFeatureGrid: React.FC = () => {
     }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4 p-4">
         <Skeleton className="h-20 w-full" />

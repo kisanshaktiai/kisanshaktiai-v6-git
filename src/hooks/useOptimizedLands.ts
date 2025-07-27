@@ -7,7 +7,7 @@ export const useOptimizedLands = (landId?: string) => {
     queryKey: ['optimized-lands', landId],
     queryFn: () => optimizedDataService.getLandsSummary(landId),
     staleTime: 3 * 60 * 1000, // 3 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
     refetchOnWindowFocus: false,
     enabled: true,
     retry: 2,

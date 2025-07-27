@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 export const QuickSummaryTiles: React.FC = () => {
-  const { data: dashboardData, loading, error } = useOptimizedDashboard();
+  const { data: dashboardData, isLoading, error } = useOptimizedDashboard();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-4 p-4">
         {[...Array(4)].map((_, i) => (
