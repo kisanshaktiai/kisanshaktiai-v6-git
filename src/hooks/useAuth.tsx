@@ -16,6 +16,38 @@ export const useAuth = () => {
   return context;
 };
 
+// Helper function to safely parse JSON and ensure proper typing
+const parseProfileData = (rawProfile: any): Profile => {
+  // Helper to safely parse JSON values
+  const safeJsonParse = (value: any, fallback: any) => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return fallback;
+      }
+    }
+    if (typeof value === 'object') return value;
+    return fallback;
+  };
+
+  return {
+    ...rawProfile,
+    notification_preferences: safeJsonParse(rawProfile.notification_preferences, {
+      sms: true,
+      push: true,
+      email: false,
+      whatsapp: true,
+      calls: false
+    }),
+    device_tokens: safeJsonParse(rawProfile.device_tokens, []),
+    coordinates: rawProfile.coordinates,
+    metadata: safeJsonParse(rawProfile.metadata, {}),
+    expertise_areas: Array.isArray(rawProfile.expertise_areas) ? rawProfile.expertise_areas : []
+  };
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,23 +57,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleFetchProfile = async (userId: string, retryCount = 0) => {
     try {
       console.log('Fetching profile for user:', userId);
-      const profileData = await fetchProfile(userId);
+      const rawProfile = await fetchProfile(userId);
       
-      if (profileData) {
+      if (rawProfile) {
         console.log('Profile fetched successfully');
-        setProfile(profileData);
+        const parsedProfile = parseProfileData(rawProfile);
+        setProfile(parsedProfile);
         
         // Apply user's saved language preference
-        if (profileData.preferred_language) {
+        if (parsedProfile.preferred_language) {
           try {
-            await LanguageService.getInstance().changeLanguage(profileData.preferred_language);
-            console.log('Applied user language preference:', profileData.preferred_language);
+            await LanguageService.getInstance().changeLanguage(parsedProfile.preferred_language);
+            console.log('Applied user language preference:', parsedProfile.preferred_language);
           } catch (error) {
             console.error('Error applying user language preference:', error);
           }
         }
         
-        return profileData;
+        return parsedProfile;
       } else if (retryCount < 3) {
         // Retry with exponential backoff
         const delay = Math.min((retryCount + 1) * 1000, 3000);
