@@ -15,7 +15,8 @@ import {
   RefreshCw,
   ChevronRight,
   Thermometer,
-  Droplets
+  Droplets,
+  Wind
 } from 'lucide-react';
 
 export const CompactWeatherCard: React.FC = () => {
@@ -25,15 +26,15 @@ export const CompactWeatherCard: React.FC = () => {
 
   const getWeatherIcon = (main: string, icon: string) => {
     const iconMap: Record<string, React.ReactNode> = {
-      'clear': <Sun className="w-8 h-8 text-yellow-500" />,
-      'clouds': <Cloud className="w-8 h-8 text-gray-500" />,
-      'rain': <CloudRain className="w-8 h-8 text-blue-500" />,
-      'drizzle': <CloudRain className="w-8 h-8 text-blue-400" />,
-      'thunderstorm': <Zap className="w-8 h-8 text-yellow-600" />,
-      'snow': <CloudSnow className="w-8 h-8 text-blue-200" />,
+      'clear': <Sun className="w-10 h-10 text-yellow-500" />,
+      'clouds': <Cloud className="w-10 h-10 text-gray-500" />,
+      'rain': <CloudRain className="w-10 h-10 text-blue-500" />,
+      'drizzle': <CloudRain className="w-10 h-10 text-blue-400" />,
+      'thunderstorm': <Zap className="w-10 h-10 text-yellow-600" />,
+      'snow': <CloudSnow className="w-10 h-10 text-blue-200" />,
     };
 
-    return iconMap[main?.toLowerCase()] || <Sun className="w-8 h-8 text-yellow-500" />;
+    return iconMap[main?.toLowerCase()] || <Sun className="w-10 h-10 text-yellow-500" />;
   };
 
   const handleCardClick = () => {
@@ -42,17 +43,17 @@ export const CompactWeatherCard: React.FC = () => {
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 backdrop-blur-sm border-white/30 shadow-lg animate-pulse">
+      <Card className="bg-gradient-to-br from-blue-50/90 to-cyan-50/90 backdrop-blur-sm border-white/40 shadow-lg animate-pulse">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
               <div>
-                <div className="h-4 bg-gray-200 rounded w-20 mb-1"></div>
-                <div className="h-3 bg-gray-200 rounded w-16"></div>
+                <div className="h-5 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
               </div>
             </div>
-            <div className="h-8 bg-gray-200 rounded w-12"></div>
+            <div className="h-10 bg-gray-200 rounded w-16"></div>
           </div>
         </CardContent>
       </Card>
@@ -61,18 +62,18 @@ export const CompactWeatherCard: React.FC = () => {
 
   if (error || !currentWeather) {
     return (
-      <Card className="bg-gradient-to-br from-red-50/80 to-red-100/80 backdrop-blur-sm border-red-200/30 shadow-lg">
+      <Card className="bg-gradient-to-br from-red-50/90 to-red-100/90 backdrop-blur-sm border-red-200/40 shadow-lg">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Cloud className="w-8 h-8 text-red-400" />
+            <div className="flex items-center space-x-4">
+              <Cloud className="w-10 h-10 text-red-400" />
               <div>
-                <p className="text-sm font-medium text-red-700">Weather Unavailable</p>
-                <p className="text-xs text-red-600">Tap to retry</p>
+                <p className="font-semibold text-red-700">Weather Unavailable</p>
+                <p className="text-sm text-red-600">Tap to retry</p>
               </div>
             </div>
-            <button onClick={refreshWeather} className="text-red-600">
-              <RefreshCw className="w-4 h-4" />
+            <button onClick={refreshWeather} className="text-red-600 hover:text-red-700 transition-colors">
+              <RefreshCw className="w-5 h-5" />
             </button>
           </div>
         </CardContent>
@@ -82,40 +83,46 @@ export const CompactWeatherCard: React.FC = () => {
 
   return (
     <Card 
-      className="bg-gradient-to-br from-blue-50/80 via-cyan-50/60 to-sky-50/80 backdrop-blur-sm border-white/30 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group active:scale-[0.98]"
+      className="bg-gradient-to-br from-blue-50/90 via-cyan-50/70 to-sky-50/90 backdrop-blur-sm border-white/40 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group active:scale-[0.98]"
       onClick={handleCardClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           {/* Weather Info */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <div className="relative">
               {getWeatherIcon(currentWeather.weather_main, currentWeather.weather_icon)}
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-lg font-bold text-gray-900">
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="text-2xl font-bold text-gray-900">
                   {Math.round(currentWeather.temperature_celsius)}°C
                 </span>
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700">
+                <Badge variant="secondary" className="text-xs px-2 py-1 bg-green-100 text-green-700 border-green-200">
                   Live
                 </Badge>
               </div>
-              <p className="text-xs text-gray-600 capitalize leading-tight">
+              <p className="text-sm text-gray-600 capitalize mb-2">
                 {currentWeather.weather_description}
               </p>
-              <div className="flex items-center space-x-3 mt-1">
+              <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-1">
-                  <Thermometer className="w-3 h-3 text-gray-500" />
-                  <span className="text-xs text-gray-500">
+                  <Thermometer className="w-3.5 h-3.5 text-orange-500" />
+                  <span className="text-xs text-gray-600 font-medium">
                     {Math.round(currentWeather.feels_like_celsius)}°
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <Droplets className="w-3 h-3 text-blue-500" />
-                  <span className="text-xs text-gray-500">
+                  <Droplets className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-xs text-gray-600 font-medium">
                     {currentWeather.humidity_percent}%
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Wind className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="text-xs text-gray-600 font-medium">
+                    {Math.round(currentWeather.wind_speed_kmh)} km/h
                   </span>
                 </div>
               </div>
@@ -123,23 +130,26 @@ export const CompactWeatherCard: React.FC = () => {
           </div>
 
           {/* Action Indicator */}
-          <div className="flex items-center space-x-2">
-            <div className="text-right">
-              <p className="text-xs text-gray-500">View Details</p>
-              <p className="text-xs text-gray-400">Tap here</p>
+          <div className="flex flex-col items-end">
+            <div className="text-right mb-2">
+              <p className="text-xs text-gray-500 font-medium">View Details</p>
+              <p className="text-xs text-gray-400">Full forecast</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-200" />
           </div>
         </div>
 
-        {/* Location indicator */}
-        <div className="flex items-center space-x-1 mt-2 pt-2 border-t border-white/20">
-          <MapPin className="w-3 h-3 text-gray-400" />
+        {/* Location and Time indicator */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/30">
+          <div className="flex items-center space-x-1">
+            <MapPin className="w-3 h-3 text-gray-400" />
+            <span className="text-xs text-gray-500 font-medium">Live Location Data</span>
+          </div>
           <span className="text-xs text-gray-500">
-            {new Date(currentWeather.observation_time).toLocaleTimeString('en-IN', {
+            Updated {new Date(currentWeather.observation_time).toLocaleTimeString('en-IN', {
               hour: '2-digit',
               minute: '2-digit'
-            })} • Real-time data
+            })}
           </span>
         </div>
       </CardContent>

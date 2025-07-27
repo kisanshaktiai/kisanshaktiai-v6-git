@@ -18,7 +18,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
     <div className="min-h-screen bg-background flex flex-col">
       {showHeader && <DashboardHeader />}
       
-      <main className="flex-1 overflow-auto pb-safe">
+      <main className={`flex-1 overflow-auto pb-safe ${showHeader ? 'pt-0' : ''}`}>
         {children}
       </main>
       

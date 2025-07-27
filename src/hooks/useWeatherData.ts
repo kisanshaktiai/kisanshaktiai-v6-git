@@ -33,13 +33,13 @@ export const useWeatherData = () => {
     try {
       setError(null);
 
-      // First, try to get recent weather data from database
+      // First, try to get recent weather data from database (last 15 minutes)
       const { data: recentWeather } = await supabase
         .from('weather_current')
         .select('*')
         .eq('latitude', location.latitude)
         .eq('longitude', location.longitude)
-        .gte('observation_time', new Date(Date.now() - 30 * 60 * 1000).toISOString()) // Last 30 minutes
+        .gte('observation_time', new Date(Date.now() - 15 * 60 * 1000).toISOString())
         .order('observation_time', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -48,11 +48,12 @@ export const useWeatherData = () => {
         setCurrentWeather(recentWeather);
         setLoading(false);
       } else {
-        // Fetch fresh data using the weather-sync edge function
+        // Fetch fresh data using the weather-sync edge function with Tomorrow.io API
         const { data: syncResult, error: syncError } = await supabase.functions.invoke('weather-sync', {
           body: {
             latitude: location.latitude,
-            longitude: location.longitude
+            longitude: location.longitude,
+            use_tomorrow_io: true // Flag to prioritize Tomorrow.io API
           }
         });
 
