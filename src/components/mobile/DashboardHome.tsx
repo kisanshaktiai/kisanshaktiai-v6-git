@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { CompactWeatherCard } from '@/components/weather/CompactWeatherCard';
 import { QuickSummaryTiles } from './dashboard/QuickSummaryTiles';
 import { FeatureGrid } from './dashboard/FeatureGrid';
 import { SeasonalCalendar } from './dashboard/SeasonalCalendar';
@@ -14,6 +15,9 @@ export const DashboardHome: React.FC = () => {
     <div className="pb-20 min-h-screen bg-gradient-to-br from-green-50/30 via-blue-50/20 to-yellow-50/10">
       {/* Main Dashboard Content */}
       <div className="space-y-6 p-4">
+        {/* Compact Weather Card */}
+        <CompactWeatherCard />
+        
         <QuickSummaryTiles />
         <FeatureGrid />
         <SeasonalCalendar />

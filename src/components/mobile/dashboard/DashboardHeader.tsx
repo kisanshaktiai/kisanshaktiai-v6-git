@@ -12,7 +12,6 @@ import {
   WifiOff, 
   MapPin, 
   Calendar,
-  CloudSun,
   AlertTriangle,
   TrendingUp,
   MessageSquare
@@ -90,7 +89,7 @@ export const DashboardHeader: React.FC = () => {
     <>
       {/* Professional Header with Glassmorphism */}
       <div 
-        className="relative px-4 py-6 backdrop-blur-xl bg-gradient-to-br from-white/90 to-white/70 border-b border-white/20 safe-area-top"
+        className="relative px-4 py-4 backdrop-blur-xl bg-gradient-to-br from-white/90 to-white/70 border-b border-white/20 safe-area-top"
         style={{
           background: tenantBranding?.primary_color 
             ? `linear-gradient(135deg, ${tenantBranding.background_color || '#ffffff'}f0, ${tenantBranding.primary_color}20, ${tenantBranding.accent_color || tenantBranding.primary_color}10)`
@@ -104,8 +103,8 @@ export const DashboardHeader: React.FC = () => {
         </div>
 
         {/* Header Content */}
-        <div className="relative z-10 space-y-4">
-          {/* Top Row - Status, Notifications, and Menu */}
+        <div className="relative z-10 space-y-3">
+          {/* Top Row - Brand, Status, Time, and Actions */}
           <div className="flex items-center justify-between">
             {/* Brand and Status */}
             <div className="flex items-center space-x-3">
@@ -114,19 +113,19 @@ export const DashboardHeader: React.FC = () => {
                   <img 
                     src={tenantBranding.logo_url} 
                     alt={tenantBranding.app_name || 'Logo'}
-                    className="w-10 h-10 rounded-xl shadow-lg ring-2 ring-white/50 object-cover"
+                    className="w-8 h-8 rounded-lg shadow-md ring-2 ring-white/50 object-cover"
                   />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
                 </div>
               )}
               <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-lg font-bold text-gray-900 tracking-tight">
                   {tenantBranding?.app_name || currentTenant?.name || 'KisanShakti AI'}
                 </h1>
                 <div className="flex items-center space-x-2">
                   <Badge 
                     variant={isOnline ? 'default' : 'secondary'} 
-                    className={`text-xs px-2 py-1 rounded-full font-medium shadow-sm ${
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium shadow-sm ${
                       isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'
                     }`}
                   >
@@ -158,48 +157,34 @@ export const DashboardHeader: React.FC = () => {
             </div>
           </div>
 
-          {/* Welcome Section */}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {t('dashboard.goodMorning', 'Good morning')}, {getProfileName()}!
-              </h2>
-              <div className="text-2xl animate-bounce" style={{ animationDuration: '3s' }}>👋</div>
-            </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
+          {/* Compact Welcome Section */}
+          <div className="flex items-center justify-between">
+            <div>
               <div className="flex items-center space-x-1">
-                <Calendar className="w-4 h-4" />
-                <span>{getCurrentDate()}</span>
+                <span className="text-sm text-gray-700">
+                  {t('dashboard.goodMorning', 'Good morning')}, 
+                </span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {getProfileName()}
+                </span>
+                <span className="text-sm">👋</span>
               </div>
-              {location && (
+              <div className="flex items-center space-x-3 text-xs text-gray-500 mt-0.5">
                 <div className="flex items-center space-x-1">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate max-w-32">
-                    {location.address || `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`}
-                  </span>
+                  <Calendar className="w-3 h-3" />
+                  <span>{getCurrentDate()}</span>
                 </div>
-              )}
+                {location && (
+                  <div className="flex items-center space-x-1">
+                    <MapPin className="w-3 h-3" />
+                    <span className="truncate max-w-24">
+                      {location.address || `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Quick Weather Info */}
-          <Card className="bg-gradient-to-r from-blue-50/80 to-cyan-50/80 border-white/30 shadow-sm backdrop-blur-sm">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <CloudSun className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Today's Weather</div>
-                    <div className="text-xs text-gray-600">Perfect for field work</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">28°C</div>
-                  <div className="text-xs text-gray-600">Sunny</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 

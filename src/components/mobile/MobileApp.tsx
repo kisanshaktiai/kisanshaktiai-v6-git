@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +18,7 @@ import { Market } from '@/pages/mobile/Market';
 import { Analytics } from '@/pages/mobile/Analytics';
 import { Community } from '@/pages/mobile/Community';
 import { Profile } from '@/pages/mobile/Profile';
+import Weather from '@/pages/mobile/Weather';
 
 export const MobileApp: React.FC = () => {
   const dispatch = useDispatch();
@@ -88,6 +88,7 @@ export const MobileApp: React.FC = () => {
         <Route path="/satellite" element={<SatelliteMonitoring />} />
         <Route path="/crop-schedule" element={<CropSchedule />} />
         <Route path="/market" element={<Market />} />
+        <Route path="/weather" element={<Weather />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/community" element={<Community />} />
         <Route path="/profile" element={<Profile />} />
