@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { CompactWeatherCard } from '@/components/weather/CompactWeatherCard';
-import { HorizontalQuickOverview } from './HorizontalQuickOverview';
-import { CoreFeatureGrid } from './CoreFeatureGrid';
+import { PromotionalBanner } from './PromotionalBanner';
+import { EnhancedWeatherCard } from './EnhancedWeatherCard';
+import { TodaysTasks } from './TodaysTasks';
+import { ModernFeatureGrid } from './ModernFeatureGrid';
 import { DashboardFooter } from './DashboardFooter';
 import { applyTenantTheme } from '@/utils/tenantTheme';
 import { RefreshCw } from 'lucide-react';
@@ -41,22 +42,7 @@ export const DashboardHome: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 relative overflow-hidden">
-      {/* Dynamic Background Effects */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
-        <div 
-          className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl animate-pulse"
-          style={{ background: 'var(--tenant-gradient-primary, linear-gradient(135deg, #10b981, #059669))' }}
-        ></div>
-        <div 
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl animate-pulse" 
-          style={{ 
-            background: 'var(--tenant-gradient-primary, linear-gradient(135deg, #10b981, #059669))',
-            animationDelay: '2s' 
-          }}
-        ></div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
       {/* Pull-to-refresh indicator */}
       {isRefreshing && (
         <div className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b border-border/20">
@@ -74,20 +60,25 @@ export const DashboardHome: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10 pb-safe">
-        <div className="space-y-4 pb-6">
-          {/* Compact Weather Card */}
-          <div className="animate-fade-in px-4" style={{ animationDelay: '100ms' }}>
-            <CompactWeatherCard />
+        <div className="space-y-6 p-4">
+          {/* Promotional Banner */}
+          <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <PromotionalBanner />
           </div>
           
-          {/* Quick Overview - smaller cards */}
+          {/* Enhanced Weather Card */}
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <HorizontalQuickOverview />
+            <EnhancedWeatherCard />
           </div>
 
-          {/* Core Features Section */}
+          {/* Today's Tasks */}
           <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <CoreFeatureGrid />
+            <TodaysTasks />
+          </div>
+
+          {/* Feature Grid */}
+          <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+            <ModernFeatureGrid />
           </div>
 
           {/* Safe area spacing for bottom navigation */}
@@ -103,11 +94,11 @@ export const DashboardHome: React.FC = () => {
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="group relative w-16 h-16 text-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center backdrop-blur-xl border border-white/10 hover:scale-110 active:scale-95 disabled:opacity-50 overflow-hidden"
+          className="group relative w-14 h-14 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center backdrop-blur-xl border border-white/10 hover:scale-110 active:scale-95 disabled:opacity-50 overflow-hidden"
           style={{ background: 'var(--tenant-gradient-primary, linear-gradient(135deg, #10b981, #059669))' }}
           aria-label={t('actions.refresh')}
         >
-          <RefreshCw className={`w-7 h-7 z-10 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+          <RefreshCw className={`w-6 h-6 z-10 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
         </button>
       </div>
     </div>
