@@ -28,14 +28,13 @@ const persistConfig = {
   whitelist: ['auth', 'farmer', 'tenant'],
 };
 
-const rootReducer = (state: any = {}, action: any) => {
-  return {
-    auth: authSlice(state.auth, action),
-    farmer: farmerSlice(state.farmer, action),
-    sync: syncSlice(state.sync, action),
-    offline: offlineSlice(state.offline, action),
-    tenant: tenantSlice(state.tenant, action),
-  };
+// Create the root reducer object directly
+const rootReducer = {
+  auth: authSlice,
+  farmer: farmerSlice,
+  sync: syncSlice,
+  offline: offlineSlice,
+  tenant: tenantSlice,
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
