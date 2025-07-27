@@ -1,59 +1,47 @@
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useWeatherData } from '@/hooks/useWeatherData';
+import { useEnhancedWeatherData } from '@/hooks/useEnhancedWeatherData';
 import { 
-  Sun, 
-  Cloud, 
-  CloudRain, 
-  CloudSnow, 
-  Zap, 
-  MapPin,
+  Thermometer, 
+  Droplets, 
+  Wind, 
   RefreshCw,
-  ChevronRight,
-  Thermometer,
-  Droplets,
-  Wind
+  MapPin,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 
 export const CompactWeatherCard: React.FC = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { currentWeather, loading, error, refreshWeather } = useWeatherData();
+  const { 
+    currentWeather, 
+    loading, 
+    error, 
+    lastFetch, 
+    refreshWeather, 
+    hasLocation 
+  } = useEnhancedWeatherData();
 
-  const getWeatherIcon = (main: string, icon: string) => {
-    const iconMap: Record<string, React.ReactNode> = {
-      'clear': <Sun className="w-10 h-10 text-yellow-500" />,
-      'clouds': <Cloud className="w-10 h-10 text-gray-500" />,
-      'rain': <CloudRain className="w-10 h-10 text-blue-500" />,
-      'drizzle': <CloudRain className="w-10 h-10 text-blue-400" />,
-      'thunderstorm': <Zap className="w-10 h-10 text-yellow-600" />,
-      'snow': <CloudSnow className="w-10 h-10 text-blue-200" />,
-    };
-
-    return iconMap[main?.toLowerCase()] || <Sun className="w-10 h-10 text-yellow-500" />;
-  };
-
-  const handleCardClick = () => {
-    navigate('/weather');
-  };
+  if (!hasLocation) {
+    return (
+      <Card className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center space-x-2">
+            <MapPin className="w-5 h-5" />
+            <span className="text-sm">स्थान की जानकारी प्राप्त कर रहे हैं...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-br from-blue-50/90 to-cyan-50/90 backdrop-blur-sm border-white/40 shadow-lg animate-pulse">
+      <Card className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-              <div>
-                <div className="h-5 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-20"></div>
-              </div>
-            </div>
-            <div className="h-10 bg-gray-200 rounded w-16"></div>
+          <div className="flex items-center justify-center space-x-2">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span className="text-sm">मौसम की जानकारी लोड हो रही है...</span>
           </div>
         </CardContent>
       </Card>
@@ -62,18 +50,23 @@ export const CompactWeatherCard: React.FC = () => {
 
   if (error || !currentWeather) {
     return (
-      <Card className="bg-gradient-to-br from-red-50/90 to-red-100/90 backdrop-blur-sm border-red-200/40 shadow-lg">
+      <Card className="bg-gradient-to-br from-orange-400 to-red-500 text-white">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Cloud className="w-10 h-10 text-red-400" />
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5" />
               <div>
-                <p className="font-semibold text-red-700">Weather Unavailable</p>
-                <p className="text-sm text-red-600">Tap to retry</p>
+                <p className="text-sm font-medium">मौसम डेटा उपलब्ध नहीं</p>
+                <p className="text-xs opacity-90">
+                  {error || 'कृपया बाद में पुनः प्रयास करें'}
+                </p>
               </div>
             </div>
-            <button onClick={refreshWeather} className="text-red-600 hover:text-red-700 transition-colors">
-              <RefreshCw className="w-5 h-5" />
+            <button 
+              onClick={refreshWeather}
+              className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </CardContent>
@@ -81,76 +74,77 @@ export const CompactWeatherCard: React.FC = () => {
     );
   }
 
+  const getWeatherGradient = (condition: string) => {
+    const lowerCondition = condition.toLowerCase();
+    if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) {
+      return 'from-yellow-400 to-orange-500';
+    }
+    if (lowerCondition.includes('cloud')) {
+      return 'from-gray-400 to-gray-600';
+    }
+    if (lowerCondition.includes('rain')) {
+      return 'from-blue-500 to-blue-700';
+    }
+    return 'from-blue-400 to-blue-600';
+  };
+
   return (
-    <Card 
-      className="bg-gradient-to-br from-blue-50/90 via-cyan-50/70 to-sky-50/90 backdrop-blur-sm border-white/40 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group active:scale-[0.98]"
-      onClick={handleCardClick}
-    >
+    <Card className={`bg-gradient-to-br ${getWeatherGradient(currentWeather.weather_main)} text-white`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          {/* Weather Info */}
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              {getWeatherIcon(currentWeather.weather_main, currentWeather.weather_icon)}
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
-            </div>
-            <div>
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-2xl font-bold text-gray-900">
-                  {Math.round(currentWeather.temperature_celsius)}°C
+          <div className="flex items-center space-x-3">
+            <div className="text-center">
+              <div className="flex items-center space-x-1 mb-1">
+                <Thermometer className="w-4 h-4" />
+                <span className="text-2xl font-bold">
+                  {Math.round(currentWeather.temperature_celsius)}°
                 </span>
-                <Badge variant="secondary" className="text-xs px-2 py-1 bg-green-100 text-green-700 border-green-200">
-                  Live
-                </Badge>
               </div>
-              <p className="text-sm text-gray-600 capitalize mb-2">
+              <p className="text-xs opacity-90 capitalize">
                 {currentWeather.weather_description}
               </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <Thermometer className="w-3.5 h-3.5 text-orange-500" />
-                  <span className="text-xs text-gray-600 font-medium">
-                    {Math.round(currentWeather.feels_like_celsius)}°
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Droplets className="w-3.5 h-3.5 text-blue-500" />
-                  <span className="text-xs text-gray-600 font-medium">
-                    {currentWeather.humidity_percent}%
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Wind className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600 font-medium">
-                    {Math.round(currentWeather.wind_speed_kmh)} km/h
-                  </span>
-                </div>
+            </div>
+            
+            <div className="text-xs space-y-1 opacity-90">
+              <div className="flex items-center space-x-1">
+                <Droplets className="w-3 h-3" />
+                <span>{currentWeather.humidity_percent}%</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Wind className="w-3 h-3" />
+                <span>{Math.round(currentWeather.wind_speed_kmh)} km/h</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Thermometer className="w-3 h-3" />
+                <span>महसूस {Math.round(currentWeather.feels_like_celsius)}°</span>
               </div>
             </div>
           </div>
 
-          {/* Action Indicator */}
-          <div className="flex flex-col items-end">
-            <div className="text-right mb-2">
-              <p className="text-xs text-gray-500 font-medium">View Details</p>
-              <p className="text-xs text-gray-400">Full forecast</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-200" />
+          <div className="text-right">
+            <button 
+              onClick={refreshWeather}
+              className="bg-white/20 hover:bg-white/30 rounded-full p-2 mb-2 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            
+            {lastFetch && (
+              <div className="flex items-center space-x-1 text-xs opacity-75">
+                <Clock className="w-3 h-3" />
+                <span>{lastFetch.toLocaleTimeString('hi-IN', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}</span>
+              </div>
+            )}
+            
+            {currentWeather.data_source && (
+              <div className="text-xs opacity-60 mt-1">
+                {currentWeather.data_source === 'tomorrow_io' ? 'Tomorrow.io' : 'OpenWeather'}
+              </div>
+            )}
           </div>
-        </div>
-
-        {/* Location and Time indicator */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/30">
-          <div className="flex items-center space-x-1">
-            <MapPin className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-500 font-medium">Live Location Data</span>
-          </div>
-          <span className="text-xs text-gray-500">
-            Updated {new Date(currentWeather.observation_time).toLocaleTimeString('en-IN', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </span>
         </div>
       </CardContent>
     </Card>

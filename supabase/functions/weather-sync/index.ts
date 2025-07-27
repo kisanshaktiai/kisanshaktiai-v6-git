@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0'
 
 const corsHeaders = {
@@ -30,6 +31,10 @@ interface WeatherData {
 const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY')
 const TOMORROW_IO_API_KEY = Deno.env.get('TOMORROW_IO_API_KEY')
 
+console.log('Weather Sync Function Started');
+console.log('OpenWeather API Key available:', !!OPENWEATHER_API_KEY);
+console.log('Tomorrow.io API Key available:', !!TOMORROW_IO_API_KEY);
+
 async function fetchTomorrowIoData(lat: number, lon: number): Promise<WeatherData | null> {
   if (!TOMORROW_IO_API_KEY) {
     console.log('Tomorrow.io API key not configured, falling back to OpenWeather')
@@ -37,15 +42,22 @@ async function fetchTomorrowIoData(lat: number, lon: number): Promise<WeatherDat
   }
 
   try {
+    console.log(`Fetching Tomorrow.io data for coordinates: ${lat}, ${lon}`);
     const url = `https://api.tomorrow.io/v4/weather/realtime?location=${lat},${lon}&apikey=${TOMORROW_IO_API_KEY}`
+    console.log('Tomorrow.io API URL:', url.replace(TOMORROW_IO_API_KEY, '[API_KEY]'));
+    
     const response = await fetch(url)
+    console.log('Tomorrow.io API response status:', response.status, response.statusText);
     
     if (!response.ok) {
-      console.error('Tomorrow.io API error:', response.status, response.statusText)
+      const errorText = await response.text();
+      console.error('Tomorrow.io API error:', response.status, response.statusText, errorText);
       return null
     }
 
     const data = await response.json()
+    console.log('Tomorrow.io API response:', JSON.stringify(data, null, 2));
+    
     const values = data.data.values
     
     // Map Tomorrow.io weather codes to OpenWeather-like descriptions
@@ -56,7 +68,7 @@ async function fetchTomorrowIoData(lat: number, lon: number): Promise<WeatherDat
         1101: { main: 'Clouds', description: 'partly cloudy', icon: '02d' },
         1102: { main: 'Clouds', description: 'mostly cloudy', icon: '03d' },
         1001: { main: 'Clouds', description: 'cloudy', icon: '04d' },
-        2000: { main: 'Clear', description: 'fog', icon: '50d' },
+        2000: { main: 'Fog', description: 'fog', icon: '50d' },
         4000: { main: 'Rain', description: 'drizzle', icon: '09d' },
         4001: { main: 'Rain', description: 'rain', icon: '10d' },
         4200: { main: 'Rain', description: 'light rain', icon: '10d' },
@@ -80,7 +92,7 @@ async function fetchTomorrowIoData(lat: number, lon: number): Promise<WeatherDat
 
     const weatherInfo = getWeatherDescription(values.weatherCode || 1000)
     
-    return {
+    const weatherData = {
       latitude: lat,
       longitude: lon,
       temperature: values.temperature,
@@ -99,7 +111,10 @@ async function fetchTomorrowIoData(lat: number, lon: number): Promise<WeatherDat
       weatherIcon: weatherInfo.icon,
       sunrise: Date.now() / 1000 + 6 * 3600, // Approximate sunrise (6 AM)
       sunset: Date.now() / 1000 + 18 * 3600, // Approximate sunset (6 PM)
-    }
+    };
+    
+    console.log('Processed Tomorrow.io weather data:', weatherData);
+    return weatherData;
   } catch (error) {
     console.error('Error fetching Tomorrow.io data:', error)
     return null
@@ -113,17 +128,23 @@ async function fetchOpenWeatherData(lat: number, lon: number): Promise<WeatherDa
   }
 
   try {
+    console.log(`Fetching OpenWeather data for coordinates: ${lat}, ${lon}`);
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
+    console.log('OpenWeather API URL:', url.replace(OPENWEATHER_API_KEY, '[API_KEY]'));
+    
     const response = await fetch(url)
+    console.log('OpenWeather API response status:', response.status, response.statusText);
     
     if (!response.ok) {
-      console.error('OpenWeather API error:', response.status, response.statusText)
+      const errorText = await response.text();
+      console.error('OpenWeather API error:', response.status, response.statusText, errorText);
       return null
     }
 
     const data = await response.json()
+    console.log('OpenWeather API response:', JSON.stringify(data, null, 2));
     
-    return {
+    const weatherData = {
       latitude: lat,
       longitude: lon,
       temperature: data.main.temp,
@@ -142,54 +163,13 @@ async function fetchOpenWeatherData(lat: number, lon: number): Promise<WeatherDa
       weatherIcon: data.weather[0].icon,
       sunrise: data.sys.sunrise,
       sunset: data.sys.sunset,
-    }
+    };
+    
+    console.log('Processed OpenWeather weather data:', weatherData);
+    return weatherData;
   } catch (error) {
     console.error('Error fetching OpenWeather data:', error)
     return null
-  }
-}
-
-async function fetchWeatherForecast(lat: number, lon: number): Promise<any[]> {
-  if (!OPENWEATHER_API_KEY) {
-    console.error('OpenWeather API key not configured')
-    return []
-  }
-
-  try {
-    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
-    const response = await fetch(url)
-    
-    if (!response.ok) {
-      console.error('OpenWeather forecast API error:', response.status, response.statusText)
-      return []
-    }
-
-    const data = await response.json()
-    
-    return data.list.map((item: any) => ({
-      forecast_time: new Date(item.dt * 1000).toISOString(),
-      forecast_type: 'hourly',
-      temperature_celsius: item.main.temp,
-      temperature_min_celsius: item.main.temp_min,
-      temperature_max_celsius: item.main.temp_max,
-      feels_like_celsius: item.main.feels_like,
-      humidity_percent: item.main.humidity,
-      pressure_hpa: item.main.pressure,
-      wind_speed_kmh: (item.wind?.speed || 0) * 3.6,
-      wind_direction_degrees: item.wind?.deg || 0,
-      rain_probability_percent: Math.round((item.pop || 0) * 100),
-      rain_amount_mm: item.rain?.['3h'] || 0,
-      cloud_cover_percent: item.clouds.all,
-      weather_main: item.weather[0].main,
-      weather_description: item.weather[0].description,
-      weather_icon: item.weather[0].icon,
-      latitude: lat,
-      longitude: lon,
-      data_source: 'openweather'
-    }))
-  } catch (error) {
-    console.error('Error fetching weather forecast:', error)
-    return []
   }
 }
 
@@ -210,7 +190,7 @@ function calculateAgriculturalMetrics(weatherData: WeatherData) {
   }
 }
 
-async function saveWeatherData(supabase: any, weatherData: WeatherData, station_id: string | null = null) {
+async function saveWeatherData(supabase: any, weatherData: WeatherData, station_id: string | null = null, dataSource: string) {
   const agricultural = calculateAgriculturalMetrics(weatherData)
   
   const currentWeather = {
@@ -238,9 +218,11 @@ async function saveWeatherData(supabase: any, weatherData: WeatherData, station_
     soil_temperature_celsius: agricultural.soil_temperature_celsius,
     soil_moisture_percent: agricultural.soil_moisture_percent,
     growing_degree_days: agricultural.growing_degree_days,
-    data_source: TOMORROW_IO_API_KEY ? 'tomorrow_io' : 'openweather',
+    data_source: dataSource,
     observation_time: new Date().toISOString()
   }
+
+  console.log('Saving weather data to database:', currentWeather);
 
   const { data, error } = await supabase
     .from('weather_current')
@@ -251,27 +233,13 @@ async function saveWeatherData(supabase: any, weatherData: WeatherData, station_
     return false
   }
 
-  console.log('Weather data saved successfully')
-  return true
-}
-
-async function saveForecastData(supabase: any, forecasts: any[]) {
-  if (forecasts.length === 0) return true
-
-  const { error } = await supabase
-    .from('weather_forecasts')
-    .insert(forecasts)
-
-  if (error) {
-    console.error('Error saving forecast data:', error)
-    return false
-  }
-
-  console.log(`${forecasts.length} forecast records saved`)
+  console.log('Weather data saved successfully:', data)
   return true
 }
 
 Deno.serve(async (req) => {
+  console.log(`Weather sync request: ${req.method} ${req.url}`);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -283,9 +251,13 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { latitude, longitude, station_id, use_tomorrow_io } = await req.json()
+    const requestBody = await req.json()
+    console.log('Request body:', requestBody);
+    
+    const { latitude, longitude, station_id, use_tomorrow_io, force_refresh } = requestBody
 
     if (!latitude || !longitude) {
+      console.error('Missing coordinates:', { latitude, longitude });
       return new Response(
         JSON.stringify({ error: 'Latitude and longitude are required' }),
         { 
@@ -295,24 +267,42 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`Fetching weather data for ${latitude}, ${longitude}`)
+    console.log(`Processing weather request for coordinates: ${latitude}, ${longitude}`);
+    console.log(`Use Tomorrow.io: ${use_tomorrow_io}, Force refresh: ${force_refresh}`);
 
-    // Try Tomorrow.io first if requested and API key is available, then fallback to OpenWeather
+    // Try Tomorrow.io first if requested and API key is available
     let weatherData = null
+    let dataSource = 'unknown'
     
     if (use_tomorrow_io && TOMORROW_IO_API_KEY) {
-      console.log('Fetching from Tomorrow.io API')
+      console.log('Attempting to fetch from Tomorrow.io API');
       weatherData = await fetchTomorrowIoData(latitude, longitude)
+      if (weatherData) {
+        dataSource = 'tomorrow_io'
+        console.log('Successfully fetched data from Tomorrow.io');
+      }
     }
     
+    // Fallback to OpenWeather if Tomorrow.io failed or not requested
     if (!weatherData && OPENWEATHER_API_KEY) {
-      console.log('Fetching from OpenWeather API')
+      console.log('Falling back to OpenWeather API');
       weatherData = await fetchOpenWeatherData(latitude, longitude)
+      if (weatherData) {
+        dataSource = 'openweather'
+        console.log('Successfully fetched data from OpenWeather');
+      }
     }
     
     if (!weatherData) {
+      console.error('Failed to fetch weather data from all sources');
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch weather data from all sources' }),
+        JSON.stringify({ 
+          error: 'Failed to fetch weather data from all sources',
+          available_sources: {
+            tomorrow_io: !!TOMORROW_IO_API_KEY,
+            openweather: !!OPENWEATHER_API_KEY
+          }
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -320,22 +310,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Save current weather
-    const currentSaved = await saveWeatherData(supabase, weatherData, station_id)
+    // Save weather data to database
+    const saved = await saveWeatherData(supabase, weatherData, station_id, dataSource)
 
-    // Fetch and save forecast
-    const forecasts = await fetchWeatherForecast(latitude, longitude)
-    const forecastSaved = await saveForecastData(supabase, forecasts)
+    const response = {
+      success: true, 
+      weather_data_saved: saved,
+      weather_data: weatherData,
+      data_source: dataSource,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Sending response:', response);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        current_weather_saved: currentSaved,
-        forecast_saved: forecastSaved,
-        forecast_count: forecasts.length,
-        weather_data: weatherData,
-        data_source: TOMORROW_IO_API_KEY && use_tomorrow_io ? 'tomorrow_io' : 'openweather'
-      }),
+      JSON.stringify(response),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -345,7 +334,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Weather sync error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error.message,
+        stack: error.stack 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

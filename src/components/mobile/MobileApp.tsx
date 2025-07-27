@@ -1,99 +1,74 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { RootState } from '@/store';
-import { LanguageService } from '@/services/LanguageService';
-import { SyncService } from '@/services/SyncService';
-import { OnboardingFlow } from '../onboarding/OnboardingFlow';
-
-import { MobileLayout } from './MobileLayout';
-import { DashboardHome } from './DashboardHome';
+import { useLocationDetection } from '@/hooks/useLocationDetection';
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
+import { MobileHome } from '@/pages/mobile/MobileHome';
 import { MyLands } from '@/pages/mobile/MyLands';
 import { AiChat } from '@/pages/mobile/AiChat';
-import { InstaScan } from '@/pages/mobile/InstaScan';
-import SatelliteMonitoring from '@/pages/mobile/SatelliteMonitoring';
 import { CropSchedule } from '@/pages/mobile/CropSchedule';
 import { Market } from '@/pages/mobile/Market';
+import { Weather } from '@/pages/mobile/Weather';
 import { Analytics } from '@/pages/mobile/Analytics';
-import { Community } from '@/pages/mobile/Community';
 import { Profile } from '@/pages/mobile/Profile';
-import Weather from '@/pages/mobile/Weather';
+import { Community } from '@/pages/mobile/Community';
+import { InstaScan } from '@/pages/mobile/InstaScan';
+import { SatelliteMonitoring } from '@/pages/mobile/SatelliteMonitoring';
+import { ProfessionalFarmerProfileForm } from '@/components/mobile/profile/ProfessionalFarmerProfileForm';
 
 export const MobileApp: React.FC = () => {
-  const dispatch = useDispatch();
-  const { loading: authLoading, isAuthenticated: contextIsAuthenticated } = useAuth();
-  const { isAuthenticated: reduxIsAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
-  const [appInitialized, setAppInitialized] = useState(false);
-
-  // Use the most reliable source of authentication state
-  const isAuthenticated = contextIsAuthenticated || reduxIsAuthenticated;
+  const { isAuthenticated, onboardingCompleted } = useSelector((state: RootState) => state.auth);
+  
+  // Initialize location detection
+  const { location, loading: locationLoading, error: locationError } = useLocationDetection();
 
   useEffect(() => {
-    // Initialize mobile services
-    const initializeApp = async () => {
-      try {
-        // Initialize services in parallel for better performance
-        await Promise.allSettled([
-          LanguageService.getInstance().initialize(),
-          SyncService.getInstance().initialize()
-        ]);
-        
-        // Apply saved language if available
-        const savedLanguage = localStorage.getItem('selectedLanguage');
-        if (savedLanguage) {
-          try {
-            await LanguageService.getInstance().changeLanguage(savedLanguage);
-            console.log('Applied saved language on app init:', savedLanguage);
-          } catch (error) {
-            console.error('Error applying saved language on init:', error);
-          }
-        }
-        
-        setAppInitialized(true);
-      } catch (error) {
-        console.error('Failed to initialize services:', error);
-        setAppInitialized(true); // Continue anyway
-      }
-    };
+    console.log('MobileApp: Location state updated:', { location, locationLoading, locationError });
+  }, [location, locationLoading, locationError]);
 
-    initializeApp();
-  }, []);
+  useEffect(() => {
+    console.log('Auth state:', { isAuthenticated, onboardingCompleted });
+  }, [isAuthenticated, onboardingCompleted]);
 
-  // Show loading while auth is being determined or app is initializing
-  if (authLoading || !appInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show onboarding if user is not authenticated or hasn't completed onboarding
-  if (!isAuthenticated || !onboardingCompleted) {
-    return <OnboardingFlow />;
-  }
-
-  // User is authenticated and onboarded, show main app
   return (
-    <MobileLayout>
+    <div className="min-h-screen bg-background">
       <Routes>
-        <Route path="/" element={<DashboardHome />} />
-        <Route path="/my-lands" element={<MyLands />} />
-        <Route path="/ai-chat" element={<AiChat />} />
-        <Route path="/instascan" element={<InstaScan />} />
-        <Route path="/satellite" element={<SatelliteMonitoring />} />
-        <Route path="/crop-schedule" element={<CropSchedule />} />
-        <Route path="/market" element={<Market />} />
-        <Route path="/weather" element={<Weather />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<DashboardHome />} />
+        {!isAuthenticated ? (
+          <>
+            <Route path="/onboarding" element={<OnboardingFlow />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </>
+        ) : !onboardingCompleted ? (
+          <>
+            <Route 
+              path="/profile-setup" 
+              element={
+                <ProfessionalFarmerProfileForm 
+                  onComplete={() => window.location.reload()} 
+                  onBack={() => {}} 
+                />
+              } 
+            />
+            <Route path="*" element={<Navigate to="/profile-setup" replace />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<MobileHome />} />
+            <Route path="/my-lands" element={<MyLands />} />
+            <Route path="/ai-chat" element={<AiChat />} />
+            <Route path="/crop-schedule" element={<CropSchedule />} />
+            <Route path="/market" element={<Market />} />
+            <Route path="/weather" element={<Weather />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/instascan" element={<InstaScan />} />
+            <Route path="/satellite-monitoring" element={<SatelliteMonitoring />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
-    </MobileLayout>
+    </div>
   );
 };
