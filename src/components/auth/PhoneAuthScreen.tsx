@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { PhoneInput } from './PhoneInput';
 import { UserStatusIndicator } from './UserStatusIndicator';
@@ -23,33 +23,47 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   const [userCheckComplete, setUserCheckComplete] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-
+  
   const { checkUserExists, signInWithPhone } = useAuth();
+  const checkingRef = useRef<boolean>(false);
+  const lastCheckedPhone = useRef<string>('');
 
-  const handlePhoneChange = async (value: string) => {
+  // Optimized phone change handler with debouncing
+  const handlePhoneChange = useCallback(async (value: string) => {
     setPhone(value);
-    setUserCheckComplete(false);
-    setIsNewUser(false);
-    setConnectionError(null);
+    
+    // Reset states when phone changes
+    if (value !== lastCheckedPhone.current) {
+      setUserCheckComplete(false);
+      setIsNewUser(false);
+      setConnectionError(null);
+    }
 
-    // Only check user existence when we have exactly 10 digits
-    if (value.length === 10) {
+    // Only check user existence when we have exactly 10 digits and it's different from last checked
+    if (value.length === 10 && value !== lastCheckedPhone.current && !checkingRef.current) {
+      checkingRef.current = true;
       setCheckingUser(true);
+      
       try {
         console.log('=== PHONE INPUT USER CHECK ===');
         console.log('Checking if user exists for phone:', value.replace(/\d/g, '*'));
         
+        const startTime = Date.now();
         const userExists = await checkUserExists(value);
+        const checkTime = Date.now() - startTime;
+        
+        lastCheckedPhone.current = value;
         setIsNewUser(!userExists);
         setUserCheckComplete(true);
         
         console.log('Phone input user check result:', {
           phone: value.replace(/\d/g, '*'),
           exists: userExists,
-          isNewUser: !userExists
+          isNewUser: !userExists,
+          checkTime: `${checkTime}ms`
         });
 
-        // Show feedback toast
+        // Show appropriate feedback toast
         if (userExists) {
           toast.success('Welcome back! Ready to continue', {
             duration: 2000,
@@ -80,18 +94,21 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
         });
       } finally {
         setCheckingUser(false);
+        checkingRef.current = false;
       }
-    } else {
+    } else if (value.length < 10) {
       // Reset states when phone number is incomplete
       setIsNewUser(false);
       setUserCheckComplete(false);
       setConnectionError(null);
+      lastCheckedPhone.current = '';
     }
-  };
+  }, [checkUserExists]);
 
   const retryConnection = async () => {
-    if (phone.length === 10) {
+    if (phone.length === 10 && !checkingRef.current) {
       setRetryCount(prev => prev + 1);
+      lastCheckedPhone.current = ''; // Force recheck
       await handlePhoneChange(phone);
     }
   };
@@ -114,7 +131,12 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
     
     try {
       console.log('Starting KisanShakti AI authentication for phone:', phone.replace(/\d/g, '*'));
+      const startTime = Date.now();
+      
       await signInWithPhone(phone);
+      
+      const authTime = Date.now() - startTime;
+      console.log(`Authentication completed in ${authTime}ms`);
       
       // Success message based on whether we know if user is new
       if (userCheckComplete) {

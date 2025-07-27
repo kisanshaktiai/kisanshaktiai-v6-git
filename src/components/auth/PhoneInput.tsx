@@ -1,7 +1,7 @@
 
 import { Phone, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface PhoneInputProps {
   phone: string;
@@ -11,6 +11,10 @@ interface PhoneInputProps {
   userCheckComplete: boolean;
   isNewUser: boolean;
 }
+
+// Simple cache for user existence checks
+const userExistenceCache = new Map<string, { exists: boolean; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const PhoneInput = ({
   phone,
@@ -22,6 +26,8 @@ export const PhoneInput = ({
 }: PhoneInputProps) => {
   const [validationError, setValidationError] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean>(false);
+  const debounceRef = useRef<NodeJS.Timeout>();
+  const lastCheckedPhoneRef = useRef<string>('');
 
   // Enhanced phone number validation - only validate when 10 digits
   const validatePhoneNumber = (value: string): { isValid: boolean; error?: string } => {
@@ -53,20 +59,57 @@ export const PhoneInput = ({
     return cleaned;
   };
 
+  // Debounced user existence check
+  const debouncedUserCheck = useCallback((phoneNumber: string) => {
+    // Clear existing timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Don't check if it's the same number we just checked
+    if (phoneNumber === lastCheckedPhoneRef.current) {
+      return;
+    }
+
+    // Check cache first
+    const cacheKey = phoneNumber;
+    const cachedResult = userExistenceCache.get(cacheKey);
+    if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
+      console.log('Using cached result for:', phoneNumber.replace(/\d/g, '*'));
+      return; // Don't trigger new check, use existing state
+    }
+
+    // Set debounced timeout for new check
+    debounceRef.current = setTimeout(() => {
+      if (phoneNumber.length === 10 && phoneNumber !== lastCheckedPhoneRef.current) {
+        lastCheckedPhoneRef.current = phoneNumber;
+        onPhoneChange(phoneNumber);
+      }
+    }, 500); // 500ms debounce
+  }, [onPhoneChange]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     const validation = validatePhoneNumber(formatted);
     
-    // Only show validation error if we have 10 digits or more
+    // Update validation state immediately
     if (formatted.length === 10) {
       setValidationError(validation.error || '');
       setIsValid(validation.isValid);
+      
+      // Only trigger user existence check if valid
+      if (validation.isValid) {
+        debouncedUserCheck(formatted);
+      }
     } else {
       setValidationError('');
       setIsValid(false);
     }
     
-    onPhoneChange(formatted);
+    // Always update the phone value immediately for responsive typing
+    if (formatted !== phone) {
+      onPhoneChange(formatted);
+    }
   };
 
   // Clear validation error when user starts typing
@@ -77,6 +120,15 @@ export const PhoneInput = ({
     }
   }, [phone]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   const showStatusIcon = () => {
     if (checkingUser) {
       return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />;
@@ -86,7 +138,7 @@ export const PhoneInput = ({
       return <AlertCircle className="w-5 h-5 text-destructive" />;
     }
     
-    if (isValid && phone.length === 10) {
+    if (isValid && phone.length === 10 && userCheckComplete) {
       return <CheckCircle className="w-5 h-5 text-green-500" />;
     }
     
@@ -117,6 +169,45 @@ export const PhoneInput = ({
     return 'focus:border-ring';
   };
 
+  const getProgressMessage = () => {
+    if (phone.length === 10 && !validationError && isValid) {
+      if (checkingUser) {
+        return (
+          <div className="mt-2 text-sm text-muted-foreground flex items-center space-x-1">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Checking number...</span>
+          </div>
+        );
+      }
+      
+      if (userCheckComplete) {
+        return (
+          <div className="mt-2 text-sm text-muted-foreground">
+            <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
+            {isNewUser ? 'New number - ready to create account' : 'Existing number - ready to login'}
+          </div>
+        );
+      }
+      
+      return (
+        <div className="mt-2 text-sm text-muted-foreground">
+          <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
+          Valid Indian mobile number
+        </div>
+      );
+    }
+    
+    if (phone.length > 0 && phone.length < 10) {
+      return (
+        <div className="mt-2 text-sm text-muted-foreground">
+          {phone.length}/10 digits entered
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium mb-3 text-foreground">
@@ -136,7 +227,7 @@ export const PhoneInput = ({
           value={phone}
           onChange={handleChange}
           maxLength={10}
-          disabled={loading || checkingUser}
+          disabled={loading}
           className={`text-lg pl-28 pr-12 border-2 transition-all duration-300 bg-background text-foreground ${getInputBorderClass()}`}
         />
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -152,20 +243,8 @@ export const PhoneInput = ({
         </div>
       )}
       
-      {/* Show success message for valid 10-digit numbers */}
-      {phone.length === 10 && !validationError && isValid && (
-        <div className="mt-2 text-sm text-muted-foreground">
-          <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
-          Valid Indian mobile number
-        </div>
-      )}
-      
-      {/* Show digit counter for incomplete numbers */}
-      {phone.length > 0 && phone.length < 10 && (
-        <div className="mt-2 text-sm text-muted-foreground">
-          {phone.length}/10 digits entered
-        </div>
-      )}
+      {/* Show progress message */}
+      {getProgressMessage()}
     </div>
   );
 };

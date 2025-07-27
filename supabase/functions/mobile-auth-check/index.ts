@@ -7,6 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Simple in-memory cache for frequent lookups (expires after 5 minutes)
+const cache = new Map()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -67,54 +71,61 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== CHECKING FOR EXISTING USER ===')
-    console.log('Phone number to search:', cleanPhone.replace(/\d/g, '*'))
-
-    // Check in user_profiles table using correct column name
-    const { data: existingProfile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, mobile_number, full_name')
-      .eq('mobile_number', cleanPhone)
-      .maybeSingle()
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Error checking user_profiles:', profileError)
+    // Check cache first
+    const cacheKey = `mobile_check_${cleanPhone}`
+    const cachedResult = cache.get(cacheKey)
+    if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
+      console.log('Cache hit for phone:', cleanPhone.replace(/\d/g, '*'))
       return new Response(
-        JSON.stringify({ 
-          error: 'Database error while checking user profile',
-          details: profileError.message 
-        }),
+        JSON.stringify(cachedResult.data),
         { 
-          status: 500, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    console.log('Profile check result:', {
-      found: !!existingProfile,
-      profileId: existingProfile?.id,
-      storedMobile: existingProfile?.mobile_number?.replace(/\d/g, '*')
-    })
+    console.log('=== OPTIMIZED USER EXISTENCE CHECK ===')
+    console.log('Phone number to search:', cleanPhone.replace(/\d/g, '*'))
 
-    let userExists = !!existingProfile;
+    // Single optimized query using UNION to check both tables at once
+    const startTime = Date.now()
+    const { data: userResults, error: userError } = await supabaseAdmin
+      .rpc('check_mobile_number_exists', { mobile_num: cleanPhone })
+      .single()
 
-    // Also check farmers table if not found in user_profiles
-    if (!userExists) {
-      console.log('User not found in user_profiles, checking farmers table...')
+    if (userError) {
+      // Fallback to manual UNION query if RPC doesn't exist
+      console.log('RPC not found, using manual UNION query')
       
-      const { data: existingFarmer, error: farmerError } = await supabaseAdmin
-        .from('farmers')
-        .select('id, mobile_number')
+      const { data: unionResults, error: unionError } = await supabaseAdmin
+        .from('user_profiles')
+        .select(`
+          id, 
+          mobile_number, 
+          full_name,
+          'user_profile' as source
+        `)
         .eq('mobile_number', cleanPhone)
-        .maybeSingle()
+        .union(
+          supabaseAdmin
+            .from('farmers')
+            .select(`
+              id,
+              mobile_number,
+              null as full_name,
+              'farmer' as source
+            `)
+            .eq('mobile_number', cleanPhone)
+        )
+        .limit(1)
 
-      if (farmerError && farmerError.code !== 'PGRST116') {
-        console.error('Error checking farmers table:', farmerError)
+      if (unionError && unionError.code !== 'PGRST116') {
+        console.error('Error in union query:', unionError)
         return new Response(
           JSON.stringify({ 
-            error: 'Database error while checking farmer data',
-            details: farmerError.message 
+            error: 'Database error while checking user existence',
+            details: unionError.message 
           }),
           { 
             status: 500, 
@@ -123,25 +134,42 @@ serve(async (req) => {
         )
       }
 
-      userExists = !!existingFarmer;
-      console.log('Farmer check result:', {
-        found: !!existingFarmer,
-        farmerId: existingFarmer?.id,
-        storedMobile: existingFarmer?.mobile_number?.replace(/\d/g, '*')
+      const queryTime = Date.now() - startTime
+      console.log(`Query executed in ${queryTime}ms`)
+
+      const userExists = unionResults && unionResults.length > 0
+      const existingUser = unionResults?.[0] || null
+
+      console.log('Union query result:', {
+        found: userExists,
+        userId: existingUser?.id,
+        source: existingUser?.source,
+        storedMobile: existingUser?.mobile_number?.replace(/\d/g, '*'),
+        queryTime: `${queryTime}ms`
       })
-    }
 
-    console.log('=== FINAL USER EXISTS CHECK ===', {
-      phone: cleanPhone.replace(/\d/g, '*'),
-      userExists,
-      foundInProfiles: !!existingProfile,
-      checkedFarmers: !existingProfile
-    })
+      const result = checkOnly 
+        ? { userExists } 
+        : { userExists, profile: existingUser }
 
-    // If this is just a check, return the result
-    if (checkOnly) {
+      // Cache the result
+      cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      })
+
+      // Clean up old cache entries periodically
+      if (cache.size > 1000) {
+        const now = Date.now()
+        for (const [key, value] of cache.entries()) {
+          if (now - value.timestamp > CACHE_DURATION) {
+            cache.delete(key)
+          }
+        }
+      }
+
       return new Response(
-        JSON.stringify({ userExists }),
+        JSON.stringify(result),
         { 
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -149,11 +177,29 @@ serve(async (req) => {
       )
     }
 
+    // If RPC exists and worked
+    const queryTime = Date.now() - startTime
+    console.log(`RPC executed in ${queryTime}ms`)
+    
+    const userExists = userResults?.exists || false
+    const result = checkOnly 
+      ? { userExists } 
+      : { userExists, profile: userResults?.profile || null }
+
+    // Cache the result
+    cache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    })
+
+    console.log('=== FINAL USER EXISTS CHECK ===', {
+      phone: cleanPhone.replace(/\d/g, '*'),
+      userExists,
+      queryTime: `${queryTime}ms`
+    })
+
     return new Response(
-      JSON.stringify({ 
-        userExists, 
-        profile: existingProfile || null 
-      }),
+      JSON.stringify(result),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
