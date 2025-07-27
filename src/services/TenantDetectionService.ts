@@ -1,4 +1,3 @@
-
 interface TenantBranding {
   logo_url?: string;
   app_name?: string;
@@ -35,13 +34,44 @@ export class TenantDetectionService {
   private cache = new Map<string, CacheEntry>();
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private readonly TIMEOUT_DURATION = 5000; // 5 seconds for Edge Function
-  private readonly MAX_RETRIES = 2; // Reduced since Edge Function is more reliable
+  private readonly MAX_RETRIES = 2;
 
   static getInstance(): TenantDetectionService {
     if (!this.instance) {
       this.instance = new TenantDetectionService();
     }
     return this.instance;
+  }
+
+  private parseHostname(): { hostname: string; subdomain: string | null; domain: string } {
+    const hostname = window.location.hostname;
+    
+    // Remove port if present (shouldn't be in hostname, but just in case)
+    const cleanHostname = hostname.split(':')[0];
+    
+    // Split by dots
+    const parts = cleanHostname.split('.');
+    
+    if (parts.length <= 2) {
+      // No subdomain (e.g., example.com or localhost)
+      return {
+        hostname: cleanHostname,
+        subdomain: null,
+        domain: cleanHostname
+      };
+    }
+    
+    // Extract subdomain and main domain
+    const subdomain = parts[0];
+    const domain = parts.slice(1).join('.');
+    
+    console.log('Parsed hostname:', { hostname: cleanHostname, subdomain, domain });
+    
+    return {
+      hostname: cleanHostname,
+      subdomain,
+      domain
+    };
   }
 
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -78,8 +108,8 @@ export class TenantDetectionService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private getCacheKey(domain: string): string {
-    return `tenant:${domain}`;
+  private getCacheKey(hostname: string): string {
+    return `tenant:${hostname}`;
   }
 
   private isValidCacheEntry(entry: CacheEntry): boolean {
@@ -135,13 +165,15 @@ export class TenantDetectionService {
     }
   }
 
-  private async callDetectTenantFunction(domain: string): Promise<TenantData> {
+  private async callDetectTenantFunction(hostname: string): Promise<TenantData> {
     try {
       // Import supabase client only when needed
       const { supabase } = await import('@/integrations/supabase/client');
       
+      console.log('Calling detect-tenant function with hostname:', hostname);
+      
       const { data, error } = await supabase.functions.invoke('detect-tenant', {
-        body: { domain }
+        body: { domain: hostname }
       });
 
       if (error) {
@@ -169,7 +201,7 @@ export class TenantDetectionService {
   }
 
   async detectTenant(): Promise<TenantData | null> {
-    const hostname = window.location.hostname;
+    const { hostname } = this.parseHostname();
     const cacheKey = this.getCacheKey(hostname);
 
     // Check cache first (memory + localStorage)

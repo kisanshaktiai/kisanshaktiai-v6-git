@@ -52,17 +52,47 @@ function isDevelopmentDomain(domain: string): boolean {
          domain.includes('lovable.app') || 
          domain.includes('127.0.0.1') ||
          domain.includes('localhost:') ||
-         domain.includes('.local');
+         domain.includes('.local') ||
+         domain.includes('192.168.') ||
+         domain.includes('10.0.') ||
+         domain === '0.0.0.0';
 }
 
-async function auditLog(supabase: any, domain: string, ip: string, result: string) {
+function parseHostname(hostname: string): { subdomain: string | null; domain: string; fullDomain: string } {
+  // Remove port if present
+  const cleanHostname = hostname.split(':')[0];
+  
+  // Split by dots
+  const parts = cleanHostname.split('.');
+  
+  if (parts.length <= 2) {
+    // No subdomain (e.g., example.com or localhost)
+    return {
+      subdomain: null,
+      domain: cleanHostname,
+      fullDomain: cleanHostname
+    };
+  }
+  
+  // Extract subdomain and main domain
+  const subdomain = parts[0];
+  const domain = parts.slice(1).join('.');
+  
+  return {
+    subdomain,
+    domain,
+    fullDomain: cleanHostname
+  };
+}
+
+async function auditLog(supabase: any, domain: string, ip: string, result: string, method: string) {
   try {
     // Optional: Log detection requests for analytics
     await supabase.from('api_logs').insert({
       endpoint: 'detect-tenant',
       method: 'POST',
       request_body: { domain },
-      response_body: { result },
+      response_body: { result, method },
       ip_address: ip,
       status_code: 200,
       response_time_ms: Date.now(),
@@ -73,54 +103,139 @@ async function auditLog(supabase: any, domain: string, ip: string, result: strin
   }
 }
 
-async function detectTenantByDomain(supabase: any, domain: string): Promise<TenantResponse | null> {
+async function detectTenantByDomain(supabase: any, hostname: string): Promise<{ tenant: TenantResponse | null; method: string }> {
   try {
-    // Try exact domain mapping first
-    const { data: domainMapping } = await supabase
+    const { subdomain, domain, fullDomain } = parseHostname(hostname);
+    
+    console.log('Parsing hostname:', { hostname, subdomain, domain, fullDomain });
+
+    // 1. Try exact match for full hostname in domain_mappings
+    const { data: exactDomainMapping } = await supabase
       .from('domain_mappings')
       .select(`
         tenant_id,
-        tenants!inner(id, name, slug, type)
+        tenants!inner(id, name, slug, type, status)
       `)
-      .eq('domain', domain)
+      .eq('domain', fullDomain)
       .eq('is_active', true)
+      .eq('tenants.status', 'active')
       .single();
 
-    if (domainMapping?.tenants) {
-      const tenant = Array.isArray(domainMapping.tenants) 
-        ? domainMapping.tenants[0] 
-        : domainMapping.tenants;
+    if (exactDomainMapping?.tenants) {
+      const tenant = Array.isArray(exactDomainMapping.tenants) 
+        ? exactDomainMapping.tenants[0] 
+        : exactDomainMapping.tenants;
       
-      // Load branding separately
       const branding = await loadTenantBranding(supabase, tenant.id);
       
+      console.log('Found tenant by exact domain mapping:', tenant.slug);
       return {
-        ...tenant,
-        branding
+        tenant: { ...tenant, branding },
+        method: 'exact-domain-mapping'
       };
     }
 
-    // Try subdomain lookup
-    const subdomain = domain.split('.')[0];
-    const { data: subdomainTenant } = await supabase
-      .from('tenants')
-      .select('id, name, slug, type')
-      .eq('subdomain', subdomain)
-      .eq('status', 'active')
-      .single();
+    // 2. Try wildcard domain mapping (*.example.com)
+    if (subdomain && domain) {
+      const wildcardDomain = `*.${domain}`;
+      const { data: wildcardMapping } = await supabase
+        .from('domain_mappings')
+        .select(`
+          tenant_id,
+          tenants!inner(id, name, slug, type, status)
+        `)
+        .eq('domain', wildcardDomain)
+        .eq('is_active', true)
+        .eq('tenants.status', 'active')
+        .single();
 
-    if (subdomainTenant) {
-      const branding = await loadTenantBranding(supabase, subdomainTenant.id);
-      return {
-        ...subdomainTenant,
-        branding
-      };
+      if (wildcardMapping?.tenants) {
+        const tenant = Array.isArray(wildcardMapping.tenants) 
+          ? wildcardMapping.tenants[0] 
+          : wildcardMapping.tenants;
+        
+        const branding = await loadTenantBranding(supabase, tenant.id);
+        
+        console.log('Found tenant by wildcard domain mapping:', tenant.slug);
+        return {
+          tenant: { ...tenant, branding },
+          method: 'wildcard-domain-mapping'
+        };
+      }
     }
 
-    return null;
+    // 3. Try base domain mapping (example.com)
+    if (subdomain && domain) {
+      const { data: baseDomainMapping } = await supabase
+        .from('domain_mappings')
+        .select(`
+          tenant_id,
+          tenants!inner(id, name, slug, type, status)
+        `)
+        .eq('domain', domain)
+        .eq('is_active', true)
+        .eq('tenants.status', 'active')
+        .single();
+
+      if (baseDomainMapping?.tenants) {
+        const tenant = Array.isArray(baseDomainMapping.tenants) 
+          ? baseDomainMapping.tenants[0] 
+          : baseDomainMapping.tenants;
+        
+        const branding = await loadTenantBranding(supabase, tenant.id);
+        
+        console.log('Found tenant by base domain mapping:', tenant.slug);
+        return {
+          tenant: { ...tenant, branding },
+          method: 'base-domain-mapping'
+        };
+      }
+    }
+
+    // 4. Try subdomain lookup in tenants table
+    if (subdomain) {
+      const { data: subdomainTenant } = await supabase
+        .from('tenants')
+        .select('id, name, slug, type, status')
+        .eq('subdomain', subdomain)
+        .eq('status', 'active')
+        .single();
+
+      if (subdomainTenant) {
+        const branding = await loadTenantBranding(supabase, subdomainTenant.id);
+        
+        console.log('Found tenant by subdomain:', subdomainTenant.slug);
+        return {
+          tenant: { ...subdomainTenant, branding },
+          method: 'subdomain-mapping'
+        };
+      }
+    }
+
+    // 5. Try slug-based lookup (if subdomain could be a tenant slug)
+    if (subdomain) {
+      const { data: slugTenant } = await supabase
+        .from('tenants')
+        .select('id, name, slug, type, status')
+        .eq('slug', subdomain)
+        .eq('status', 'active')
+        .single();
+
+      if (slugTenant) {
+        const branding = await loadTenantBranding(supabase, slugTenant.id);
+        
+        console.log('Found tenant by slug mapping:', slugTenant.slug);
+        return {
+          tenant: { ...slugTenant, branding },
+          method: 'slug-mapping'
+        };
+      }
+    }
+
+    return { tenant: null, method: 'not-found' };
   } catch (error) {
     console.error('Domain detection error:', error);
-    return null;
+    return { tenant: null, method: 'error' };
   }
 }
 
@@ -128,7 +243,7 @@ async function getDefaultTenant(supabase: any): Promise<TenantResponse | null> {
   try {
     const { data: tenant } = await supabase
       .from('tenants')
-      .select('id, name, slug, type')
+      .select('id, name, slug, type, status')
       .eq('is_default', true)
       .eq('status', 'active')
       .single();
@@ -201,8 +316,9 @@ Deno.serve(async (req) => {
 
   try {
     // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for') || 
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                     req.headers.get('x-real-ip') || 
+                    req.headers.get('cf-connecting-ip') ||
                     'unknown';
 
     // Apply rate limiting
@@ -257,11 +373,12 @@ Deno.serve(async (req) => {
       }
     } else {
       // Production tenant detection flow
-      // 1. Try domain/subdomain detection
-      result = await detectTenantByDomain(supabase, domain);
+      // 1. Try comprehensive domain/subdomain detection
+      const { tenant, method } = await detectTenantByDomain(supabase, domain);
       
-      if (result) {
-        detectionMethod = 'domain-mapping';
+      if (tenant) {
+        result = tenant;
+        detectionMethod = method;
       } else {
         // 2. Fallback to default tenant
         result = await getDefaultTenant(supabase);
@@ -275,7 +392,7 @@ Deno.serve(async (req) => {
     }
 
     // Audit log the detection (optional)
-    await auditLog(supabase, domain, clientIP, detectionMethod);
+    await auditLog(supabase, domain, clientIP, result.slug, detectionMethod);
 
     console.log(`Tenant detection: ${domain} -> ${result.slug} (${detectionMethod})`);
 
