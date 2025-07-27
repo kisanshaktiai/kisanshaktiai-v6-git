@@ -32,32 +32,32 @@ export const DashboardFooter: React.FC = () => {
     {
       id: 'home',
       icon: Home,
-      label: t('navigation.home', 'Home'),
+      label: t('navigation.home'),
       route: '/'
     },
     {
       id: 'search',
       icon: Search,
-      label: t('navigation.search', 'Search'),
+      label: t('navigation.search'),
       route: '/search'
     },
     {
       id: 'schedule',
       icon: Calendar,
-      label: t('navigation.schedule', 'Schedule'),
+      label: t('navigation.schedule'),
       route: '/crop-schedule'
     },
     {
       id: 'chat',
       icon: MessageCircle,
-      label: t('navigation.aiChat', 'AI Chat'),
+      label: t('navigation.aiChat'),
       route: '/ai-chat',
       badge: 1
     },
     {
       id: 'settings',
       icon: Settings,
-      label: t('navigation.settings', 'Settings'),
+      label: t('navigation.settings'),
       route: '/settings'
     }
   ];

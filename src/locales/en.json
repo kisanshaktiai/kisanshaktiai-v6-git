@@ -1,4 +1,3 @@
-
 {
   "common": {
     "loading": "Loading...",
@@ -229,7 +228,13 @@
     "crop_schedule": "Crop Schedule",
     "market": "Market",
     "community": "Community",
-    "profile": "Profile"
+    "profile": "Profile",
+    "search": "Search",
+    "schedule": "Schedule",
+    "aiChat": "AI Chat",
+    "settings": "Settings",
+    "instaScan": "InstaScan",
+    "satelliteData": "Satellite"
   },
   "features": {
     "aiPoweredAdvice": "AI-Powered Advice",
