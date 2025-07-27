@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -13,6 +12,7 @@ interface WeatherData {
   weather_description: string;
   weather_icon: string;
   wind_speed_kmh: number;
+  rain_1h_mm?: number;
   observation_time: string;
   latitude: number;
   longitude: number;
@@ -91,6 +91,7 @@ export const useEnhancedWeatherData = () => {
           weather_description: syncResult.weather_data.weatherDescription,
           weather_icon: syncResult.weather_data.weatherIcon,
           wind_speed_kmh: syncResult.weather_data.windSpeed,
+          rain_1h_mm: syncResult.weather_data.rain_1h_mm || 0,
           observation_time: new Date().toISOString(),
           latitude: location.latitude,
           longitude: location.longitude,
