@@ -1,5 +1,5 @@
 
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import { Preferences } from '@capacitor/preferences';
 import authSlice from './slices/authSlice';
@@ -28,14 +28,14 @@ const persistConfig = {
   whitelist: ['auth', 'farmer', 'tenant'],
 };
 
-// Create the root reducer object directly
-const rootReducer = {
+// Combine the reducers properly
+const rootReducer = combineReducers({
   auth: authSlice,
   farmer: farmerSlice,
   sync: syncSlice,
   offline: offlineSlice,
   tenant: tenantSlice,
-};
+});
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -51,12 +51,5 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-export type RootState = {
-  auth: ReturnType<typeof authSlice>;
-  farmer: ReturnType<typeof farmerSlice>;
-  sync: ReturnType<typeof syncSlice>;
-  offline: ReturnType<typeof offlineSlice>;
-  tenant: ReturnType<typeof tenantSlice>;
-};
-
+export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = typeof store.dispatch;
