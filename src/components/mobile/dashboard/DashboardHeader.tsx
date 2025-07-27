@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
+import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,14 +14,13 @@ import {
   WifiOff,
   Sun,
   Moon,
-  Cloud,
   User,
   Settings
 } from 'lucide-react';
 
 export const DashboardHeader: React.FC = () => {
   const { t } = useTranslation('dashboard');
-  const { profile } = useSelector((state: RootState) => state.farmer);
+  const { profile } = useAuth();
   const { tenantBranding } = useSelector((state: RootState) => state.tenant);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -40,14 +40,16 @@ export const DashboardHeader: React.FC = () => {
     };
   }, []);
 
-  // Update time and greeting
+  // Update time and greeting with enhanced logic
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(now);
       
       const hour = now.getHours();
-      if (hour < 12) {
+      if (hour < 6) {
+        setGreeting(t('welcome.lateNight'));
+      } else if (hour < 12) {
         setGreeting(t('welcome.goodMorning'));
       } else if (hour < 17) {
         setGreeting(t('welcome.goodAfternoon'));
@@ -59,7 +61,7 @@ export const DashboardHeader: React.FC = () => {
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 60000); // Update every minute
+    const interval = setInterval(updateTime, 60000);
     
     return () => clearInterval(interval);
   }, [t]);
@@ -89,115 +91,176 @@ export const DashboardHeader: React.FC = () => {
     });
   };
 
+  // Extract first name from full name or use default
+  const getFirstName = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ')[0];
+    }
+    return t('welcome.defaultFarmerName');
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50 safe-area-top">
-      {/* Status Bar */}
-      <div className="bg-primary/5 border-b border-primary/10">
-        <div className="flex items-center justify-between px-4 py-1">
-          <div className="flex items-center space-x-2">
-            <div className={`flex items-center space-x-1 text-xs ${isOnline ? 'text-green-600' : 'text-orange-600'}`}>
+      {/* Enhanced Status Bar with Professional Design */}
+      <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-secondary/5 border-b border-primary/10">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center space-x-3">
+            {/* Connection Status with Enhanced Styling */}
+            <div className={`flex items-center space-x-2 text-xs font-medium px-3 py-1 rounded-full ${
+              isOnline 
+                ? 'text-green-700 bg-green-100 border border-green-200' 
+                : 'text-orange-700 bg-orange-100 border border-orange-200'
+            }`}>
               {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-              <span className="font-medium">
-                {isOnline ? t('status.online') : t('status.offline')}
-              </span>
+              <span>{isOnline ? t('status.online') : t('status.offline')}</span>
             </div>
+            
+            {/* Tenant Branding Badge */}
             {tenantBranding?.app_name && (
-              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+              <Badge 
+                variant="secondary" 
+                className="text-xs font-semibold border-primary/20"
+                style={{ 
+                  backgroundColor: `${tenantBranding.primary_color}15`,
+                  color: tenantBranding.primary_color,
+                  borderColor: `${tenantBranding.primary_color}30`
+                }}
+              >
                 {tenantBranding.app_name}
               </Badge>
             )}
           </div>
-          <div className="text-xs text-muted-foreground font-medium">
+          
+          {/* Professional Time Display */}
+          <div className="text-xs text-muted-foreground font-semibold tracking-wider">
             {formatTime(currentTime)}
           </div>
         </div>
       </div>
 
-      {/* Main Header */}
+      {/* Enhanced Main Header */}
       <div className="px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Left Section - Greeting & Profile */}
-          <div className="flex items-center space-x-3 flex-1">
-            {/* Profile Avatar */}
+          {/* Left Section - Enhanced Profile & Greeting */}
+          <div className="flex items-center space-x-4 flex-1">
+            {/* Professional Profile Avatar */}
             <div className="relative">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-white shadow-lg backdrop-blur-sm">
+              <div 
+                className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                style={{ 
+                  background: tenantBranding?.primary_color 
+                    ? `linear-gradient(135deg, ${tenantBranding.primary_color}20, ${tenantBranding.secondary_color || tenantBranding.primary_color}20)`
+                    : 'linear-gradient(135deg, #10b98120, #05966920)'
+                }}
+              >
                 {tenantBranding?.logo_url ? (
                   <img 
                     src={tenantBranding.logo_url} 
-                    alt="Logo" 
-                    className="w-8 h-8 rounded-xl object-contain"
+                    alt={tenantBranding.app_name || "Logo"} 
+                    className="w-9 h-9 rounded-xl object-contain"
                   />
                 ) : (
-                  <User className="w-6 h-6 text-primary" />
+                  <User 
+                    className="w-7 h-7"
+                    style={{ color: tenantBranding?.primary_color || '#10b981' }}
+                  />
                 )}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+              
+              {/* Online Status Indicator */}
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
                 <div className="w-2 h-2 bg-white rounded-full"></div>
               </div>
             </div>
 
-            {/* Greeting */}
+            {/* Enhanced Greeting Section */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 mb-1">
                 {getGreetingIcon()}
                 <h1 className="text-lg font-bold text-foreground truncate">
-                  {greeting}, {profile?.full_name?.split(' ')[0] || t('welcome.defaultFarmerName')}!
+                  {greeting}, {getFirstName()}!
                 </h1>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">
-                {formatDate(currentTime)}
-              </p>
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {formatDate(currentTime)}
+                </p>
+                <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                <span className="text-xs text-muted-foreground">
+                  {t('header.welcome')}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Right Section - Actions */}
+          {/* Enhanced Right Section - Action Buttons */}
           <div className="flex items-center space-x-2">
-            {/* Search Button */}
+            {/* Professional Search Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm"
+              className="w-11 h-11 rounded-xl hover:bg-muted/80 backdrop-blur-sm border border-transparent hover:border-border/50 transition-all duration-200"
             >
               <Search className="w-5 h-5" />
             </Button>
 
-            {/* Notifications */}
+            {/* Enhanced Notifications with Badge */}
             <Button
               variant="ghost"
               size="sm"
-              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm relative"
+              className="w-11 h-11 rounded-xl hover:bg-muted/80 backdrop-blur-sm border border-transparent hover:border-border/50 transition-all duration-200 relative"
             >
               <Bell className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+              <div 
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg"
+                style={{ backgroundColor: tenantBranding?.accent_color || '#f59e0b' }}
+              >
                 <span className="text-xs text-white font-bold">3</span>
               </div>
             </Button>
 
-            {/* Menu */}
+            {/* Professional Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="w-10 h-10 rounded-xl hover:bg-muted/80 backdrop-blur-sm"
+              className="w-11 h-11 rounded-xl hover:bg-muted/80 backdrop-blur-sm border border-transparent hover:border-border/50 transition-all duration-200"
             >
               <Menu className="w-5 h-5" />
             </Button>
           </div>
         </div>
 
-        {/* Quick Stats Bar */}
-        <div className="mt-4 p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-2xl border border-border/50 backdrop-blur-sm">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-sm font-bold text-primary">₹2.4L</div>
-              <div className="text-xs text-muted-foreground">{t('quickOverview.netIncome')}</div>
+        {/* Enhanced Quick Stats Bar with Professional Design */}
+        <div className="mt-5 p-4 bg-gradient-to-r from-muted/40 via-muted/60 to-muted/40 rounded-2xl border border-border/30 backdrop-blur-sm shadow-lg">
+          <div className="grid grid-cols-3 gap-6">
+            <div className="text-center group">
+              <div 
+                className="text-base font-bold mb-1 transition-colors duration-200"
+                style={{ color: tenantBranding?.primary_color || '#10b981' }}
+              >
+                ₹2.4L
+              </div>
+              <div className="text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors duration-200">
+                {t('quickOverview.netIncome')}
+              </div>
             </div>
-            <div className="text-center border-x border-border/30">
-              <div className="text-sm font-bold text-green-600">12.5 Ac</div>
-              <div className="text-xs text-muted-foreground">{t('quickOverview.totalLand')}</div>
+            
+            <div className="text-center border-x border-border/40 group">
+              <div className="text-base font-bold text-green-600 mb-1 transition-colors duration-200">
+                12.5 Ac
+              </div>
+              <div className="text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors duration-200">
+                {t('quickOverview.totalLand')}
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-sm font-bold text-blue-600">8 {t('quickOverview.crops')}</div>
-              <div className="text-xs text-muted-foreground">{t('quickOverview.activeCrops')}</div>
+            
+            <div className="text-center group">
+              <div className="text-base font-bold text-blue-600 mb-1 transition-colors duration-200">
+                8 {t('quickOverview.crops')}
+              </div>
+              <div className="text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors duration-200">
+                {t('quickOverview.activeCrops')}
+              </div>
             </div>
           </div>
         </div>
