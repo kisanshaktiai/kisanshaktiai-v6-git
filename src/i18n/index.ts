@@ -30,43 +30,43 @@ const resources = {
   },
   mr: {
     translation: mrTranslations,
-    dashboard: {}, // Add empty dashboard namespace for other languages
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   pa: {
     translation: paTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   te: {
     translation: teTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   ta: {
     translation: taTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   gu: {
     translation: guTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   kn: {
     translation: knTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   bn: {
     translation: bnTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   ml: {
     translation: mlTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   or: {
     translation: orTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
   ur: {
     translation: urTranslations,
-    dashboard: {},
+    dashboard: dashboardEn, // Use English dashboard as fallback for now
   },
 };
 
@@ -93,20 +93,28 @@ i18n
       transSupportBasicHtmlNodes: true,
       transKeepBasicHtmlNodesFor: ['br', 'strong', 'i'],
     },
-    // Enable real-time updates
+    // Enable real-time updates and better error handling
     saveMissing: false,
     updateMissing: false,
     missingKeyHandler: (lng, ns, key, fallbackValue) => {
-      console.warn(`Missing translation key: ${key} for language: ${lng}, namespace: ${ns}`);
-      return key; // Return the key itself as fallback
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Missing translation key: ${key} for language: ${lng}, namespace: ${ns}`);
+      }
+      // Return a more readable fallback instead of just the key
+      return fallbackValue || key.split('.').pop() || key;
     },
     // Load all namespaces
     ns: ['translation', 'dashboard'],
-    // Preload all supported languages for instant switching
-    preload: ['en', 'hi', 'mr'],
+    // Preload supported languages for instant switching
+    preload: ['en', 'hi'],
     // Ensure keys are properly interpolated
     returnEmptyString: false,
     returnNull: false,
+    // Add key separator for nested keys
+    keySeparator: '.',
+    nsSeparator: ':',
+    // Enable debug mode in development
+    debug: process.env.NODE_ENV === 'development',
   });
 
 export default i18n;

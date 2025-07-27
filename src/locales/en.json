@@ -108,7 +108,10 @@
     "upcomingTasks": "Upcoming Tasks",
     "recentTasks": "Recent Tasks",
     "tasksDue": "Tasks Due",
-    "tasksCompleted": "Tasks Completed"
+    "tasksCompleted": "Tasks Completed",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
   },
   "tasks": {
     "sowing": "Sowing",
@@ -144,7 +147,13 @@
     "marketPrices": "Market prices",
     "soilHealth": "Soil health",
     "irrigation": "Irrigation",
-    "harvesting": "Harvesting"
+    "harvesting": "Harvesting",
+    "Weather": "Weather",
+    "Market Prices": "Market Prices",
+    "Disease Help": "Disease Help",
+    "Crop Advice": "Crop Advice",
+    "Fertilizer": "Fertilizer",
+    "Schedule": "Schedule"
   },
   "profile": {
     "title": "Profile",
@@ -242,7 +251,57 @@
     "marketplace": "Marketplace",
     "marketplaceDesc": "Buy & Sell",
     "reports": "Reports",
-    "reportsDesc": "Business analytics"
+    "reportsDesc": "Business analytics",
+    "myLands": {
+      "title": "My Lands",
+      "description": "Manage your agricultural fields with GPS mapping and satellite monitoring",
+      "shortDesc": "Field management"
+    },
+    "cropSchedule": {
+      "title": "Smart Calendar",
+      "description": "AI-powered crop planning and task scheduling for optimal yields",
+      "shortDesc": "Crop planning"
+    },
+    "aiChat": {
+      "title": "AI Assistant", 
+      "description": "Get instant farming advice from your personal AI agricultural expert",
+      "shortDesc": "Farming advice"
+    },
+    "weather": {
+      "title": "Weather Hub",
+      "description": "Hyperlocal weather forecasts and agricultural alerts for your farm",
+      "shortDesc": "Weather insights"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "description": "Buy quality inputs and sell your produce directly to buyers",
+      "shortDesc": "Buy & sell"
+    },
+    "analytics": {
+      "title": "Farm Analytics", 
+      "description": "Performance insights, profit analysis, and business intelligence",
+      "shortDesc": "Business insights"
+    },
+    "community": {
+      "title": "Farmer Network",
+      "description": "Connect with local farmers, share knowledge, and learn together",
+      "shortDesc": "Connect & learn"
+    },
+    "satellite": {
+      "title": "Satellite Intel",
+      "description": "NDVI analysis and crop health monitoring from space",
+      "shortDesc": "Satellite monitoring"
+    },
+    "reports": {
+      "title": "Smart Reports",
+      "description": "Automated reporting and documentation for your farming business",
+      "shortDesc": "Business reports"
+    },
+    "schemes": {
+      "title": "Gov Schemes", 
+      "description": "Government subsidies, insurance, and support programs for farmers",
+      "shortDesc": "Subsidies & support"
+    }
   },
   "home": {
     "quickActions": "Quick Actions",
@@ -283,7 +342,10 @@
     "dueDate": "Due Date",
     "waterWheatField": "Water wheat field",
     "applyFertilizer": "Apply fertilizer",
-    "harvestInspection": "Harvest inspection"
+    "harvestInspection": "Harvest inspection",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
   },
   "community": {
     "title": "Community",
