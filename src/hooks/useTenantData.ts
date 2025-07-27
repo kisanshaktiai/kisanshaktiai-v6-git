@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -67,7 +68,7 @@ export const useTenantData = (tenantId?: string) => {
         // Load branding and features with version information
         const brandingPromise = supabase
           .from('tenant_branding')
-          .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color, accent_color, text_color, font_family, neutral_color, muted_color, gray_50, gray_100, gray_200, gray_300, gray_400, gray_500, gray_600, gray_700, gray_800, gray_900, version')
+          .select('logo_url, app_name, app_tagline, primary_color, secondary_color, background_color, accent_color, text_color, font_family, version')
           .eq('tenant_id', tenant.id)
           .maybeSingle();
 
