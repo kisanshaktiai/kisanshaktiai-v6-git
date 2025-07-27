@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.51.0';
 
 const corsHeaders = {
@@ -87,21 +88,40 @@ function parseHostname(hostname: string): { subdomain: string | null; domain: st
   };
 }
 
-async function auditLog(supabase: any, domain: string, ip: string, result: string, method: string) {
+async function logTenantDetectionEvent(
+  supabase: any, 
+  eventType: string, 
+  domain: string, 
+  tenantId: string | null, 
+  fallbackReason: string | null, 
+  detectionMethod: string, 
+  userAgent: string | null, 
+  ipAddress: string | null,
+  errorDetails: any = null,
+  sessionId: string | null = null
+) {
   try {
-    // Optional: Log detection requests for analytics
-    await supabase.from('api_logs').insert({
-      endpoint: 'detect-tenant',
-      method: 'POST',
-      request_body: { domain },
-      response_body: { result, method },
-      ip_address: ip,
-      status_code: 200,
-      response_time_ms: Date.now(),
-      tenant_id: null // This is a public endpoint
+    const metadata = {
+      timestamp: new Date().toISOString(),
+      environment: isDevelopmentDomain(domain) ? 'development' : 'production'
+    };
+
+    await supabase.rpc('log_tenant_detection_event', {
+      p_event_type: eventType,
+      p_domain: domain,
+      p_tenant_id: tenantId,
+      p_fallback_reason: fallbackReason,
+      p_detection_method: detectionMethod,
+      p_user_agent: userAgent,
+      p_ip_address: ipAddress,
+      p_metadata: metadata,
+      p_error_details: errorDetails ? { error: errorDetails.toString(), stack: errorDetails.stack } : {},
+      p_session_id: sessionId
     });
+
+    console.log(`📊 Analytics: ${eventType} event logged for ${domain} -> ${detectionMethod}`);
   } catch (error) {
-    console.warn('Failed to audit log:', error);
+    console.error('❌ Failed to log tenant detection event:', error);
   }
 }
 
@@ -350,11 +370,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get client IP for rate limiting
+    // Get client IP and user agent for analytics
     const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                     req.headers.get('x-real-ip') || 
                     req.headers.get('cf-connecting-ip') ||
                     'unknown';
+    
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const sessionId = req.headers.get('x-session-id') || crypto.randomUUID();
 
     // Apply rate limiting
     if (!checkRateLimit(clientIP)) {
@@ -397,6 +420,7 @@ Deno.serve(async (req) => {
 
     let result: TenantResponse | null = null;
     let detectionMethod = 'unknown';
+    let fallbackReason: string | null = null;
 
     // Fast-track for development environments
     if (isDevelopmentDomain(domain)) {
@@ -405,37 +429,125 @@ Deno.serve(async (req) => {
       
       if (!result) {
         result = getEmergencyTenant();
+        fallbackReason = 'No default tenant found in development';
+        
+        // Log fallback event for development
+        await logTenantDetectionEvent(
+          supabase, 
+          'fallback', 
+          domain, 
+          result.id, 
+          fallbackReason, 
+          detectionMethod, 
+          userAgent, 
+          clientIP,
+          null,
+          sessionId
+        );
+      } else {
+        // Log success event
+        await logTenantDetectionEvent(
+          supabase, 
+          'success', 
+          domain, 
+          result.id, 
+          null, 
+          detectionMethod, 
+          userAgent, 
+          clientIP,
+          null,
+          sessionId
+        );
       }
     } else {
       // Production tenant detection flow
-      // 1. Try comprehensive domain/subdomain detection
-      const { tenant, method } = await detectTenantByDomain(supabase, domain);
-      
-      if (tenant) {
-        result = tenant;
-        detectionMethod = method;
-      } else {
-        // 2. Fallback to default tenant
+      try {
+        // 1. Try comprehensive domain/subdomain detection
+        const { tenant, method } = await detectTenantByDomain(supabase, domain);
+        
+        if (tenant) {
+          result = tenant;
+          detectionMethod = method;
+          
+          // Log success event
+          await logTenantDetectionEvent(
+            supabase, 
+            'success', 
+            domain, 
+            result.id, 
+            null, 
+            detectionMethod, 
+            userAgent, 
+            clientIP,
+            null,
+            sessionId
+          );
+        } else {
+          // 2. Fallback to default tenant
+          result = await getDefaultTenant(supabase);
+          detectionMethod = result ? 'default-tenant' : 'emergency-fallback';
+          fallbackReason = 'Domain-based detection failed, using default tenant';
+          
+          if (!result) {
+            // 3. Emergency fallback
+            result = getEmergencyTenant();
+            fallbackReason = 'All detection methods failed, using emergency tenant';
+          }
+          
+          // Log fallback event
+          await logTenantDetectionEvent(
+            supabase, 
+            'fallback', 
+            domain, 
+            result.id, 
+            fallbackReason, 
+            detectionMethod, 
+            userAgent, 
+            clientIP,
+            null,
+            sessionId
+          );
+        }
+      } catch (detectionError) {
+        console.error('Tenant detection error:', detectionError);
+        
+        // Try default tenant as fallback
         result = await getDefaultTenant(supabase);
-        detectionMethod = result ? 'default-tenant' : 'emergency-fallback';
+        detectionMethod = result ? 'error-fallback-default' : 'error-fallback-emergency';
+        fallbackReason = `Detection error: ${detectionError.message}`;
         
         if (!result) {
-          // 3. Emergency fallback
           result = getEmergencyTenant();
         }
+        
+        // Log error event
+        await logTenantDetectionEvent(
+          supabase, 
+          'error', 
+          domain, 
+          result.id, 
+          fallbackReason, 
+          detectionMethod, 
+          userAgent, 
+          clientIP,
+          detectionError,
+          sessionId
+        );
       }
     }
 
-    // Audit log the detection (optional)
-    await auditLog(supabase, domain, clientIP, result.slug, detectionMethod);
-
     console.log(`Tenant detection: ${domain} -> ${result.slug} (${detectionMethod})`);
+    
+    if (fallbackReason) {
+      console.warn(`🔄 Fallback used: ${fallbackReason}`);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         data: result,
-        method: detectionMethod
+        method: detectionMethod,
+        fallback_reason: fallbackReason
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -445,8 +557,35 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Tenant detection error:', error);
     
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const sessionId = req.headers.get('x-session-id') || crypto.randomUUID();
+    
     // Return emergency fallback on any error
     const emergencyTenant = getEmergencyTenant();
+    
+    // Log emergency fallback event
+    try {
+      await logTenantDetectionEvent(
+        supabase, 
+        'emergency', 
+        'unknown', 
+        emergencyTenant.id, 
+        'Critical error in tenant detection', 
+        'emergency-error', 
+        userAgent, 
+        clientIP,
+        error,
+        sessionId
+      );
+    } catch (logError) {
+      console.error('Failed to log emergency event:', logError);
+    }
     
     return new Response(
       JSON.stringify({

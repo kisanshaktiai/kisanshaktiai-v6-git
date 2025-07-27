@@ -3880,6 +3880,54 @@ export type Database = {
           },
         ]
       }
+      tenant_detection_events: {
+        Row: {
+          created_at: string
+          detection_method: string | null
+          domain: string
+          error_details: Json | null
+          event_type: string
+          fallback_reason: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          session_id: string | null
+          tenant_id: string | null
+          timestamp: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          detection_method?: string | null
+          domain: string
+          error_details?: Json | null
+          event_type: string
+          fallback_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          tenant_id?: string | null
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          detection_method?: string | null
+          domain?: string
+          error_details?: Json | null
+          event_type?: string
+          fallback_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          tenant_id?: string | null
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       tenant_features: {
         Row: {
           advanced_analytics: boolean | null
@@ -6167,6 +6215,21 @@ export type Database = {
           metadata?: Json
           ip_address?: string
           user_agent?: string
+        }
+        Returns: string
+      }
+      log_tenant_detection_event: {
+        Args: {
+          p_event_type: string
+          p_domain: string
+          p_tenant_id?: string
+          p_fallback_reason?: string
+          p_detection_method?: string
+          p_user_agent?: string
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_error_details?: Json
+          p_session_id?: string
         }
         Returns: string
       }

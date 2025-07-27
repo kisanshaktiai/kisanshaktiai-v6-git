@@ -1,3 +1,4 @@
+
 interface TenantBranding {
   logo_url?: string;
   app_name?: string;
@@ -31,6 +32,7 @@ interface DetectionResponse {
   success: boolean;
   data: TenantData;
   method: string;
+  fallback_reason?: string;
   error?: string;
 }
 
@@ -41,6 +43,23 @@ interface VersionCheckResponse {
   cachedVersion?: number;
   reason?: string;
   error?: string;
+}
+
+// Sentry/LogRocket integration for production error tracking
+interface ErrorTrackingService {
+  captureException: (error: Error, context?: any) => void;
+  addBreadcrumb: (breadcrumb: any) => void;
+  setContext: (context: string, data: any) => void;
+}
+
+declare global {
+  interface Window {
+    Sentry?: ErrorTrackingService;
+    LogRocket?: {
+      captureException: (error: Error) => void;
+      track: (event: string, properties?: any) => void;
+    };
+  }
 }
 
 export class TenantDetectionService {
@@ -57,6 +76,59 @@ export class TenantDetectionService {
       this.instance = new TenantDetectionService();
     }
     return this.instance;
+  }
+
+  private logAnalyticsEvent(eventType: string, data: any) {
+    // Log to browser console for development
+    console.log(`📊 Tenant Analytics [${eventType}]:`, data);
+
+    // Send to Sentry if available
+    if (typeof window !== 'undefined' && window.Sentry) {
+      window.Sentry.addBreadcrumb({
+        category: 'tenant-detection',
+        message: `${eventType}: ${data.domain || 'unknown'} -> ${data.method || 'unknown'}`,
+        level: eventType === 'error' ? 'error' : 'info',
+        data: data
+      });
+
+      if (eventType === 'fallback' || eventType === 'error' || eventType === 'emergency') {
+        window.Sentry.setContext('tenant-detection', data);
+      }
+    }
+
+    // Send to LogRocket if available
+    if (typeof window !== 'undefined' && window.LogRocket) {
+      window.LogRocket.track(`tenant-detection-${eventType}`, {
+        ...data,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      });
+    }
+  }
+
+  private captureError(error: Error, context: any) {
+    console.error('🔥 Tenant Detection Error:', error, context);
+    
+    // Log analytics event for error
+    this.logAnalyticsEvent('error', {
+      ...context,
+      error: error.message,
+      stack: error.stack
+    });
+
+    if (typeof window !== 'undefined') {
+      // Send to Sentry
+      if (window.Sentry) {
+        window.Sentry.setContext('tenant-detection-error', context);
+        window.Sentry.captureException(error);
+      }
+
+      // Send to LogRocket
+      if (window.LogRocket) {
+        window.LogRocket.captureException(error);
+      }
+    }
   }
 
   private parseHostname(): { hostname: string; subdomain: string | null; domain: string } {
@@ -206,6 +278,13 @@ export class TenantDetectionService {
     // Also remove from localStorage
     try {
       localStorage.removeItem(`tenant_cache_${cacheKey}`);
+      
+      // Log analytics event
+      this.logAnalyticsEvent('cache-invalidation', {
+        hostname,
+        reason: 'version-mismatch',
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.warn('Failed to remove from localStorage:', error);
     }
@@ -270,21 +349,48 @@ export class TenantDetectionService {
       console.log('Calling detect-tenant function with hostname:', hostname);
       
       const { data, error } = await supabase.functions.invoke('detect-tenant', {
-        body: { domain: hostname }
+        body: { domain: hostname },
+        headers: {
+          'x-session-id': crypto.randomUUID()
+        }
       });
 
       if (error) {
         console.error('Edge function error:', error);
+        this.captureError(new Error(`Tenant detection failed: ${error.message}`), {
+          hostname,
+          error: error.message
+        });
         throw new Error(`Tenant detection failed: ${error.message}`);
       }
 
       const response = data as DetectionResponse;
       
       if (!response.success || !response.data) {
-        throw new Error('Invalid response from tenant detection service');
+        const errorMsg = 'Invalid response from tenant detection service';
+        this.captureError(new Error(errorMsg), { hostname, response });
+        throw new Error(errorMsg);
       }
 
       console.log(`Tenant detected via ${response.method}:`, response.data.slug);
+      
+      // Log analytics based on response
+      if (response.fallback_reason) {
+        this.logAnalyticsEvent('fallback', {
+          domain: hostname,
+          method: response.method,
+          fallback_reason: response.fallback_reason,
+          tenant_slug: response.data.slug,
+          tenant_id: response.data.id
+        });
+      } else {
+        this.logAnalyticsEvent('success', {
+          domain: hostname,
+          method: response.method,
+          tenant_slug: response.data.slug,
+          tenant_id: response.data.id
+        });
+      }
       
       if (response.error) {
         console.warn('Detection warning:', response.error);
@@ -293,6 +399,7 @@ export class TenantDetectionService {
       return response.data;
     } catch (error) {
       console.error('Failed to call detect-tenant function:', error);
+      this.captureError(error as Error, { hostname });
       throw error;
     }
   }
@@ -305,6 +412,13 @@ export class TenantDetectionService {
     const cachedTenant = this.getCachedTenant(cacheKey);
     if (cachedTenant) {
       console.log('Tenant loaded from cache:', cachedTenant.slug);
+      
+      this.logAnalyticsEvent('cache-hit', {
+        domain: hostname,
+        tenant_slug: cachedTenant.slug,
+        tenant_id: cachedTenant.id
+      });
+      
       return cachedTenant;
     }
 
@@ -319,15 +433,37 @@ export class TenantDetectionService {
     } catch (error) {
       console.error('All tenant detection attempts failed:', error);
       
+      this.captureError(error as Error, {
+        hostname,
+        context: 'detection-failure'
+      });
+      
       // Try to get any cached tenant as last resort
       const emergencyTenant = this.getEmergencyFallbackFromCache();
       if (emergencyTenant) {
         console.warn('Using emergency cached tenant:', emergencyTenant.slug);
+        
+        this.logAnalyticsEvent('emergency', {
+          domain: hostname,
+          fallback_reason: 'All detection failed, using cached emergency tenant',
+          tenant_slug: emergencyTenant.slug,
+          tenant_id: emergencyTenant.id
+        });
+        
         return emergencyTenant;
       }
       
       // Return client-side emergency tenant
-      return this.createEmergencyTenant();
+      const clientEmergency = this.createEmergencyTenant();
+      
+      this.logAnalyticsEvent('emergency', {
+        domain: hostname,
+        fallback_reason: 'All detection failed, using client-side emergency tenant',
+        tenant_slug: clientEmergency.slug,
+        tenant_id: clientEmergency.id
+      });
+      
+      return clientEmergency;
     }
   }
 
@@ -400,9 +536,17 @@ export class TenantDetectionService {
       const tenant = await this.callDetectTenantFunction(targetHostname);
       this.setCachedTenant(cacheKey, tenant);
       console.log('Tenant force refreshed:', tenant.slug);
+      
+      this.logAnalyticsEvent('force-refresh', {
+        domain: targetHostname,
+        tenant_slug: tenant.slug,
+        tenant_id: tenant.id
+      });
+      
       return tenant;
     } catch (error) {
       console.error('Failed to force refresh tenant:', error);
+      this.captureError(error as Error, { hostname: targetHostname, context: 'force-refresh' });
       return null;
     }
   }
@@ -445,6 +589,11 @@ export class TenantDetectionService {
         }
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      this.logAnalyticsEvent('cache-clear', {
+        cleared_keys: keysToRemove.length,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.warn('Failed to clear localStorage cache:', error);
     }
@@ -459,8 +608,15 @@ export class TenantDetectionService {
         const tenant = await this.callDetectTenantFunction(domain);
         this.setCachedTenant(cacheKey, tenant);
         console.log('Tenant preloaded:', tenant.slug);
+        
+        this.logAnalyticsEvent('preload', {
+          domain,
+          tenant_slug: tenant.slug,
+          tenant_id: tenant.id
+        });
       } catch (error) {
         console.warn('Failed to preload tenant for domain:', domain, error);
+        this.captureError(error as Error, { domain, context: 'preload' });
       }
     }
   }
@@ -507,6 +663,11 @@ export class TenantDetectionService {
         }
       }
       expiredKeys.forEach(key => localStorage.removeItem(key));
+      
+      this.logAnalyticsEvent('cache-cleanup', {
+        expired_keys_removed: expiredKeys.length,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.warn('Failed to cleanup localStorage cache:', error);
     }
