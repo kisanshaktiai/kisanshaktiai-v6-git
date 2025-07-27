@@ -16,6 +16,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [currentStep, setCurrentStep] = useState('Initializing...');
   const [tenantBranding, setTenantBranding] = useState({
     logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
     appName: 'KisanShakti AI',
@@ -32,54 +33,76 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const initializeApp = async () => {
     try {
       console.log('Starting app initialization...');
+      setCurrentStep('Initializing services...');
       
-      // Initialize location services
-      try {
-        const locationService = LocationService.getInstance();
-        await locationService.getCurrentLocation();
-        console.log('Location service initialized');
-      } catch (locationError) {
-        console.warn('Location service failed, continuing without location:', locationError);
+      // Parallel initialization for better performance
+      const locationPromise = initializeLocation();
+      const tenantPromise = initializeTenant();
+      
+      // Start both operations in parallel
+      const [, detectedTenant] = await Promise.allSettled([locationPromise, tenantPromise]);
+
+      if (detectedTenant.status === 'fulfilled' && detectedTenant.value) {
+        const tenant = detectedTenant.value;
+        console.log('Tenant initialized:', tenant);
+        
+        setCurrentStep('Applying configuration...');
+        
+        // Set up branding
+        if (tenant.branding) {
+          const branding = tenant.branding;
+          setTenantBranding({
+            logo: branding.logo_url || tenantBranding.logo,
+            appName: branding.app_name || tenant.name || tenantBranding.appName,
+            tagline: branding.app_tagline || tenantBranding.tagline,
+            primaryColor: branding.primary_color || tenantBranding.primaryColor,
+            secondaryColor: branding.secondary_color || tenantBranding.secondaryColor,
+            backgroundColor: branding.background_color ? `linear-gradient(135deg, ${branding.background_color}, #1e293b)` : tenantBranding.backgroundColor
+          });
+          console.log('Custom branding applied');
+        }
+
+        if (tenant.id) {
+          dispatch(setTenantId(tenant.id));
+        }
       }
 
-      // Detect tenant with error handling
-      let detectedTenant = null;
-      try {
-        const tenantService = TenantDetectionService.getInstance();
-        await tenantService.clearCache();
-        detectedTenant = await tenantService.detectTenant();
-        console.log('Tenant detected:', detectedTenant);
-      } catch (tenantError) {
-        console.warn('Tenant detection failed, using default:', tenantError);
-      }
-
-      // Set up branding
-      if (detectedTenant?.branding) {
-        const branding = detectedTenant.branding;
-        setTenantBranding({
-          logo: branding.logo_url || tenantBranding.logo,
-          appName: branding.app_name || detectedTenant.name || tenantBranding.appName,
-          tagline: branding.app_tagline || tenantBranding.tagline,
-          primaryColor: branding.primary_color || tenantBranding.primaryColor,
-          secondaryColor: branding.secondary_color || tenantBranding.secondaryColor,
-          backgroundColor: branding.background_color ? `linear-gradient(135deg, ${branding.background_color}, #1e293b)` : tenantBranding.backgroundColor
-        });
-        console.log('Custom branding applied');
-      }
-
-      if (detectedTenant?.id) {
-        dispatch(setTenantId(detectedTenant.id));
-      }
-
-      // Mark as loaded after initialization
+      setCurrentStep('Ready!');
+      
+      // Minimal delay for smooth UX
       setTimeout(() => {
         setIsLoaded(true);
-      }, 1000);
+      }, 300);
 
     } catch (error) {
       console.error('Splash initialization error:', error);
-      // Continue anyway and show button
+      // Continue anyway for better UX
+      setCurrentStep('Ready! (Fallback mode)');
       setIsLoaded(true);
+    }
+  };
+
+  const initializeLocation = async () => {
+    try {
+      setCurrentStep('Getting location...');
+      const locationService = LocationService.getInstance();
+      await locationService.getCurrentLocation();
+      console.log('Location service initialized');
+    } catch (locationError) {
+      console.warn('Location service failed, continuing without location:', locationError);
+    }
+  };
+
+  const initializeTenant = async () => {
+    try {
+      setCurrentStep('Detecting organization...');
+      const tenantService = TenantDetectionService.getInstance();
+      const detectedTenant = await tenantService.detectTenant();
+      console.log('Tenant detection completed:', detectedTenant);
+      return detectedTenant;
+    } catch (tenantError) {
+      console.warn('Tenant detection failed, using default:', tenantError);
+      return null;
     }
   };
 
@@ -105,7 +128,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         ))}
       </div>
 
-      {/* Floating Geometric Shapes */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-20 h-20 border border-green-400/20 rounded-full animate-float" 
              style={{ animationDelay: '0s' }} />
@@ -117,7 +139,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
              style={{ animationDelay: '0.5s' }} />
       </div>
 
-      {/* Glassmorphism Container */}
       <div className="min-h-screen flex flex-col items-center justify-center px-6 relative">
         <div className="backdrop-blur-sm bg-white/5 rounded-3xl border border-white/10 p-8 sm:p-12 shadow-2xl max-w-md w-full mx-auto">
           
@@ -135,19 +156,16 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
                     e.currentTarget.src = '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
                   }}
                 />
-                {/* Logo glow effect */}
                 <div className="absolute -inset-2 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-3xl blur-lg animate-pulse" />
               </div>
             </div>
             
-            {/* App Name with staggered animation */}
             <h1 className={`text-3xl sm:text-4xl font-bold text-white mb-3 transition-all duration-1000 delay-300 transform ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               {tenantBranding.appName}
             </h1>
             
-            {/* Tagline */}
             <p className={`text-sm sm:text-base text-gray-300 font-medium leading-relaxed transition-all duration-1000 delay-500 transform ${
               isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
@@ -192,8 +210,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             </div>
           </div>
 
-          {/* Continue Button */}
-          {isLoaded && (
+          {/* Status and Continue Button */}
+          {isLoaded ? (
             <div className="text-center animate-fade-in" style={{ animationDelay: '1.1s' }}>
               <Button
                 onClick={handleContinue}
@@ -205,21 +223,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
                 
-                {/* Animated shimmer effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-                
-                {/* Subtle pulse ring */}
                 <div className="absolute inset-0 rounded-full bg-green-400/20 animate-ping" />
               </Button>
             </div>
-          )}
-          
-          {/* Loading indicator when not ready */}
-          {!isLoaded && (
+          ) : (
             <div className="text-center">
-              <div className="inline-flex items-center space-x-2 text-gray-400">
-                <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm">Initializing your farming companion...</span>
+              <div className="inline-flex items-center space-x-2 text-gray-300">
+                <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm">{currentStep}</span>
               </div>
             </div>
           )}

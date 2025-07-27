@@ -13,6 +13,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
   const [loadingStage, setLoadingStage] = useState<'initializing' | 'detecting' | 'loading' | 'ready' | 'error'>('initializing');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [actualProgress, setActualProgress] = useState('Initializing...');
   const [tenantBranding, setTenantBranding] = useState({
     logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
     appName: 'KisanShakti AI',
@@ -25,20 +26,36 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
     const initializeApp = async () => {
       try {
         setLoadingStage('detecting');
-        setProgress(20);
+        setActualProgress('Checking cache...');
+        setProgress(10);
 
-        // Initialize tenant detection with timeout
         const tenantService = TenantDetectionService.getInstance();
         
-        setProgress(40);
+        // Fast initialization for development
+        const hostname = window.location.hostname;
+        const isDev = hostname === 'localhost' || hostname.includes('lovable.app');
+        
+        if (isDev) {
+          setActualProgress('Development mode detected');
+          setProgress(30);
+          await new Promise(resolve => setTimeout(resolve, 100)); // Minimal delay
+        } else {
+          setActualProgress('Detecting organization...');
+          setProgress(20);
+        }
+
+        setLoadingStage('loading');
+        setActualProgress('Loading configuration...');
+        setProgress(50);
+
         const tenant = await tenantService.detectTenant();
         
         if (!tenant) {
           throw new Error('No tenant configuration found');
         }
 
-        setProgress(70);
-        setLoadingStage('loading');
+        setProgress(80);
+        setActualProgress('Applying theme...');
 
         // Apply tenant branding and theming
         if (tenant.branding) {
@@ -51,7 +68,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
           };
           setTenantBranding(branding);
 
-          // Apply tenant theme using the utility
+          // Apply tenant theme
           applyTenantTheme(tenant.branding);
           
           // Update page title
@@ -61,6 +78,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
         }
 
         setProgress(100);
+        setActualProgress('Ready!');
         setLoadingStage('ready');
 
       } catch (error) {
@@ -68,40 +86,38 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
         setError(error instanceof Error ? error.message : 'Failed to load application');
         setLoadingStage('error');
         
-        // Auto-retry after 3 seconds in case of network issues
-        setTimeout(() => {
-          setError(null);
-          setLoadingStage('initializing');
-          setProgress(0);
-        }, 3000);
+        // Quick auto-recovery for development
+        const hostname = window.location.hostname;
+        const isDev = hostname === 'localhost' || hostname.includes('lovable.app');
+        
+        if (isDev) {
+          console.log('Development mode: auto-recovering from error');
+          setTimeout(() => {
+            setError(null);
+            setLoadingStage('ready');
+            setProgress(100);
+            setActualProgress('Ready! (Emergency mode)');
+          }, 1000);
+        }
       }
     };
 
-    // Start initialization after a brief moment
-    const timer = setTimeout(initializeApp, 200);
+    // Minimal delay for smooth UX
+    const timer = setTimeout(initializeApp, 50);
     return () => clearTimeout(timer);
-  }, [onComplete, loadingStage]);
-
-  const getLoadingMessage = () => {
-    switch (loadingStage) {
-      case 'initializing':
-        return 'Initializing application...';
-      case 'detecting':
-        return 'Detecting organization...';
-      case 'loading':
-        return 'Loading configuration...';
-      case 'ready':
-        return 'Ready to go!';
-      case 'error':
-        return error || 'Something went wrong. Retrying...';
-      default:
-        return 'Loading...';
-    }
-  };
+  }, [onComplete, tenantBranding.logo, tenantBranding.appName, tenantBranding.tagline, tenantBranding.primaryColor, tenantBranding.secondaryColor]);
 
   const handleContinue = () => {
     onComplete();
   };
+
+  const handleSkipForDev = () => {
+    console.log('Skipping initialization for development');
+    onComplete();
+  };
+
+  // Show skip button for development environments during errors
+  const showSkipButton = error && (window.location.hostname === 'localhost' || window.location.hostname.includes('lovable.app'));
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
@@ -121,7 +137,6 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
         ))}
       </div>
 
-      {/* Floating Geometric Shapes */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-20 h-20 border border-green-400/15 rounded-full animate-float" 
              style={{ animationDelay: '0s' }} />
@@ -133,11 +148,11 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
              style={{ animationDelay: '0.5s' }} />
       </div>
 
-      {/* Main Content Container with Glassmorphism */}
+      {/* Main Content Container */}
       <div className="min-h-screen flex flex-col items-center justify-center px-6 relative">
         <div className="backdrop-blur-lg bg-white/10 rounded-3xl border border-white/20 p-8 sm:p-12 shadow-2xl max-w-md w-full mx-auto">
           
-          {/* Logo Section with Enhanced Animation */}
+          {/* Logo Section */}
           <div className={`mb-8 text-center transition-all duration-1000 transform ${
             loadingStage !== 'initializing' ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
           }`}>
@@ -151,7 +166,6 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
                     e.currentTarget.src = '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
                   }}
                 />
-                {/* Dynamic glow effect using tenant colors */}
                 <div 
                   className="absolute -inset-3 rounded-3xl blur-xl animate-pulse opacity-30"
                   style={{ backgroundColor: tenantBranding.primaryColor }}
@@ -159,14 +173,12 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
               </div>
             </div>
             
-            {/* App Name with Staggered Animation */}
             <h1 className={`text-3xl sm:text-4xl font-bold text-white mb-3 transition-all duration-1000 delay-300 transform ${
               loadingStage !== 'initializing' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               {tenantBranding.appName}
             </h1>
             
-            {/* Tagline */}
             <p className={`text-sm sm:text-base text-gray-300 font-medium leading-relaxed transition-all duration-1000 delay-500 transform ${
               loadingStage !== 'initializing' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
@@ -192,7 +204,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
             </div>
           </div>
 
-          {/* Feature Icons with Tenant Colors */}
+          {/* Feature Icons */}
           <div className={`mb-8 flex justify-center space-x-6 transition-all duration-1000 delay-900 transform ${
             loadingStage !== 'initializing' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}>
@@ -235,7 +247,7 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
             <div className="mb-6">
               <div className="w-full bg-gray-700/50 rounded-full h-3 mb-4 overflow-hidden backdrop-blur-sm">
                 <div 
-                  className={`h-3 rounded-full transition-all duration-500 ${
+                  className={`h-3 rounded-full transition-all duration-300 ${
                     loadingStage === 'error' ? 'bg-red-500' : 'bg-gradient-to-r'
                   }`}
                   style={{ 
@@ -247,18 +259,17 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
                 />
               </div>
               
-              {/* Loading Message with Better Typography */}
               <p className={`text-sm text-center font-medium ${
                 loadingStage === 'error' ? 'text-red-400' : 'text-gray-300'
               }`}>
-                {getLoadingMessage()}
+                {loadingStage === 'error' ? (error || 'Something went wrong') : actualProgress}
               </p>
             </div>
           )}
 
-          {/* Continue Button - Only Show When Ready */}
+          {/* Continue Button */}
           {loadingStage === 'ready' && (
-            <div className="text-center animate-fade-in" style={{ animationDelay: '1.1s' }}>
+            <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <Button
                 onClick={handleContinue}
                 size="lg"
@@ -272,13 +283,12 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
                 
-                {/* Animated shimmer effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
               </Button>
             </div>
           )}
           
-          {/* Enhanced Loading Animation */}
+          {/* Loading Animation */}
           {loadingStage !== 'error' && loadingStage !== 'ready' && (
             <div className="flex justify-center space-x-2">
               <div 
@@ -302,18 +312,26 @@ export const SkeletonSplashScreen: React.FC<SkeletonSplashScreenProps> = ({ onCo
             </div>
           )}
 
-          {/* Enhanced Error State */}
+          {/* Enhanced Error State with Skip Button for Dev */}
           {loadingStage === 'error' && (
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-4">
               <div className="w-8 h-8 bg-red-500/20 border border-red-500/30 rounded-full mx-auto animate-pulse flex items-center justify-center mb-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               </div>
               <p className="text-xs text-gray-400 mb-2">
-                Network issue detected. Retrying automatically...
+                {error || 'Loading failed'}
               </p>
-              <div className="w-16 h-1 bg-red-500/30 rounded-full mx-auto overflow-hidden">
-                <div className="w-full h-full bg-red-500 rounded-full animate-pulse"></div>
-              </div>
+              
+              {showSkipButton && (
+                <Button
+                  onClick={handleSkipForDev}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs px-4 py-2 border border-gray-600 hover:border-gray-500 bg-transparent hover:bg-gray-800/50"
+                >
+                  Skip (Dev Mode)
+                </Button>
+              )}
             </div>
           )}
         </div>
