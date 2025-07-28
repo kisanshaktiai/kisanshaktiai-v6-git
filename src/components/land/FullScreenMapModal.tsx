@@ -12,7 +12,11 @@ import {
   Satellite,
   Maximize2,
   X,
-  Plus
+  Plus,
+  Minus,
+  Target,
+  Square,
+  Undo
 } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
 import { useToast } from '@/hooks/use-toast';
@@ -64,9 +68,26 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     }
 
     try {
-      // Get API key from Supabase Edge Function
-      const response = await fetch('/api/get-maps-key');
-      const { apiKey } = await response.json();
+      // Get API key from Supabase Edge Function with proper URL
+      const response = await fetch(`https://qfklkkzxemsbeniyugiz.supabase.co/functions/v1/get-maps-key`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const { apiKey } = data;
+      
+      if (!apiKey) {
+        throw new Error('Google Maps API key not found');
+      }
       
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places`;
@@ -97,9 +118,9 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
       zoom: 18,
       center: { lat: 20.5937, lng: 78.9629 }, // Default to India center
       mapTypeId: 'satellite',
-      disableDefaultUI: false,
-      zoomControl: true,
-      mapTypeControl: true,
+      disableDefaultUI: true, // Clean interface
+      zoomControl: false, // Custom controls
+      mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
       gestureHandling: 'greedy',
@@ -107,7 +128,7 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
         {
           featureType: "poi",
           elementType: "labels",
-          stylers: [{ visibility: "on" }]
+          stylers: [{ visibility: "off" }]
         }
       ]
     });
@@ -425,62 +446,139 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
       <DialogContent className="max-w-full max-h-full w-screen h-screen p-0 m-0">
         <div className="relative w-full h-full flex flex-col">
           {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-sm border-b">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center space-x-3">
-                <Satellite className="w-6 h-6 text-primary" />
-                <div>
-                  <h2 className="text-lg font-semibold">Mark Land Boundary</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {walkMode ? 'Walk around your land boundary' : 'Tap on the map to mark points'}
-                  </p>
-                </div>
+          <div className="absolute top-0 left-0 right-0 z-10 bg-card/90 backdrop-blur-sm border-b border-border/50">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center space-x-2">
+                <Satellite className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold">Draw Boundary</h2>
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => onOpenChange(false)}
+                className="h-8 w-8"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
           {/* Map */}
-          <div className="flex-1 mt-[88px]">
+          <div className="flex-1 mt-[64px]">
             {mapsLoaded ? (
               <div ref={mapRef} className="w-full h-full" />
             ) : (
-              <div className="flex items-center justify-center h-full bg-gray-100">
+              <div className="flex items-center justify-center h-full bg-muted/50">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading satellite view...</p>
+                  <p className="text-muted-foreground">Loading satellite view...</p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Nearby Places */}
-          {nearbyPlaces.length > 0 && (
-            <div className="absolute top-[100px] left-4 z-10">
-              <Card className="w-64 bg-white/95 backdrop-blur-sm">
-                <CardContent className="p-3">
-                  <div className="text-sm font-medium mb-2 flex items-center">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    Nearby Places
-                  </div>
-                  {nearbyPlaces.map((place, index) => (
-                    <div key={index} className="text-xs text-gray-600 mb-1">
-                      {place.name}
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Top Controls */}
+          <div className="absolute top-[80px] left-4 flex gap-2 z-20">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => mapInstanceRef.current?.setZoom((mapInstanceRef.current.getZoom() || 15) + 1)}
+              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50"
+              title="Zoom In"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => mapInstanceRef.current?.setZoom((mapInstanceRef.current.getZoom() || 15) - 1)}
+              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50"
+              title="Zoom Out"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (currentLocation) {
+                  mapInstanceRef.current?.setCenter(currentLocation);
+                  mapInstanceRef.current?.setZoom(18);
+                }
+              }}
+              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50"
+              title="My Location"
+            >
+              <Target className="h-4 w-4" />
+            </Button>
+          </div>
 
-          {/* Controls */}
-          <div className="absolute bottom-4 left-4 right-4 z-10">
+          {/* Left Control Buttons */}
+          <div className="absolute bottom-20 left-4 flex flex-col gap-2 z-20">
+            <Button
+              variant={walkMode ? "default" : "outline"}
+              size="icon"
+              onClick={walkMode ? stopWalkMode : startWalkMode}
+              className="h-12 w-12 bg-card/80 backdrop-blur-sm border-border/50"
+              title={walkMode ? "Stop Walking" : "Walk Boundary"}
+            >
+              {walkMode ? <Square className="h-5 w-5" /> : <Navigation className="h-5 w-5" />}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={clearBoundary}
+              disabled={points.length === 0}
+              className="h-12 w-12 bg-card/80 backdrop-blur-sm border-border/50"
+              title="Clear All"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (points.length > 0) {
+                  setPoints(points.slice(0, -1));
+                }
+              }}
+              disabled={points.length === 0}
+              className="h-12 w-12 bg-card/80 backdrop-blur-sm border-border/50"
+              title="Undo Last"
+            >
+              <Undo className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Compact Bottom Info Card */}
+          <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg shadow-lg p-3 min-w-[140px] z-20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Points</span>
+              <span className="text-sm font-semibold">{points.length}</span>
+            </div>
+            
+            {calculatedArea > 0 && (
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs text-muted-foreground">Area</span>
+                <span className="text-sm font-semibold">{getAreaDisplay(calculatedArea).acres} ac</span>
+              </div>
+            )}
+            
+            <Button
+              onClick={handleSave}
+              disabled={points.length < 3}
+              size="sm"
+              className="w-full h-8"
+            >
+              <Save className="mr-1 h-3 w-3" />
+              Save
+            </Button>
+          </div>
+
+          {/* Legacy Controls - Hidden */}
+          <div className="absolute bottom-4 left-4 right-4 z-10 hidden">
             <Card className="bg-white/95 backdrop-blur-sm">
               <CardContent className="p-4">
                 {/* Area Display */}
