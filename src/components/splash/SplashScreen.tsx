@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setTenantId } from '@/store/slices/farmerSlice';
 import { LocationService } from '@/services/LocationService';
-import { TenantDetectionService } from '@/services/TenantDetectionService';
+import { EnhancedTenantService } from '@/services/EnhancedTenantService';
+import { PerformanceCache } from '@/services/PerformanceCache';
+import { ActivationCodeScreen } from '@/components/activation/ActivationCodeScreen';
 import { ChevronRight, Sparkles, Leaf, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +19,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const dispatch = useDispatch();
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState('Initializing...');
+  const [showActivation, setShowActivation] = useState(false);
   const [tenantBranding, setTenantBranding] = useState({
     logo: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
     appName: 'KisanShakti AI',
@@ -32,24 +35,38 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const initializeApp = async () => {
     try {
-      console.log('Starting app initialization...');
-      setCurrentStep('Initializing services...');
+      console.log('🚀 Starting enhanced app initialization...');
+      setCurrentStep('Initializing performance systems...');
       
-      // Parallel initialization for better performance
-      const locationPromise = initializeLocation();
-      const tenantPromise = initializeTenant();
+      const enhancedTenantService = EnhancedTenantService.getInstance();
+      const performanceCache = PerformanceCache.getInstance();
       
-      // Start both operations in parallel
-      const [, detectedTenant] = await Promise.allSettled([locationPromise, tenantPromise]);
+      // Check if activation is required
+      const requiresActivation = await enhancedTenantService.isActivationRequired();
+      
+      if (requiresActivation) {
+        console.log('🔑 Activation required for this domain');
+        setShowActivation(true);
+        return;
+      }
 
-      if (detectedTenant.status === 'fulfilled' && detectedTenant.value) {
-        const tenant = detectedTenant.value;
-        console.log('Tenant initialized:', tenant);
+      setCurrentStep('Loading tenant configuration...');
+      
+      // Parallel initialization for maximum performance
+      const [locationResult, tenantResult] = await Promise.allSettled([
+        initializeLocation(),
+        enhancedTenantService.getDefaultTenant()
+      ]);
+
+      let tenant = null;
+      if (tenantResult.status === 'fulfilled') {
+        tenant = tenantResult.value;
+        console.log('✅ Tenant initialized:', tenant?.id);
         
-        setCurrentStep('Applying configuration...');
+        setCurrentStep('Applying branding...');
         
-        // Set up branding
-        if (tenant.branding) {
+        // Apply tenant branding
+        if (tenant?.branding) {
           const branding = tenant.branding;
           setTenantBranding({
             logo: branding.logo_url || tenantBranding.logo,
@@ -57,13 +74,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             tagline: branding.app_tagline || tenantBranding.tagline,
             primaryColor: branding.primary_color || tenantBranding.primaryColor,
             secondaryColor: branding.secondary_color || tenantBranding.secondaryColor,
-            backgroundColor: branding.background_color ? `linear-gradient(135deg, ${branding.background_color}, #1e293b)` : tenantBranding.backgroundColor
+            backgroundColor: branding.background_color ? 
+              `linear-gradient(135deg, ${branding.background_color}, #1e293b)` : 
+              tenantBranding.backgroundColor
           });
-          console.log('Custom branding applied');
         }
 
-        if (tenant.id) {
+        if (tenant?.id) {
           dispatch(setTenantId(tenant.id));
+          
+          // Start preloading critical data in background
+          setCurrentStep('Optimizing performance...');
+          performanceCache.preloadCriticalData(tenant.id);
         }
       }
 
@@ -72,10 +94,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       // Minimal delay for smooth UX
       setTimeout(() => {
         setIsLoaded(true);
-      }, 300);
+      }, 500);
 
     } catch (error) {
-      console.error('Splash initialization error:', error);
+      console.error('❌ Splash initialization error:', error);
       // Continue anyway for better UX
       setCurrentStep('Ready! (Fallback mode)');
       setIsLoaded(true);
@@ -93,22 +115,68 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     }
   };
 
-  const initializeTenant = async () => {
-    try {
-      setCurrentStep('Detecting organization...');
-      const tenantService = TenantDetectionService.getInstance();
-      const detectedTenant = await tenantService.detectTenant();
-      console.log('Tenant detection completed:', detectedTenant);
-      return detectedTenant;
-    } catch (tenantError) {
-      console.warn('Tenant detection failed, using default:', tenantError);
-      return null;
+  const handleActivationSuccess = async (tenantData: any) => {
+    console.log('🎉 Activation successful, applying tenant configuration');
+    
+    setShowActivation(false);
+    setCurrentStep('Applying tenant configuration...');
+    
+    // Apply tenant branding
+    if (tenantData?.branding) {
+      const branding = tenantData.branding;
+      setTenantBranding({
+        logo: branding.logo_url || tenantBranding.logo,
+        appName: branding.app_name || tenantData.name || tenantBranding.appName,
+        tagline: branding.app_tagline || tenantBranding.tagline,
+        primaryColor: branding.primary_color || tenantBranding.primaryColor,
+        secondaryColor: branding.secondary_color || tenantBranding.secondaryColor,
+        backgroundColor: branding.background_color ? 
+          `linear-gradient(135deg, ${branding.background_color}, #1e293b)` : 
+          tenantBranding.backgroundColor
+      });
     }
+
+    if (tenantData?.id) {
+      dispatch(setTenantId(tenantData.id));
+    }
+
+    setCurrentStep('Ready!');
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 500);
+  };
+
+  const handleActivationSkip = async () => {
+    console.log('⏭️ Skipping activation, using default tenant');
+    setShowActivation(false);
+    
+    // Continue with default tenant initialization
+    const enhancedTenantService = EnhancedTenantService.getInstance();
+    const defaultTenant = await enhancedTenantService.getDefaultTenant();
+    
+    if (defaultTenant?.id) {
+      dispatch(setTenantId(defaultTenant.id));
+    }
+    
+    setCurrentStep('Ready!');
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 500);
   };
 
   const handleContinue = () => {
     onComplete();
   };
+
+  // Show activation screen if required
+  if (showActivation) {
+    return (
+      <ActivationCodeScreen
+        onActivationSuccess={handleActivationSuccess}
+        onSkip={handleActivationSkip}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
