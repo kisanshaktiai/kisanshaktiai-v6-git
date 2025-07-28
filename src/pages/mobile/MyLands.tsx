@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Plus, Grid, List, Filter } from 'lucide-react';
 import { LandCard } from '@/components/land/LandCard';
 import { LandFilters } from '@/components/land/LandFilters';
+import { AddLandModal } from '@/components/land/AddLandModal';
+import { LandDetailModal } from '@/components/land/LandDetailModal';
 import { useLands } from '@/hooks/useLands';
 import { LandWithDetails } from '@/types/land';
 
@@ -20,6 +22,8 @@ export const MyLands: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedLands, setSelectedLands] = useState<Set<string>>(new Set());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedLandDetail, setSelectedLandDetail] = useState<LandWithDetails | null>(null);
   const [filters, setFilters] = useState({
     cropType: undefined as string | undefined,
     soilHealth: undefined as string | undefined,
@@ -83,11 +87,11 @@ export const MyLands: React.FC = () => {
   };
 
   const handleAddLand = () => {
-    navigate('/add-land');
+    setShowAddModal(true);
   };
 
   const handleLandEdit = (land: LandWithDetails) => {
-    navigate(`/land/${land.id}`);
+    setSelectedLandDetail(land);
   };
 
   const clearFilters = () => {
@@ -278,6 +282,20 @@ export const MyLands: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modals */}
+      <AddLandModal 
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSuccess={() => setShowAddModal(false)}
+      />
+      
+      <LandDetailModal
+        land={selectedLandDetail}
+        open={!!selectedLandDetail}
+        onOpenChange={(open) => !open && setSelectedLandDetail(null)}
+        onEdit={handleLandEdit}
+      />
     </div>
   );
 };
