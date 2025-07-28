@@ -13,63 +13,59 @@ export const useLands = () => {
 
       const { data: lands, error } = await supabase
         .from('lands')
-        .select(`
-          *,
-          soil_health:soil_health!soil_health_land_id_fkey(
-            id, land_id, ph_level, organic_carbon, nitrogen_level, 
-            phosphorus_level, potassium_level, soil_type, 
-            test_date, source, created_at, updated_at
-          ),
-          crop_history!crop_history_land_id_fkey(
-            id, land_id, crop_name, variety, season, planting_date, 
-            harvest_date, yield_kg_per_acre, growth_stage, 
-            status, notes, created_at, updated_at
-          ),
-          ndvi_data!ndvi_data_land_id_fkey(
-            id, land_id, date, ndvi_value, satellite_source, 
-            image_url, cloud_cover, created_at
-          ),
-          land_activities!land_activities_land_id_fkey(
-            id, land_id, activity_type, description, quantity, 
-            unit, cost, activity_date, notes, created_at
-          )
-        `)
+        .select('*')
         .eq('farmer_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching lands:', error);
+        throw error;
+      }
 
-      // Process the data to get the most recent related records
+      // Process the data to match LandWithDetails interface
       const landsWithDetails: LandWithDetails[] = lands?.map(land => {
-        const soilHealthArray = land.soil_health as any[];
-        const soilHealth = soilHealthArray && soilHealthArray.length > 0 
-          ? soilHealthArray[0] as SoilHealth
-          : undefined;
-        
-        const cropHistoryArray = land.crop_history as any[];
-        const currentCrop = cropHistoryArray 
-          ? cropHistoryArray.find((crop: any) => crop.status === 'active') as CropHistory | undefined
-          : undefined;
-        
-        const ndviDataArray = land.ndvi_data as any[];
-        const recentNdvi = ndviDataArray && ndviDataArray.length > 0 
-          ? ndviDataArray[0] as NDVIData
-          : undefined;
-        
-        const activitiesArray = land.land_activities as any[];
-        const recentActivities = activitiesArray 
-          ? (activitiesArray as LandActivity[]).slice(0, 5)
-          : [];
+        // Create soil health from direct columns
+        const soilHealth = land.soil_ph ? {
+          id: `${land.id}_soil`,
+          land_id: land.id,
+          ph_level: land.soil_ph,
+          organic_carbon: land.organic_carbon_percent,
+          nitrogen_level: (land.nitrogen_kg_per_ha > 300 ? 'high' : land.nitrogen_kg_per_ha > 150 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+          phosphorus_level: (land.phosphorus_kg_per_ha > 25 ? 'high' : land.phosphorus_kg_per_ha > 12 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+          potassium_level: (land.potassium_kg_per_ha > 250 ? 'high' : land.potassium_kg_per_ha > 125 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+          soil_type: land.soil_type || 'Unknown',
+          test_date: land.last_soil_test_date,
+          source: 'manual' as const,
+          created_at: land.created_at,
+          updated_at: land.updated_at,
+        } : undefined;
 
-        // Calculate enhanced health score
-        const healthScore = calculateLandHealthScore(soilHealth, recentNdvi, currentCrop);
+        // Create current crop from direct columns
+        const currentCrop = land.current_crop ? {
+          id: `${land.id}_crop`,
+          land_id: land.id,
+          crop_name: land.current_crop,
+          variety: null,
+          season: null,
+          planting_date: land.last_sowing_date,
+          harvest_date: land.expected_harvest_date,
+          yield_kg_per_acre: null,
+          growth_stage: land.crop_stage || 'unknown',
+          status: 'active' as const,
+          notes: null,
+          created_at: land.created_at,
+          updated_at: land.updated_at,
+        } : undefined;
+
+        // Calculate health score based on available data
+        const healthScore = calculateLandHealthScore(soilHealth, undefined, currentCrop);
 
         return {
           ...land,
           soil_health: soilHealth,
           current_crop: currentCrop,
-          recent_ndvi: recentNdvi,
-          recent_activities: recentActivities,
+          recent_ndvi: undefined,
+          recent_activities: [],
           health_score: healthScore,
         } as LandWithDetails;
       }) || [];
