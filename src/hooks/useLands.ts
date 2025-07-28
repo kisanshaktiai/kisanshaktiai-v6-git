@@ -9,7 +9,7 @@ export const useLands = () => {
     queryFn: async (): Promise<LandWithDetails[]> => {
       // Get current user first
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) return []; // Return empty array instead of throwing error
 
       const { data: lands, error } = await supabase
         .from('lands')
