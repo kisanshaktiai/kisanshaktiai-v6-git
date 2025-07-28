@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   MapPin, Droplets, Activity, TrendingUp, Calendar, 
-  FileText, AlertTriangle, Edit3, Trash2 
+  FileText, AlertTriangle, Edit3, Trash2, TestTube
 } from 'lucide-react';
 import { LandWithDetails } from '@/types/land';
 import { useTenant } from '@/hooks/useTenant';
 import { useDeleteLand } from '@/hooks/useLands';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { SoilDataModal } from './SoilDataModal';
 
 interface LandDetailModalProps {
   land: LandWithDetails | null;
@@ -32,6 +33,7 @@ export const LandDetailModal: React.FC<LandDetailModalProps> = ({
   const deleteLandMutation = useDeleteLand();
   const mapRef = useRef<HTMLDivElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSoilData, setShowSoilData] = useState(false);
 
   // Initialize map with land boundary
   useEffect(() => {
@@ -147,6 +149,14 @@ export const LandDetailModal: React.FC<LandDetailModalProps> = ({
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSoilData(true)}
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                Soil Data
               </Button>
               <Button 
                 variant="outline" 
@@ -435,6 +445,13 @@ export const LandDetailModal: React.FC<LandDetailModalProps> = ({
             </Card>
           </div>
         )}
+
+        {/* Soil Data Modal */}
+        <SoilDataModal
+          open={showSoilData}
+          onOpenChange={setShowSoilData}
+          land={land}
+        />
       </DialogContent>
     </Dialog>
   );

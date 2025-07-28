@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Plus, Grid, List, Filter } from 'lucide-react';
 import { LandCard } from '@/components/land/LandCard';
 import { LandFilters } from '@/components/land/LandFilters';
-import { AddLandModal } from '@/components/land/AddLandModal';
+import { FullScreenMapModal } from '@/components/land/FullScreenMapModal';
+import { LandFormModal } from '@/components/land/LandFormModal';
 import { LandDetailModal } from '@/components/land/LandDetailModal';
 import { useLands } from '@/hooks/useLands';
 import { LandWithDetails } from '@/types/land';
@@ -22,8 +23,14 @@ export const MyLands: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedLands, setSelectedLands] = useState<Set<string>>(new Set());
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
   const [selectedLandDetail, setSelectedLandDetail] = useState<LandWithDetails | null>(null);
+  const [boundaryData, setBoundaryData] = useState<{
+    points: any[];
+    area: number;
+    centerPoint: any;
+  } | null>(null);
   const [filters, setFilters] = useState({
     cropType: undefined as string | undefined,
     soilHealth: undefined as string | undefined,
@@ -87,7 +94,18 @@ export const MyLands: React.FC = () => {
   };
 
   const handleAddLand = () => {
-    setShowAddModal(true);
+    setShowMapModal(true);
+  };
+
+  const handleBoundaryComplete = (points: any[], area: number, centerPoint: any) => {
+    setBoundaryData({ points, area, centerPoint });
+    setShowMapModal(false);
+    setShowFormModal(true);
+  };
+
+  const handleLandSaved = () => {
+    setShowFormModal(false);
+    setBoundaryData(null);
   };
 
   const handleLandEdit = (land: LandWithDetails) => {
@@ -284,11 +302,22 @@ export const MyLands: React.FC = () => {
       )}
 
       {/* Modals */}
-      <AddLandModal 
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        onSuccess={() => setShowAddModal(false)}
+      <FullScreenMapModal 
+        open={showMapModal}
+        onOpenChange={setShowMapModal}
+        onBoundaryComplete={handleBoundaryComplete}
       />
+      
+      {boundaryData && (
+        <LandFormModal
+          open={showFormModal}
+          onOpenChange={setShowFormModal}
+          boundaryPoints={boundaryData.points}
+          calculatedArea={boundaryData.area}
+          centerPoint={boundaryData.centerPoint}
+          onSuccess={handleLandSaved}
+        />
+      )}
       
       <LandDetailModal
         land={selectedLandDetail}
