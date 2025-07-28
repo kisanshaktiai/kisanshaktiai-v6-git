@@ -162,6 +162,18 @@ export class TenantDetectionService {
     };
   }
 
+  private isDevelopmentDomain(domain: string): boolean {
+    return domain === 'localhost' || 
+           domain.includes('lovableproject.com') || 
+           domain.includes('lovable.app') ||
+           domain.includes('127.0.0.1') ||
+           domain.includes('localhost:') ||
+           domain.includes('.local') ||
+           domain.includes('192.168.') ||
+           domain.includes('10.0.') ||
+           domain === '0.0.0.0';
+  }
+
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Operation timed out')), timeoutMs);
@@ -406,6 +418,21 @@ export class TenantDetectionService {
 
   async detectTenant(): Promise<TenantData | null> {
     const { hostname } = this.parseHostname();
+    
+    // Fast-track for development environments - return emergency tenant immediately
+    if (this.isDevelopmentDomain(hostname)) {
+      console.log('🔧 Development environment detected, using emergency tenant immediately');
+      const emergencyTenant = this.createEmergencyTenant();
+      
+      this.logAnalyticsEvent('development-fallback', {
+        domain: hostname,
+        tenant_slug: emergencyTenant.slug,
+        tenant_id: emergencyTenant.id
+      });
+      
+      return emergencyTenant;
+    }
+
     const cacheKey = this.getCacheKey(hostname);
 
     // Check cache first (memory + localStorage)
@@ -422,7 +449,7 @@ export class TenantDetectionService {
       return cachedTenant;
     }
 
-    // Call Edge Function with retry logic
+    // Call Edge Function with retry logic (production only)
     try {
       const tenant = await this.withRetry(() => this.callDetectTenantFunction(hostname));
       
