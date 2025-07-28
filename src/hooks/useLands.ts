@@ -88,19 +88,19 @@ export const useCreateLand = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const finalLandData = {
-        ...landData,
-        farmer_id: user.id,
-      };
+      // Use the land-operations edge function for consistent data handling
+      const { data: result, error } = await supabase.functions.invoke('land-operations', {
+        body: {
+          action: 'CREATE',
+          ...landData,
+          farmer_id: user.id,
+        }
+      });
 
-      const { data, error } = await supabase
-        .from('lands')
-        .insert([finalLandData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      if (error) throw new Error(error.message || 'Failed to create land');
+      if (!result?.success) throw new Error(result?.error || 'Failed to create land');
+      
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lands'] });

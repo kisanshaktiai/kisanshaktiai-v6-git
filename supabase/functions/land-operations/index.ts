@@ -99,12 +99,59 @@ async function createLand(supabase: any, userId: string, landData: any) {
     }
   }
 
+  // Convert boundary_polygon to PostGIS geometry if provided
+  let boundaryGeometry = null
+  if (landData.boundary_polygon) {
+    try {
+      // Convert GeoJSON to WKT format for PostGIS
+      const coords = landData.boundary_polygon.coordinates[0]
+      const wktCoords = coords.map((coord: number[]) => `${coord[0]} ${coord[1]}`).join(', ')
+      const wkt = `POLYGON((${wktCoords}))`
+      
+      // Use ST_GeomFromText to create PostGIS geometry
+      const { data: geomResult } = await supabase
+        .rpc('ST_GeomFromText', { wkt_text: wkt, srid: 4326 })
+      
+      boundaryGeometry = geomResult
+    } catch (error) {
+      console.warn('Failed to convert boundary to PostGIS geometry:', error)
+      // Store as JSONB fallback in boundary_polygon_old
+    }
+  }
+
+  // Map form fields to database columns correctly
   const finalLandData = {
-    ...landData,
     farmer_id: userId,
+    tenant_id: landData.tenant_id,
     name: finalName,
+    survey_number: landData.survey_number || null,
+    area_acres: Number(landData.area_acres),
+    ownership_type: landData.ownership_type || 'owned',
+    irrigation_source: landData.irrigation_source || null,
+    
+    // Enhanced GPS tracking fields
+    village: landData.village || null,
+    taluka: landData.taluka || null,
+    district: landData.district || null,
+    state: landData.state || null,
+    gps_accuracy_meters: landData.gps_accuracy_meters ? Number(landData.gps_accuracy_meters) : null,
+    gps_recorded_at: landData.gps_recorded_at || new Date().toISOString(),
+    boundary_method: landData.boundary_method || 'manual',
+    location_context: landData.location_context || {},
+    
+    // Soil and farming data from form
+    soil_type: landData.soil_type || null,
+    water_source: landData.irrigation_source || null,
+    
+    // Store boundary as both PostGIS and JSONB
+    boundary: boundaryGeometry,
+    boundary_polygon_old: landData.boundary_polygon || null,
+    center_point_old: landData.center_point || null,
+    
+    // Timestamps
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    is_active: true
   }
 
   const { data, error } = await supabase
@@ -233,16 +280,28 @@ async function getLandById(supabase: any, userId: string, landId: string) {
 }
 
 async function uploadLandPhoto(supabase: any, userId: string, { landId, photoData, fileName }: any) {
-  const filePath = `lands/${userId}/${landId}/${fileName}`
+  // Create proper file path with user folder structure
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const filePath = `${userId}/${landId || 'temp'}/${timestamp}_${fileName}`
+  
+  // Convert base64 to Uint8Array
+  const binaryString = atob(photoData)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
   
   const { data, error } = await supabase.storage
     .from('land-photos')
-    .upload(filePath, photoData, {
+    .upload(filePath, bytes, {
       contentType: 'image/jpeg',
       upsert: true
     })
 
-  if (error) throw new Error(`Failed to upload photo: ${error.message}`)
+  if (error) {
+    console.error('Storage upload error:', error)
+    throw new Error(`Failed to upload photo: ${error.message}`)
+  }
 
   const { data: publicUrl } = supabase.storage
     .from('land-photos')
@@ -252,7 +311,8 @@ async function uploadLandPhoto(supabase: any, userId: string, { landId, photoDat
     success: true, 
     data: { 
       url: publicUrl.publicUrl,
-      path: filePath 
+      path: filePath,
+      fileName: fileName
     },
     message: 'Photo uploaded successfully'
   }

@@ -181,6 +181,7 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Enhanced validation
     if (!formData.name.trim()) {
       toast({
         title: "Validation Error",
@@ -199,70 +200,28 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
       return;
     }
 
+    if (!tenant?.id) {
+      toast({
+        title: "Tenant Error",
+        description: "No tenant selected. Please contact support.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate boundary points
+    if (!boundaryPoints || boundaryPoints.length < 3) {
+      toast({
+        title: "Invalid Boundary",
+        description: "At least 3 boundary points are required to create a valid land parcel.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // Validate boundary points
-      if (!boundaryPoints || boundaryPoints.length < 3) {
-        toast({
-          title: "Invalid Boundary",
-          description: "At least 3 boundary points are required.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Upload photos first if any
-      const uploadedPhotos: string[] = [];
-      if (capturedPhotos.length > 0) {
-        for (let i = 0; i < capturedPhotos.length; i++) {
-          try {
-            const base64Data = capturedPhotos[i].split(',')[1];
-            const fileName = `photo_${Date.now()}_${i}.jpg`;
-            
-            const { data: photoResult } = await supabase.functions.invoke('land-operations', {
-              body: {
-                action: 'UPLOAD_PHOTO',
-                landId: 'temp', // Will be replaced after land creation
-                photoData: base64Data,
-                fileName
-              }
-            });
-            
-            if (photoResult?.success) {
-              uploadedPhotos.push(photoResult.data.url);
-            }
-          } catch (photoError) {
-            console.error('Photo upload error:', photoError);
-            // Continue with land creation even if photo upload fails
-          }
-        }
-      }
-      
-      const landData = {
-        name: formData.name.trim(),
-        tenant_id: tenant?.id || '',
-        area_acres: calculatedArea,
-        survey_number: formData.survey_number.trim() || undefined,
-        ownership_type: formData.ownership_type,
-        irrigation_source: formData.irrigation_source.trim() || undefined,
-        // Enhanced fields from GPS tracking
-        village: enhancedData?.locationContext?.village,
-        taluka: enhancedData?.locationContext?.taluka,
-        district: enhancedData?.locationContext?.district,
-        state: enhancedData?.locationContext?.state,
-        gps_accuracy_meters: enhancedData?.gpsAccuracy,
-        gps_recorded_at: enhancedData?.recordedAt?.toISOString(),
-        boundary_method: enhancedData?.boundaryMethod || 'manual',
-        location_context: enhancedData?.locationContext ? {
-          ...enhancedData.locationContext,
-          totalPoints: enhancedData.totalPoints,
-          recordingMethod: enhancedData.boundaryMethod,
-          photos: uploadedPhotos
-        } : { photos: uploadedPhotos }
-      };
-
       // Create proper GeoJSON for PostGIS (ensure closed polygon)
       const coordinates = [...boundaryPoints.map(p => [p.lng, p.lat])];
       if (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || 
@@ -270,8 +229,26 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         coordinates.push([boundaryPoints[0].lng, boundaryPoints[0].lat]);
       }
 
-      const finalLandData = {
-        ...landData,
+      // Prepare land data with correct field mapping
+      const landData = {
+        name: formData.name.trim(),
+        tenant_id: tenant.id,
+        area_acres: calculatedArea,
+        survey_number: formData.survey_number.trim() || null,
+        ownership_type: formData.ownership_type,
+        irrigation_source: formData.irrigation_source.trim() || null,
+        soil_type: formData.soil_type || null,
+        
+        // Enhanced fields from GPS tracking
+        village: enhancedData?.locationContext?.village || null,
+        taluka: enhancedData?.locationContext?.taluka || null,
+        district: enhancedData?.locationContext?.district || null,
+        state: enhancedData?.locationContext?.state || null,
+        gps_accuracy_meters: enhancedData?.gpsAccuracy || null,
+        gps_recorded_at: enhancedData?.recordedAt?.toISOString() || new Date().toISOString(),
+        boundary_method: enhancedData?.boundaryMethod || 'manual',
+        
+        // GeoJSON data
         boundary_polygon: {
           type: 'Polygon',
           coordinates: [coordinates]
@@ -279,31 +256,106 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         center_point: centerPoint ? {
           type: 'Point',
           coordinates: [centerPoint.lng, centerPoint.lat]
-        } : null
+        } : null,
+        
+        // Context data including photos
+        location_context: {
+          ...enhancedData?.locationContext,
+          totalPoints: boundaryPoints.length,
+          recordingMethod: enhancedData?.boundaryMethod || 'manual',
+          timestamp: new Date().toISOString(),
+          photos: capturedPhotos.length
+        }
       };
 
-      console.log('Submitting land data via edge function:', finalLandData);
+      console.log('Submitting land data via edge function:', landData);
       
-      // Use the enhanced edge function
+      // Create land first
       const { data: result, error } = await supabase.functions.invoke('land-operations', {
         body: {
           action: 'CREATE',
-          ...finalLandData
+          ...landData
         }
       });
 
       if (error) {
+        console.error('Edge function error:', error);
         throw new Error(error.message || 'Failed to create land');
       }
 
       if (!result?.success) {
+        console.error('Land creation failed:', result);
         throw new Error(result?.error || 'Failed to create land');
+      }
+
+      const createdLand = result.data;
+      console.log('Land created successfully:', createdLand);
+
+      // Upload photos after land creation with actual landId
+      const uploadedPhotos: string[] = [];
+      if (capturedPhotos.length > 0 && createdLand?.id) {
+        for (let i = 0; i < capturedPhotos.length; i++) {
+          try {
+            const base64Data = capturedPhotos[i].split(',')[1];
+            const fileName = `land_photo_${Date.now()}_${i}.jpg`;
+            
+            const { data: photoResult } = await supabase.functions.invoke('land-operations', {
+              body: {
+                action: 'UPLOAD_PHOTO',
+                landId: createdLand.id,
+                photoData: base64Data,
+                fileName
+              }
+            });
+            
+            if (photoResult?.success) {
+              uploadedPhotos.push(photoResult.data.url);
+              console.log('Photo uploaded successfully:', photoResult.data.url);
+            }
+          } catch (photoError) {
+            console.error('Photo upload error:', photoError);
+            // Continue with land creation even if photo upload fails
+          }
+        }
+      }
+
+      // Update land with photo URLs if any were uploaded
+      if (uploadedPhotos.length > 0 && createdLand?.id) {
+        try {
+          await supabase.functions.invoke('land-operations', {
+            body: {
+              action: 'UPDATE',
+              landId: createdLand.id,
+              updates: {
+                location_context: {
+                  ...landData.location_context,
+                  photoUrls: uploadedPhotos
+                }
+              }
+            }
+          });
+        } catch (updateError) {
+          console.warn('Failed to update land with photo URLs:', updateError);
+        }
       }
       
       toast({
         title: "Success!",
-        description: `${formData.name} has been added to your lands.`,
+        description: `${formData.name} has been successfully added to your lands.`,
       });
+      
+      // Reset form state
+      setFormData({
+        name: '',
+        survey_number: '',
+        ownership_type: 'owned',
+        irrigation_source: '',
+        notes: '',
+        soil_type: '',
+        crop_pattern: '',
+        photos: []
+      });
+      setCapturedPhotos([]);
       
       onSuccess?.();
       onOpenChange(false);

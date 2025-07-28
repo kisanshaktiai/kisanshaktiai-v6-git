@@ -1,9 +1,24 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Droplets, Activity, TrendingUp, TestTube, Satellite, WifiOff, Eye, MoreVertical } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { 
+  MapPin, 
+  Droplets, 
+  Activity, 
+  TrendingUp, 
+  TestTube, 
+  Satellite, 
+  WifiOff, 
+  Wifi, 
+  Eye, 
+  MoreVertical,
+  Mountain,
+  Leaf,
+  Camera,
+  FlaskConical
+} from 'lucide-react';
 import { LandWithDetails } from '@/types/land';
 import { useTenant } from '@/hooks/useTenant';
 import { LandWeatherCard } from '@/components/weather/LandWeatherCard';
@@ -30,31 +45,45 @@ export const LandCard: React.FC<LandCardProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Generate map thumbnail
+  // Generate enhanced map thumbnail
   useEffect(() => {
-    if (!mapRef.current || mapLoaded || !land.boundary_polygon) return;
+    if (!mapRef.current || mapLoaded || (!land.boundary_polygon && !land.boundary_polygon_old)) return;
 
-    // Create a simple static map thumbnail
     const loadStaticMap = async () => {
       try {
-        if (land.boundary_polygon && typeof land.boundary_polygon === 'object') {
-          const polygon = land.boundary_polygon as any;
+        const polygonData = land.boundary_polygon_old || land.boundary_polygon;
+        if (polygonData && typeof polygonData === 'object') {
+          const polygon = polygonData as any;
           if (polygon.coordinates && polygon.coordinates[0]) {
             const coords = polygon.coordinates[0];
             const centerLat = coords.reduce((sum: number, coord: number[]) => sum + coord[1], 0) / coords.length;
             const centerLng = coords.reduce((sum: number, coord: number[]) => sum + coord[0], 0) / coords.length;
             
-            // Create simple SVG map placeholder
+            // Create enhanced SVG map with better styling
             const svg = `
               <svg width="100%" height="100%" viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100%" height="100%" fill="#f0f9ff"/>
-                <polygon points="${coords.map((coord: number[], i: number) => 
-                  `${20 + (i * 15) % 80},${20 + (i * 10) % 40}`
-                ).join(' ')}" 
-                fill="${tenant?.branding?.primary_color || '#10B981'}40" 
-                stroke="${tenant?.branding?.primary_color || '#10B981'}" 
-                stroke-width="1"/>
-                <circle cx="60" cy="40" r="2" fill="${tenant?.branding?.primary_color || '#10B981'}"/>
+                <defs>
+                  <radialGradient id="landGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:hsl(var(--primary));stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:hsl(var(--primary));stop-opacity:0.1" />
+                  </radialGradient>
+                  <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:hsl(var(--primary));stop-opacity:0.8" />
+                    <stop offset="100%" style="stop-color:hsl(var(--accent));stop-opacity:0.6" />
+                  </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#landGradient)"/>
+                <polygon 
+                  points="15,25 85,15 105,35 95,65 25,70 10,45" 
+                  fill="url(#landGradient)" 
+                  stroke="url(#borderGradient)" 
+                  stroke-width="2"
+                  opacity="0.8"
+                />
+                <circle cx="60" cy="40" r="3" fill="hsl(var(--primary))" opacity="0.8"/>
+                <text x="60" y="52" text-anchor="middle" font-size="8" fill="hsl(var(--primary))" opacity="0.7">
+                  ${land.area_acres.toFixed(1)}ac
+                </text>
               </svg>
             `;
             
@@ -65,302 +94,327 @@ export const LandCard: React.FC<LandCardProps> = ({
           }
         }
       } catch (error) {
-        console.error('Error loading map thumbnail:', error);
+        console.error('Map thumbnail error:', error);
+        setMapLoaded(true);
       }
     };
 
     loadStaticMap();
-  }, [land.boundary_polygon, tenant?.branding?.primary_color, mapLoaded]);
-  const getHealthColor = (score?: number) => {
-    if (!score) return 'bg-gray-400';
-    if (score >= 4) return 'bg-green-500';
-    if (score >= 3) return 'bg-yellow-500';
-    return 'bg-red-500';
+  }, [land.boundary_polygon, land.boundary_polygon_old, land.area_acres]);
+
+  // Enhanced health score rendering
+  const getHealthColor = (score?: number): string => {
+    if (!score) return 'bg-muted text-muted-foreground';
+    if (score >= 4) return 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+    if (score >= 3) return 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+    return 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
   };
 
-  const getHealthLabel = (score?: number) => {
+  const getHealthLabel = (score?: number): string => {
     if (!score) return 'Unknown';
     if (score >= 4) return 'Excellent';
     if (score >= 3) return 'Good';
     if (score >= 2) return 'Fair';
-    return 'Poor';
+    return 'Needs Attention';
   };
 
   return (
     <LandErrorBoundary>
       <Card 
-        className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 ${
-          selected ? 'ring-2 ring-primary shadow-lg' : ''
-        } ${isOffline ? 'opacity-75 border-dashed' : ''} bg-gradient-to-br from-background to-background/50 border border-border/50`}
+        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg border-2 ${
+          selected 
+            ? 'border-primary shadow-lg ring-2 ring-primary/20' 
+            : 'border-border hover:border-primary/50'
+        } ${onSelect ? 'cursor-pointer' : ''}`}
         onClick={() => onSelect?.(land)}
       >
-      {/* Enhanced Map Thumbnail Header */}
-      <div className="relative h-32 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 rounded-t-lg overflow-hidden">
-        <div 
-          ref={mapRef}
-          className="absolute inset-0 opacity-70 transition-opacity group-hover:opacity-90"
-        />
-        
-        {/* Glassmorphism overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-        
-        {/* Area Badge */}
-        <div className="absolute top-3 left-3">
-          <Badge 
-            variant="secondary" 
-            className="bg-background/90 backdrop-blur-sm text-xs font-medium shadow-sm"
-          >
-            {land.area_acres.toFixed(1)} acres
-          </Badge>
-        </div>
-        
-        {/* Health Score */}
-        <div className="absolute top-3 right-3">
-          {land.health_score && (
+        {/* Enhanced Header with Professional Styling */}
+        <div className="relative h-48 mb-4 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 via-primary/10 to-accent/15 border border-primary/20">
+          {mapLoaded ? (
             <div 
-              className={`w-4 h-4 rounded-full ${getHealthColor(land.health_score)} shadow-sm ring-2 ring-background/80`} 
-              title={`Health: ${getHealthLabel(land.health_score)}`} 
+              ref={mapRef}
+              className="absolute inset-0 flex items-center justify-center"
             />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-pulse text-primary">
+                <MapPin className="w-12 h-12" />
+              </div>
+            </div>
           )}
-        </div>
-        
-        {/* Type Badge */}
-        <div className="absolute bottom-3 left-3">
-          <Badge 
-            variant="outline" 
-            className="bg-background/80 backdrop-blur-sm text-xs border-white/20"
-          >
-            <Satellite className="w-3 h-3 mr-1" />
-            {land.ownership_type}
-          </Badge>
-        </div>
-        
-        {/* Quick Action */}
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button 
-            size="sm" 
-            variant="secondary"
-            className="h-7 w-7 p-0 bg-background/80 backdrop-blur-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit?.(land);
-            }}
-          >
-            <Eye className="w-3 h-3" />
-          </Button>
-        </div>
-      </div>
-
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold truncate text-foreground group-hover:text-primary transition-colors">
-              {land.name}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              {land.survey_number ? `Survey: ${land.survey_number}` : 'GPS Mapped'}
-            </p>
+          
+          {/* Enhanced Area Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="secondary" className="bg-background/95 border border-primary/20 text-primary shadow-lg backdrop-blur-sm">
+              <Mountain className="w-3 h-3 mr-1" />
+              {land.area_acres.toFixed(1)} acres
+            </Badge>
           </div>
-          <div className="flex items-center space-x-2">
-            {land.health_score && (
+          
+          {/* Enhanced Health Score Badge */}
+          {land.health_score && (
+            <div className="absolute top-3 right-3">
               <Badge 
-                variant="outline" 
-                className={`text-xs font-medium ${
-                  land.health_score >= 4 ? 'border-green-500/50 text-green-700 bg-green-50' :
-                  land.health_score >= 3 ? 'border-yellow-500/50 text-yellow-700 bg-yellow-50' :
-                  'border-red-500/50 text-red-700 bg-red-50'
-                }`}
+                variant="secondary" 
+                className={`${getHealthColor(land.health_score)} shadow-lg backdrop-blur-sm border border-background/20`}
               >
+                <Leaf className="w-3 h-3 mr-1" />
                 {getHealthLabel(land.health_score)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Status Indicators */}
+          <div className="absolute bottom-3 left-3 flex gap-2">
+            {(land.location_context as any)?.photoUrls?.length > 0 && (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs">
+                <Camera className="w-3 h-3 mr-1" />
+                {(land.location_context as any).photoUrls.length}
+              </Badge>
+            )}
+            {isOffline ? (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs text-orange-600">
+                <WifiOff className="w-3 h-3 mr-1" />
+                Offline
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs text-green-600">
+                <Wifi className="w-3 h-3 mr-1" />
+                Online
               </Badge>
             )}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Weather Integration */}
-        {showWeather && land.boundary_polygon && (
-          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-100">
-            <LandWeatherCard
-              landId={land.id}
-              latitude={18.5} // fallback - would extract from boundary in real implementation
-              longitude={73.7}
-              cropType={land.current_crop?.crop_name}
-              compact
-            />
-          </div>
-        )}
-        
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-green-600 font-medium">Total Area</p>
-                <p className="text-lg font-bold text-green-700">{land.area_acres.toFixed(1)}</p>
-                <p className="text-xs text-green-500">acres</p>
-              </div>
-              <div className="w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-green-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-3 border border-purple-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-purple-600 font-medium">Type</p>
-                <p className="text-lg font-bold text-purple-700 capitalize">{land.ownership_type}</p>
-                <p className="text-xs text-purple-500">ownership</p>
-              </div>
-              <div className="w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center">
-                <Activity className="w-4 h-4 text-purple-600" />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Current Crop */}
-        {land.current_crop && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 border border-amber-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-amber-600 font-medium">Current Crop</p>
-                <p className="text-sm font-semibold text-amber-700">{land.current_crop.crop_name}</p>
-                {land.current_crop.variety && (
-                  <p className="text-xs text-amber-500">{land.current_crop.variety}</p>
-                )}
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1 flex-1">
+              <h3 className="font-bold text-xl leading-tight text-foreground">
+                {land.name}
+              </h3>
+              {land.survey_number && (
+                <p className="text-sm text-muted-foreground font-medium">
+                  Survey: {land.survey_number}
+                </p>
+              )}
+              {land.village && (
+                <p className="text-xs text-muted-foreground">
+                  📍 {land.village}, {land.taluka}
+                </p>
+              )}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Weather Information */}
+          {showWeather && (() => {
+            // Extract coordinates from center_point or center_point_old
+            const centerPoint = land.center_point_old || land.center_point;
+            if (centerPoint && typeof centerPoint === 'object') {
+              const coords = (centerPoint as any).coordinates;
+              if (coords && Array.isArray(coords) && coords.length >= 2) {
+                return (
+                  <LandWeatherCard 
+                    landId={land.id}
+                    latitude={coords[1]}
+                    longitude={coords[0]}
+                  />
+                );
+              }
+            }
+            return null;
+          })()}
+
+          {/* Enhanced Stats Grid */}
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Area</p>
+              <div className="flex items-center gap-2">
+                <Mountain className="w-4 h-4 text-primary" />
+                <p className="text-lg font-bold text-foreground">
+                  {land.area_acres.toFixed(1)} acres
+                </p>
               </div>
-              <Badge 
-                variant="outline" 
-                className="border-amber-200 text-amber-700 bg-amber-50"
-              >
-                {land.current_crop.growth_stage || 'Active'}
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Ownership</p>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                {land.ownership_type?.charAt(0).toUpperCase() + land.ownership_type?.slice(1)}
               </Badge>
             </div>
           </div>
-        )}
 
-        {/* Enhanced Soil Health Summary */}
-        {land.soil_health && (
-          <div className="bg-gradient-to-r from-stone-50 to-slate-50 rounded-lg p-3 border border-stone-100">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-stone-600 font-medium">Soil Health</p>
-              <TestTube className="w-3 h-3 text-stone-500" />
+          {/* Current Crop Information */}
+          {land.current_crop && (
+            <div className="space-y-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2">
+                <Leaf className="w-4 h-4 text-primary" />
+                <h4 className="font-semibold text-foreground">Current Crop</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Crop:</span>
+                  <div className="font-medium text-foreground">{land.current_crop.crop_name}</div>
+                </div>
+                {land.current_crop.variety && (
+                  <div>
+                    <span className="text-muted-foreground">Variety:</span>
+                    <div className="font-medium text-foreground">{land.current_crop.variety}</div>
+                  </div>
+                )}
+                {land.current_crop.growth_stage && (
+                  <div>
+                    <span className="text-muted-foreground">Stage:</span>
+                    <Badge variant="outline" className="text-xs">{land.current_crop.growth_stage}</Badge>
+                  </div>
+                )}
+                {land.current_crop.season && (
+                  <div>
+                    <span className="text-muted-foreground">Season:</span>
+                    <Badge variant="outline" className="text-xs">{land.current_crop.season}</Badge>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center">
-                <div className="text-xs text-stone-500">pH Level</div>
-                <div className="font-bold text-stone-700">
-                  {land.soil_health.ph_level?.toFixed(1) || 'N/A'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-stone-500">Nitrogen</div>
-                <div className="font-bold text-stone-700 capitalize">
-                  {land.soil_health.nitrogen_level || 'N/A'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xs text-stone-500">OC %</div>
-                <div className="font-bold text-stone-700">
-                  {land.soil_health.organic_carbon?.toFixed(1) || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Enhanced Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="flex items-center space-x-2 bg-blue-50 rounded-lg p-2 border border-blue-100">
-            <Droplets className="w-4 h-4 text-blue-600" />
-            <div>
-              <p className="text-blue-600 font-medium">Irrigation</p>
-              <p className="text-blue-700 font-semibold truncate">
-                {land.irrigation_source || 'Not set'}
-              </p>
+          {/* Soil Health Information */}
+          {land.soil_health && (
+            <div className="space-y-3 p-4 bg-accent/5 rounded-lg border border-accent/20">
+              <div className="flex items-center gap-2">
+                <TestTube className="w-4 h-4 text-accent" />
+                <h4 className="font-semibold text-foreground">Soil Health</h4>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                {land.soil_health.ph_level && (
+                  <div>
+                    <span className="text-muted-foreground">pH Level:</span>
+                    <div className="font-bold text-foreground">{land.soil_health.ph_level}</div>
+                  </div>
+                )}
+                {land.soil_health.nitrogen_level && (
+                  <div>
+                    <span className="text-muted-foreground">Nitrogen:</span>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        land.soil_health.nitrogen_level === 'high' ? 'text-green-600' :
+                        land.soil_health.nitrogen_level === 'medium' ? 'text-yellow-600' : 'text-red-600'
+                      }`}
+                    >
+                      {land.soil_health.nitrogen_level}
+                    </Badge>
+                  </div>
+                )}
+                {land.soil_health.organic_carbon && (
+                  <div>
+                    <span className="text-muted-foreground">Organic C:</span>
+                    <div className="font-bold text-foreground">{land.soil_health.organic_carbon.toFixed(1)}%</div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2 bg-indigo-50 rounded-lg p-2 border border-indigo-100">
-            <Activity className="w-4 h-4 text-indigo-600" />
-            <div>
-              <p className="text-indigo-600 font-medium">Activities</p>
-              <p className="text-indigo-700 font-semibold">
-                {land.recent_activities?.length || 0} recent
-              </p>
-            </div>
-          </div>
-        </div>
+          )}
 
-        {/* NDVI Health Indicator */}
-        {land.recent_ndvi && (
-          <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-3 border border-teal-100">
-            <div className="flex items-center justify-between">
+          {/* Quick Statistics */}
+          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Droplets className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-xs text-teal-600 font-medium">Crop Health (NDVI)</p>
-                <p className="text-lg font-bold text-teal-700">
-                  {land.recent_ndvi.ndvi_value?.toFixed(2) || 'N/A'}
+                <p className="text-xs text-muted-foreground">Irrigation</p>
+                <p className="text-sm font-medium text-foreground">
+                  {land.irrigation_source || 'Not specified'}
                 </p>
-                <p className="text-xs text-teal-500">satellite data</p>
               </div>
-              <div className="flex items-center space-x-1">
-                <TrendingUp className="w-4 h-4 text-teal-600" />
-                <Satellite className="w-4 h-4 text-teal-500" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-green-600" />
+              <div>
+                <p className="text-xs text-muted-foreground">Recent Activity</p>
+                <p className="text-sm font-medium text-foreground">
+                  {land.recent_activities?.length || 0} activities
+                </p>
               </div>
             </div>
           </div>
-        )}
 
+          {/* NDVI Health Status */}
+          {land.recent_ndvi && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Satellite className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-foreground">Crop Health (NDVI)</span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {(land.recent_ndvi.ndvi_value * 100).toFixed(0)}%
+                </Badge>
+              </div>
+              <Progress 
+                value={land.recent_ndvi.ndvi_value * 100} 
+                className="h-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Last updated: {new Date(land.recent_ndvi.date).toLocaleDateString()}
+              </p>
+            </div>
+          )}
 
-        {/* Enhanced Action Buttons */}
-        <div className="flex space-x-2 pt-2 border-t border-border/50">
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit?.(land);
-            }}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            View Details
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-primary/20 text-primary hover:bg-primary/10"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit?.(land);
-            }}
-            title="Soil Analysis"
-          >
-            <TestTube className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-primary/20 text-primary hover:bg-primary/10"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Add more actions menu
-            }}
-            title="More Actions"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </Button>
-        </div>
-        {/* Offline indicator */}
-        {isOffline && (
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            <WifiOff className="w-3 h-3" />
-            <span>Saved offline - will sync when connected</span>
+          {/* Enhanced Action Buttons */}
+          <div className="flex gap-3 pt-6 border-t border-border">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(land);
+              }}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 hover:bg-accent/10 hover:border-accent transition-all duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FlaskConical className="w-4 h-4 mr-2" />
+              Analysis
+            </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Enhanced Status Footer */}
+          {isOffline ? (
+            <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-lg">
+              <div className="flex items-center justify-center gap-2">
+                <WifiOff className="w-4 h-4 text-orange-600" />
+                <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">
+                  Offline Data
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-center gap-2">
+                <Wifi className="w-4 h-4 text-green-600" />
+                <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                  Live Data
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </LandErrorBoundary>
   );
 };

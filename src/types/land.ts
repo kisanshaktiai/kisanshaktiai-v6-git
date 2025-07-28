@@ -10,8 +10,20 @@ export interface Land {
   area_acres: number;
   boundary_polygon?: Json;
   center_point?: Json;
+  boundary_polygon_old?: Json;
+  center_point_old?: Json;
   ownership_type: 'owned' | 'leased' | 'shared' | 'rented';
   irrigation_source?: string;
+  village?: string;
+  taluka?: string;
+  district?: string;
+  state?: string;
+  soil_type?: string;
+  water_source?: string;
+  gps_accuracy_meters?: number;
+  gps_recorded_at?: string;
+  boundary_method?: string;
+  location_context?: Json;
   created_at: string;
   updated_at: string;
 }
