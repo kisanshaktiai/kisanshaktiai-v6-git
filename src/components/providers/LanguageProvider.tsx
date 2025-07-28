@@ -5,6 +5,7 @@ import { LanguageService } from '@/services/LanguageService';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { setLanguage } from '@/store/slices/farmerSlice';
+import { loadLanguageResources } from '@/i18n';
 
 interface LanguageContextType {
   currentLanguage: string;
@@ -45,6 +46,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
     try {
       setIsChangingLanguage(true);
+      
+      // Lazy load language resources if not already loaded
+      const loaded = await loadLanguageResources(languageCode);
+      if (!loaded && !['en', 'hi'].includes(languageCode)) {
+        console.warn(`Failed to load language ${languageCode}, falling back to English`);
+        languageCode = 'en';
+      }
       
       // Change language in i18n
       await i18n.changeLanguage(languageCode);

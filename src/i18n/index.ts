@@ -3,22 +3,47 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import translation files
+// Core translations - loaded immediately
 import enTranslations from '../locales/en.json';
 import hiTranslations from '../locales/hi.json';
-import mrTranslations from '../locales/mr.json';
-import paTranslations from '../locales/pa.json';
-import teTranslations from '../locales/te.json';
-import taTranslations from '../locales/ta.json';
-import guTranslations from '../locales/gu.json';
-import knTranslations from '../locales/kn.json';
-import bnTranslations from '../locales/bn.json';
-import mlTranslations from '../locales/ml.json';
-import orTranslations from '../locales/or.json';
-import urTranslations from '../locales/ur.json';
 import dashboardEn from '../locales/dashboard-en.json';
 import dashboardHi from '../locales/dashboard-hi.json';
 
+// Language loader for lazy loading
+const loadLanguage = async (languageCode: string) => {
+  try {
+    switch (languageCode) {
+      case 'mr':
+        return (await import('../locales/mr.json')).default;
+      case 'pa':
+        return (await import('../locales/pa.json')).default;
+      case 'te':
+        return (await import('../locales/te.json')).default;
+      case 'ta':
+        return (await import('../locales/ta.json')).default;
+      case 'gu':
+        return (await import('../locales/gu.json')).default;
+      case 'kn':
+        return (await import('../locales/kn.json')).default;
+      case 'bn':
+        return (await import('../locales/bn.json')).default;
+      case 'ml':
+        return (await import('../locales/ml.json')).default;
+      case 'or':
+        return (await import('../locales/or.json')).default;
+      case 'ur':
+        return (await import('../locales/ur.json')).default;
+      default:
+        console.warn(`Language ${languageCode} not supported`);
+        return null;
+    }
+  } catch (error) {
+    console.error(`Failed to load language ${languageCode}:`, error);
+    return null;
+  }
+};
+
+// Initial resources with core languages only
 const resources = {
   en: {
     translation: enTranslations,
@@ -28,46 +53,61 @@ const resources = {
     translation: hiTranslations,
     dashboard: dashboardHi,
   },
-  mr: {
-    translation: mrTranslations,
-    dashboard: dashboardEn, // Use English dashboard as fallback
-  },
-  pa: {
-    translation: paTranslations,
-    dashboard: dashboardEn,
-  },
-  te: {
-    translation: teTranslations,
-    dashboard: dashboardEn,
-  },
-  ta: {
-    translation: taTranslations,
-    dashboard: dashboardEn,
-  },
-  gu: {
-    translation: guTranslations,
-    dashboard: dashboardEn,
-  },
-  kn: {
-    translation: knTranslations,
-    dashboard: dashboardEn,
-  },
-  bn: {
-    translation: bnTranslations,
-    dashboard: dashboardEn,
-  },
-  ml: {
-    translation: mlTranslations,
-    dashboard: dashboardEn,
-  },
-  or: {
-    translation: orTranslations,
-    dashboard: dashboardEn,
-  },
-  ur: {
-    translation: urTranslations,
-    dashboard: dashboardEn,
-  },
+};
+
+// Enhanced language loader with caching
+export const loadLanguageResources = async (languageCode: string) => {
+  // Skip if already loaded
+  if (resources[languageCode as keyof typeof resources]) {
+    return true;
+  }
+
+  console.log(`🌐 Lazy loading language: ${languageCode}`);
+  
+  // Check cache first
+  const cacheKey = `i18n_${languageCode}`;
+  const cached = localStorage.getItem(cacheKey);
+  
+  let translations;
+  if (cached) {
+    try {
+      translations = JSON.parse(cached);
+      console.log(`📦 Loaded ${languageCode} from cache`);
+    } catch (error) {
+      console.warn(`Failed to parse cached translations for ${languageCode}:`, error);
+    }
+  }
+
+  // Load from network if not cached
+  if (!translations) {
+    translations = await loadLanguage(languageCode);
+    if (translations) {
+      // Cache the translations
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(translations));
+        console.log(`💾 Cached translations for ${languageCode}`);
+      } catch (error) {
+        console.warn(`Failed to cache translations for ${languageCode}:`, error);
+      }
+    }
+  }
+
+  if (translations) {
+    // Add to i18n resources
+    i18n.addResources(languageCode, 'translation', translations);
+    i18n.addResources(languageCode, 'dashboard', dashboardEn); // Fallback to English dashboard
+    
+    // Update local resources object
+    (resources as any)[languageCode] = {
+      translation: translations,
+      dashboard: dashboardEn,
+    };
+    
+    console.log(`✅ Language ${languageCode} loaded successfully`);
+    return true;
+  }
+
+  return false;
 };
 
 i18n
@@ -103,7 +143,8 @@ i18n
       return fallbackValue || key.split('.').pop() || key;
     },
     ns: ['translation', 'dashboard'],
-    preload: ['en', 'hi'],
+    preload: ['en', 'hi'], // Only preload core languages
+    partialBundledLanguages: true, // Enable partial bundling for lazy loading
     returnEmptyString: false,
     returnNull: false,
     keySeparator: '.',

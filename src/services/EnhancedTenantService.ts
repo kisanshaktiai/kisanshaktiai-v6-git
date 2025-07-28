@@ -303,10 +303,83 @@ export class EnhancedTenantService {
     // Preload tenant-specific assets (logos, images, etc.)
     const branding = await this.cache.get('tenant', 'branding', tenantId);
     if (branding?.logo_url) {
-      // Preload logo image
-      const img = new Image();
-      img.src = branding.logo_url;
+      // Preload logo image with CDN optimization
+      await this.preloadImage(branding.logo_url);
     }
+    
+    // Preload other tenant assets from CDN
+    await this.preloadTenantCDNAssets(tenantId, branding);
+  }
+
+  private async preloadImage(url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        console.log(`📸 Preloaded image: ${url}`);
+        resolve();
+      };
+      img.onerror = () => {
+        console.warn(`Failed to preload image: ${url}`);
+        reject();
+      };
+      
+      // Optimize image URL for CDN if it's a tenant asset
+      img.src = this.getOptimizedImageUrl(url);
+    });
+  }
+
+  private getOptimizedImageUrl(url: string, options: {
+    width?: number;
+    height?: number;
+    format?: 'webp' | 'jpg' | 'png';
+    quality?: number;
+  } = {}): string {
+    if (!url || url.startsWith('data:')) return url;
+    
+    // Check if it's a Supabase storage URL for tenant assets
+    if (url.includes('storage/v1/object/public/tenant-assets/')) {
+      const baseUrl = url.split('?')[0];
+      const params = new URLSearchParams();
+      
+      if (options.width) params.set('width', options.width.toString());
+      if (options.height) params.set('height', options.height.toString());
+      if (options.format) params.set('format', options.format);
+      if (options.quality) params.set('quality', (options.quality || 85).toString());
+      
+      // Add cache headers
+      params.set('cache', '31536000'); // 1 year cache
+      
+      return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    }
+    
+    return url;
+  }
+
+  private async preloadTenantCDNAssets(tenantId: string, branding: any): Promise<void> {
+    const assetUrls: string[] = [];
+    
+    // Collect all asset URLs from branding
+    if (branding?.favicon_url) assetUrls.push(branding.favicon_url);
+    if (branding?.background_image_url) assetUrls.push(branding.background_image_url);
+    if (branding?.custom_icons) {
+      Object.values(branding.custom_icons as Record<string, string>).forEach(url => {
+        if (typeof url === 'string') assetUrls.push(url);
+      });
+    }
+    
+    // Preload assets in parallel with different optimization for each
+    const preloadPromises = assetUrls.map(async (url, index) => {
+      try {
+        // Stagger requests to avoid overwhelming the CDN
+        await new Promise(resolve => setTimeout(resolve, index * 100));
+        await this.preloadImage(url);
+      } catch (error) {
+        console.warn(`Failed to preload tenant asset: ${url}`, error);
+      }
+    });
+    
+    await Promise.allSettled(preloadPromises);
+    console.log(`📦 Preloaded ${assetUrls.length} tenant assets for ${tenantId}`);
   }
 
   /**
