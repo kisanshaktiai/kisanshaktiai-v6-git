@@ -138,8 +138,15 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Create proper PostGIS geometry for boundary
-      const boundaryGeometry = `POLYGON((${boundaryPoints.map(p => `${p.lng} ${p.lat}`).join(', ')}, ${boundaryPoints[0].lng} ${boundaryPoints[0].lat}))`;
+      // Validate boundary points
+      if (!boundaryPoints || boundaryPoints.length < 3) {
+        toast({
+          title: "Invalid Boundary",
+          description: "At least 3 boundary points are required.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const landData: LandCreateInput = {
         name: formData.name.trim(),
@@ -164,12 +171,18 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         } : {}
       };
 
-      // Add boundary polygon to the data
+      // Create proper GeoJSON for PostGIS (ensure closed polygon)
+      const coordinates = [...boundaryPoints.map(p => [p.lng, p.lat])];
+      if (coordinates[0][0] !== coordinates[coordinates.length - 1][0] || 
+          coordinates[0][1] !== coordinates[coordinates.length - 1][1]) {
+        coordinates.push([boundaryPoints[0].lng, boundaryPoints[0].lat]);
+      }
+
       const finalLandData = {
         ...landData,
         boundary_polygon: {
           type: 'Polygon',
-          coordinates: [[...boundaryPoints.map(p => [p.lng, p.lat]), [boundaryPoints[0].lng, boundaryPoints[0].lat]]]
+          coordinates: [coordinates]
         },
         center_point: centerPoint ? {
           type: 'Point',
@@ -177,6 +190,8 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         } : null
       };
 
+      console.log('Submitting land data:', finalLandData);
+      
       await createLandMutation.mutateAsync(finalLandData);
       
       toast({
@@ -189,9 +204,10 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
       
     } catch (error) {
       console.error('Error creating land:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save land details. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to save land details. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

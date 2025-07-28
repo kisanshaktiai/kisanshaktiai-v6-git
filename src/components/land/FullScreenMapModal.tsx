@@ -70,7 +70,7 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
   const [boundaryMethod, setBoundaryMethod] = useState<'manual' | 'gps_walk' | 'gps_points'>('manual');
   const [showLocationLabels, setShowLocationLabels] = useState(true);
 
-  // Load Google Maps
+  // Load Google Maps with optimized caching
   const loadGoogleMaps = useCallback(async () => {
     if (window.google) {
       setMapsLoaded(true);
@@ -78,31 +78,49 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     }
 
     try {
-      // Get API key from Supabase Edge Function with proper URL
-      const response = await fetch(`https://qfklkkzxemsbeniyugiz.supabase.co/functions/v1/get-maps-key`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      const { apiKey } = data;
+      // Check for cached API key first
+      let apiKey = localStorage.getItem('google_maps_api_key');
       
       if (!apiKey) {
-        throw new Error('Google Maps API key not found');
+        // Get API key from Supabase Edge Function with proper URL
+        const response = await fetch(`https://qfklkkzxemsbeniyugiz.supabase.co/functions/v1/get-maps-key`, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        apiKey = data.apiKey;
+        
+        if (!apiKey) {
+          throw new Error('Google Maps API key not found');
+        }
+        
+        // Cache the API key
+        localStorage.setItem('google_maps_api_key', apiKey);
+      }
+      
+      // Check if script already exists
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+      if (existingScript) {
+        existingScript.remove();
       }
       
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places`;
+      script.async = true;
+      script.defer = true;
       script.onload = () => setMapsLoaded(true);
       script.onerror = () => {
+        // Clear cached key on error
+        localStorage.removeItem('google_maps_api_key');
         toast({
           title: "Map Loading Error",
           description: "Failed to load Google Maps. Please try again.",
@@ -112,6 +130,8 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
       document.head.appendChild(script);
     } catch (error) {
       console.error('Error loading Google Maps:', error);
+      // Clear cached key on error
+      localStorage.removeItem('google_maps_api_key');
       toast({
         title: "Configuration Error",
         description: "Google Maps API not configured. Please contact support.",
@@ -135,10 +155,38 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
       fullscreenControl: false,
       gestureHandling: 'greedy',
       styles: [
+        // Show place names, villages, cities - essential for farmers
         {
-          featureType: "poi",
+          featureType: "administrative.locality",
+          elementType: "labels.text",
+          stylers: [{ visibility: "on" }, { color: "#2563eb" }, { weight: "bold" }]
+        },
+        {
+          featureType: "administrative.neighborhood",
+          elementType: "labels.text",
+          stylers: [{ visibility: "on" }, { color: "#059669" }]
+        },
+        {
+          featureType: "administrative.land_parcel",
+          elementType: "labels.text",
+          stylers: [{ visibility: "on" }, { color: "#dc2626" }]
+        },
+        // Hide unnecessary POI labels but keep important ones
+        {
+          featureType: "poi.business",
           elementType: "labels",
           stylers: [{ visibility: "off" }]
+        },
+        {
+          featureType: "poi.government",
+          elementType: "labels.text",
+          stylers: [{ visibility: "on" }, { color: "#7c3aed" }]
+        },
+        // Enhanced road labels for navigation
+        {
+          featureType: "road",
+          elementType: "labels.text",
+          stylers: [{ visibility: "on" }, { color: "#374151" }]
         }
       ]
     });
@@ -504,12 +552,12 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     mapInstanceRef.current.fitBounds(bounds);
   }, [points, tenant?.branding?.primary_color]);
 
-  // Load maps when modal opens
+  // Preload maps on component mount for faster access
   useEffect(() => {
-    if (open && !mapsLoaded) {
+    if (!mapsLoaded && !document.querySelector('script[src*="maps.googleapis.com"]')) {
       loadGoogleMaps();
     }
-  }, [open, mapsLoaded, loadGoogleMaps]);
+  }, [loadGoogleMaps, mapsLoaded]);
 
   // Initialize map when loaded
   useEffect(() => {
@@ -609,7 +657,8 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
               <div className="flex items-center justify-center h-full bg-muted/50">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading satellite view...</p>
+                  <p className="text-muted-foreground">Loading maps with place names...</p>
+                  <p className="text-xs text-muted-foreground mt-2">Villages, roads, and landmarks will be visible</p>
                 </div>
               </div>
             )}
