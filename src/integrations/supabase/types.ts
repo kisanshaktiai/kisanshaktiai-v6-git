@@ -7807,6 +7807,16 @@ export type Database = {
         Args: { tenant_uuid: string }
         Returns: boolean
       }
+      verify_admin_user_setup: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          is_verified: boolean
+          admin_role: string
+          issues: string[]
+        }[]
+      }
     }
     Enums: {
       alert_severity: "low" | "medium" | "high" | "critical" | "info"
