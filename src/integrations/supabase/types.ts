@@ -1888,6 +1888,7 @@ export type Database = {
           area_acres: number
           area_guntas: number | null
           boundary: unknown | null
+          boundary_method: string | null
           boundary_polygon_old: Json | null
           center_point_old: Json | null
           created_at: string
@@ -1897,6 +1898,8 @@ export type Database = {
           elevation_meters: number | null
           expected_harvest_date: string | null
           farmer_id: string
+          gps_accuracy_meters: number | null
+          gps_recorded_at: string | null
           id: string
           irrigation_source: string | null
           is_active: boolean | null
@@ -1904,6 +1907,7 @@ export type Database = {
           land_type: string | null
           last_soil_test_date: string | null
           last_sowing_date: string | null
+          location_context: Json | null
           name: string
           nitrogen_kg_per_ha: number | null
           organic_carbon_percent: number | null
@@ -1925,6 +1929,7 @@ export type Database = {
           area_acres: number
           area_guntas?: number | null
           boundary?: unknown | null
+          boundary_method?: string | null
           boundary_polygon_old?: Json | null
           center_point_old?: Json | null
           created_at?: string
@@ -1934,6 +1939,8 @@ export type Database = {
           elevation_meters?: number | null
           expected_harvest_date?: string | null
           farmer_id: string
+          gps_accuracy_meters?: number | null
+          gps_recorded_at?: string | null
           id?: string
           irrigation_source?: string | null
           is_active?: boolean | null
@@ -1941,6 +1948,7 @@ export type Database = {
           land_type?: string | null
           last_soil_test_date?: string | null
           last_sowing_date?: string | null
+          location_context?: Json | null
           name: string
           nitrogen_kg_per_ha?: number | null
           organic_carbon_percent?: number | null
@@ -1962,6 +1970,7 @@ export type Database = {
           area_acres?: number
           area_guntas?: number | null
           boundary?: unknown | null
+          boundary_method?: string | null
           boundary_polygon_old?: Json | null
           center_point_old?: Json | null
           created_at?: string
@@ -1971,6 +1980,8 @@ export type Database = {
           elevation_meters?: number | null
           expected_harvest_date?: string | null
           farmer_id?: string
+          gps_accuracy_meters?: number | null
+          gps_recorded_at?: string | null
           id?: string
           irrigation_source?: string | null
           is_active?: boolean | null
@@ -1978,6 +1989,7 @@ export type Database = {
           land_type?: string | null
           last_soil_test_date?: string | null
           last_sowing_date?: string | null
+          location_context?: Json | null
           name?: string
           nitrogen_kg_per_ha?: number | null
           organic_carbon_percent?: number | null
@@ -5695,6 +5707,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      check_admin_permission: {
+        Args: { required_role?: string }
+        Returns: boolean
+      }
       check_slug_availability: {
         Args: { p_slug: string }
         Returns: Json
@@ -6225,6 +6241,10 @@ export type Database = {
         Args: { "": string }
         Returns: unknown
       }
+      get_current_admin_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -6232,6 +6252,10 @@ export type Database = {
       get_jwt_farmer_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_location_context: {
+        Args: { lat: number; lng: number }
+        Returns: Json
       }
       get_onboarding_template: {
         Args: { tenant_type: string; subscription_plan: string }
@@ -6283,6 +6307,14 @@ export type Database = {
         Returns: unknown
       }
       is_authenticated_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -7627,6 +7659,10 @@ export type Database = {
       text: {
         Args: { "": unknown }
         Returns: string
+      }
+      track_admin_session: {
+        Args: { session_data?: Json }
+        Returns: undefined
       }
       track_failed_login: {
         Args: {

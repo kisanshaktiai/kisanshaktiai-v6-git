@@ -103,6 +103,15 @@ export interface LandCreateInput {
   center_point?: Json;
   ownership_type?: 'owned' | 'leased' | 'shared' | 'rented';
   irrigation_source?: string;
+  // Enhanced GPS tracking fields
+  village?: string;
+  taluka?: string;
+  district?: string;
+  state?: string;
+  gps_accuracy_meters?: number;
+  gps_recorded_at?: string;
+  boundary_method?: 'manual' | 'gps_walk' | 'gps_points' | 'satellite';
+  location_context?: Json;
 }
 
 export interface LandUpdateInput {

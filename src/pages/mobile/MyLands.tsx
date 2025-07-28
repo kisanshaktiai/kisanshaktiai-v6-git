@@ -30,6 +30,7 @@ export const MyLands: React.FC = () => {
     points: any[];
     area: number;
     centerPoint: any;
+    enhancedData?: any;
   } | null>(null);
   const [filters, setFilters] = useState({
     cropType: undefined as string | undefined,
@@ -97,8 +98,8 @@ export const MyLands: React.FC = () => {
     setShowMapModal(true);
   };
 
-  const handleBoundaryComplete = (points: any[], area: number, centerPoint: any) => {
-    setBoundaryData({ points, area, centerPoint });
+  const handleBoundaryComplete = (points: any[], area: number, centerPoint: any, enhancedData?: any) => {
+    setBoundaryData({ points, area, centerPoint, enhancedData });
     setShowMapModal(false);
     setShowFormModal(true);
   };
@@ -315,6 +316,7 @@ export const MyLands: React.FC = () => {
           boundaryPoints={boundaryData.points}
           calculatedArea={boundaryData.area}
           centerPoint={boundaryData.centerPoint}
+          enhancedData={boundaryData.enhancedData}
           onSuccess={handleLandSaved}
         />
       )}

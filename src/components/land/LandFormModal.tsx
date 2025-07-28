@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Camera, Calendar, MapPin, Save } from 'lucide-react';
 import { useCreateLand } from '@/hooks/useLands';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,7 @@ interface LandFormModalProps {
   boundaryPoints: Point[];
   calculatedArea: number;
   centerPoint: Point | null;
+  enhancedData?: any;
   onSuccess?: () => void;
 }
 
@@ -34,6 +36,7 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
   boundaryPoints,
   calculatedArea,
   centerPoint,
+  enhancedData,
   onSuccess
 }) => {
   const { toast } = useToast();
@@ -135,12 +138,35 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Create proper PostGIS geometry for boundary
+      const boundaryGeometry = `POLYGON((${boundaryPoints.map(p => `${p.lng} ${p.lat}`).join(', ')}, ${boundaryPoints[0].lng} ${boundaryPoints[0].lat}))`;
+      
       const landData: LandCreateInput = {
         name: formData.name.trim(),
         farmer_id: user.id,
         tenant_id: tenant?.id || '',
         area_acres: calculatedArea,
         survey_number: formData.survey_number.trim() || undefined,
+        ownership_type: formData.ownership_type,
+        irrigation_source: formData.irrigation_source.trim() || undefined,
+        // Enhanced fields from GPS tracking
+        village: enhancedData?.locationContext?.village,
+        taluka: enhancedData?.locationContext?.taluka,
+        district: enhancedData?.locationContext?.district,
+        state: enhancedData?.locationContext?.state,
+        gps_accuracy_meters: enhancedData?.gpsAccuracy,
+        gps_recorded_at: enhancedData?.recordedAt?.toISOString(),
+        boundary_method: enhancedData?.boundaryMethod || 'manual',
+        location_context: enhancedData?.locationContext ? {
+          ...enhancedData.locationContext,
+          totalPoints: enhancedData.totalPoints,
+          recordingMethod: enhancedData.boundaryMethod
+        } : {}
+      };
+
+      // Add boundary polygon to the data
+      const finalLandData = {
+        ...landData,
         boundary_polygon: {
           type: 'Polygon',
           coordinates: [[...boundaryPoints.map(p => [p.lng, p.lat]), [boundaryPoints[0].lng, boundaryPoints[0].lat]]]
@@ -148,12 +174,10 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         center_point: centerPoint ? {
           type: 'Point',
           coordinates: [centerPoint.lng, centerPoint.lat]
-        } : undefined,
-        ownership_type: formData.ownership_type,
-        irrigation_source: formData.irrigation_source.trim() || undefined
+        } : null
       };
 
-      await createLandMutation.mutateAsync(landData);
+      await createLandMutation.mutateAsync(finalLandData);
       
       toast({
         title: "Success!",

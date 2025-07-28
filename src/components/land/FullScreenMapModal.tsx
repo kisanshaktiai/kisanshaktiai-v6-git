@@ -29,7 +29,7 @@ interface Point {
 interface FullScreenMapModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onBoundaryComplete: (points: Point[], area: number, centerPoint: Point | null) => void;
+  onBoundaryComplete: (points: Point[], area: number, centerPoint: Point | null, enhancedData?: any) => void;
 }
 
 // Declare Google Maps types
@@ -59,6 +59,16 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [locationContext, setLocationContext] = useState<{
+    village?: string;
+    taluka?: string;
+    district?: string;
+    state?: string;
+    accuracy?: number;
+  } | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [boundaryMethod, setBoundaryMethod] = useState<'manual' | 'gps_walk' | 'gps_points'>('manual');
+  const [showLocationLabels, setShowLocationLabels] = useState(true);
 
   // Load Google Maps
   const loadGoogleMaps = useCallback(async () => {
@@ -165,8 +175,9 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
             }
           });
 
-          // Search for nearby places
-          searchNearbyPlaces(pos);
+          // Get detailed location context
+          getLocationContext(pos);
+          setGpsAccuracy(position.coords.accuracy);
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -187,6 +198,7 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     // Click to add points
     map.addListener('click', (e: any) => {
       if (!walkMode && e.latLng) {
+        setBoundaryMethod('manual');
         addBoundaryPoint({
           lat: e.latLng.lat(),
           lng: e.latLng.lng()
@@ -195,33 +207,98 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     });
   }, [tenant?.branding?.primary_color, toast, walkMode]);
 
-  // Search nearby places for context
+  // Enhanced location context with reverse geocoding
+  const getLocationContext = async (location: Point) => {
+    try {
+      // Use Google Maps Geocoding API for detailed location info
+      const geocoder = new window.google.maps.Geocoder();
+      
+      geocoder.geocode({ location: new window.google.maps.LatLng(location.lat, location.lng) }, (results: any[], status: any) => {
+        if (status === 'OK' && results[0]) {
+          const components = results[0].address_components;
+          const context: any = {};
+          
+          components.forEach((component: any) => {
+            const types = component.types;
+            if (types.includes('locality') || types.includes('administrative_area_level_3')) {
+              context.village = component.long_name;
+            } else if (types.includes('administrative_area_level_2')) {
+              context.taluka = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              context.district = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              context.state = component.long_name;
+            }
+          });
+          
+          setLocationContext(context);
+          
+          // Also search for nearby landmarks
+          searchNearbyPlaces(location);
+        }
+      });
+    } catch (error) {
+      console.error('Error getting location context:', error);
+    }
+  };
+
+  // Search nearby places for context with enhanced types
   const searchNearbyPlaces = (location: Point) => {
     if (!placesServiceRef.current) return;
 
     const request = {
       location: new window.google.maps.LatLng(location.lat, location.lng),
-      radius: 1000,
-      types: ['locality', 'administrative_area_level_1', 'administrative_area_level_2']
+      radius: 2000,
+      types: ['locality', 'sublocality', 'administrative_area_level_1', 'administrative_area_level_2', 'administrative_area_level_3']
     };
 
     placesServiceRef.current.nearbySearch(request, (results: any[], status: any) => {
       if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-        setNearbyPlaces(results.slice(0, 3));
+        setNearbyPlaces(results.slice(0, 5));
+        
+        // Add labels to map if enabled
+        if (showLocationLabels) {
+          results.slice(0, 3).forEach((place: any, index: number) => {
+            const marker = new window.google.maps.Marker({
+              position: place.geometry.location,
+              map: mapInstanceRef.current,
+              title: place.name,
+              icon: {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="${tenant?.branding?.accent_color || '#6366F1'}" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                `),
+                scaledSize: new window.google.maps.Size(16, 16),
+                anchor: new window.google.maps.Point(8, 16),
+                labelOrigin: new window.google.maps.Point(8, -2)
+              },
+              label: {
+                text: place.name,
+                color: '#374151',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                className: 'map-label'
+              }
+            });
+          });
+        }
       }
     });
   };
 
-  // Add boundary point
-  const addBoundaryPoint = (point: Point) => {
+  // Add boundary point with enhanced GPS tracking
+  const addBoundaryPoint = (point: Point, accuracy?: number) => {
     setPoints(prev => {
       const newPoints = [...prev, point];
       
-      // Add marker
+      // Add marker with GPS accuracy indication
+      const markerColor = accuracy && accuracy > 10 ? '#F59E0B' : tenant?.branding?.primary_color || '#10B981';
       const marker = new window.google.maps.Marker({
         position: point,
         map: mapInstanceRef.current,
-        title: `Point ${newPoints.length}`,
+        title: `Point ${newPoints.length}${accuracy ? ` (±${accuracy.toFixed(1)}m)` : ''}`,
         label: {
           text: newPoints.length.toString(),
           color: 'white',
@@ -229,8 +306,9 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
         },
         icon: {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="${tenant?.branding?.primary_color || '#10B981'}" stroke="white" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="${markerColor}" stroke="white" stroke-width="2">
               <circle cx="12" cy="12" r="8"/>
+              ${accuracy && accuracy > 10 ? '<circle cx="12" cy="12" r="4" fill="white"/>' : ''}
             </svg>
           `),
           scaledSize: new window.google.maps.Size(20, 20),
@@ -238,12 +316,26 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
         }
       });
       
+      // Add accuracy circle if GPS tracking
+      if (accuracy && accuracy > 0) {
+        const accuracyCircle = new window.google.maps.Circle({
+          strokeColor: markerColor,
+          strokeOpacity: 0.8,
+          strokeWeight: 1,
+          fillColor: markerColor,
+          fillOpacity: 0.1,
+          map: mapInstanceRef.current,
+          center: point,
+          radius: accuracy
+        });
+      }
+      
       markersRef.current.push(marker);
       return newPoints;
     });
   };
 
-  // Start GPS walking mode
+  // Enhanced GPS walking mode with accuracy tracking
   const startWalkMode = () => {
     if (!navigator.geolocation) {
       toast({
@@ -255,8 +347,14 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
     }
 
     setWalkMode(true);
+    setBoundaryMethod('gps_walk');
     setPoints([]);
     clearMarkers();
+    
+    toast({
+      title: "GPS Walking Mode",
+      description: "Walk around your field boundary. Points will be recorded automatically.",
+    });
     
     const id = navigator.geolocation.watchPosition(
       (position) => {
@@ -265,9 +363,15 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
           lng: position.coords.longitude
         };
         
-        // Only add if moved significantly (>2 meters)
+        const accuracy = position.coords.accuracy;
+        setGpsAccuracy(accuracy);
+        
+        // Only add if moved significantly and accuracy is reasonable
         setPoints(prev => {
-          if (prev.length === 0) return [newPoint];
+          if (prev.length === 0) {
+            addBoundaryPoint(newPoint, accuracy);
+            return [newPoint];
+          }
           
           const lastPoint = prev[prev.length - 1];
           const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
@@ -275,39 +379,61 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
             new window.google.maps.LatLng(newPoint.lat, newPoint.lng)
           );
           
-          if (distance > 2) {
-            addBoundaryPoint(newPoint);
+          // Adaptive distance threshold based on accuracy
+          const minDistance = Math.max(2, accuracy * 0.5);
+          
+          if (distance > minDistance) {
+            addBoundaryPoint(newPoint, accuracy);
             return [...prev, newPoint];
           }
           return prev;
         });
+        
+        // Update map center to follow user
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.panTo(newPoint);
+        }
       },
       (error) => {
         console.error('GPS tracking error:', error);
         setWalkMode(false);
+        setBoundaryMethod('manual');
         toast({
           title: "GPS Tracking Error",
-          description: "Unable to track your movement. Please ensure GPS is enabled.",
+          description: "Unable to track your movement. Please ensure GPS is enabled and you have a clear sky view.",
           variant: "destructive"
         });
       },
       { 
         enableHighAccuracy: true, 
-        maximumAge: 1000, 
-        timeout: 5000 
+        maximumAge: 500, 
+        timeout: 10000 
       }
     );
     
     setWatchId(id);
 
-    // Auto-stop after 10 minutes
+    // Auto-stop after 15 minutes with warning at 10 minutes
+    setTimeout(() => {
+      toast({
+        title: "GPS Tracking",
+        description: "GPS tracking will stop in 5 minutes. Complete your boundary soon.",
+        variant: "default"
+      });
+    }, 600000);
+    
     setTimeout(() => {
       if (id) {
         navigator.geolocation.clearWatch(id);
         setWalkMode(false);
+        setBoundaryMethod('manual');
         setWatchId(null);
+        toast({
+          title: "GPS Tracking Stopped",
+          description: "GPS tracking has been automatically stopped after 15 minutes.",
+        });
       }
-    }, 600000);
+    }, 900000);
   };
 
   // Stop walk mode
@@ -421,7 +547,19 @@ export const FullScreenMapModal: React.FC<FullScreenMapModalProps> = ({
       return;
     }
 
-    onBoundaryComplete(points, calculatedArea, currentLocation);
+    // Enhanced data for land creation
+    const enhancedData = {
+      points,
+      area: calculatedArea,
+      centerPoint: currentLocation,
+      locationContext,
+      gpsAccuracy,
+      boundaryMethod,
+      recordedAt: new Date(),
+      totalPoints: points.length
+    };
+
+    onBoundaryComplete(points, calculatedArea, currentLocation, enhancedData);
     onOpenChange(false);
   };
 
