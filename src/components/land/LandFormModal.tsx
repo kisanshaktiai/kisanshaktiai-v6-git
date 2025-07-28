@@ -7,13 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Calendar, MapPin, Save } from 'lucide-react';
-import { useCreateLand } from '@/hooks/useLands';
+import { Camera, Calendar, MapPin, Save, Upload, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { useToast } from '@/hooks/use-toast';
 import { LandCreateInput } from '@/types/land';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface Point {
   lat: number;
@@ -42,7 +42,6 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const createLandMutation = useCreateLand();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +56,8 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
 
   const [timestamp] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -71,26 +72,89 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         crop_pattern: '',
         photos: []
       });
+      setCapturedPhotos([]);
+      generateUniqueLandName();
     }
   }, [open]);
 
-  // Auto-suggest land name based on location
-  useEffect(() => {
-    if (open && centerPoint && !formData.name) {
-      // You could integrate with reverse geocoding here
-      // For now, use a simple pattern
-      const suggestedName = `Field ${new Date().toLocaleDateString('en-IN')}`;
-      setFormData(prev => ({ ...prev, name: suggestedName }));
+  // Generate unique land name
+  const generateUniqueLandName = async () => {
+    if (!centerPoint || !tenant?.id || !user?.id) return;
+    
+    setIsGeneratingName(true);
+    try {
+      const { data } = await supabase.functions.invoke('land-operations', {
+        body: {
+          action: 'GENERATE_NAME',
+          latitude: centerPoint.lat,
+          longitude: centerPoint.lng,
+          tenantId: tenant.id
+        }
+      });
+      
+      if (data?.success && data?.name) {
+        setFormData(prev => ({ ...prev, name: data.name }));
+      }
+    } catch (error) {
+      console.error('Error generating name:', error);
+      // Fallback to simple name
+      const fallbackName = `Field ${new Date().toLocaleDateString('en-IN')}`;
+      setFormData(prev => ({ ...prev, name: fallbackName }));
+    } finally {
+      setIsGeneratingName(false);
     }
-  }, [open, centerPoint, formData.name]);
+  };
 
-  const handlePhotoCapture = () => {
-    // In a real implementation, this would use Capacitor Camera
-    // For now, we'll just show a placeholder
-    toast({
-      title: "Photo Capture",
-      description: "Photo capture functionality will be implemented with camera integration.",
-    });
+  const handlePhotoCapture = async () => {
+    try {
+      const image = await CapacitorCamera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        width: 1024,
+        height: 1024
+      });
+
+      if (image.dataUrl) {
+        setCapturedPhotos(prev => [...prev, image.dataUrl!]);
+        toast({
+          title: "Photo Captured",
+          description: "Photo captured successfully!",
+        });
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast({
+        title: "Camera Error",
+        description: "Unable to capture photo. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            setCapturedPhotos(prev => [...prev, e.target!.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      
+      toast({
+        title: "Photos Added",
+        description: `${files.length} photo(s) added successfully!`,
+      });
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setCapturedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleVoiceInput = (field: string) => {
@@ -145,12 +209,39 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
           description: "At least 3 boundary points are required.",
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
+
+      // Upload photos first if any
+      const uploadedPhotos: string[] = [];
+      if (capturedPhotos.length > 0) {
+        for (let i = 0; i < capturedPhotos.length; i++) {
+          try {
+            const base64Data = capturedPhotos[i].split(',')[1];
+            const fileName = `photo_${Date.now()}_${i}.jpg`;
+            
+            const { data: photoResult } = await supabase.functions.invoke('land-operations', {
+              body: {
+                action: 'UPLOAD_PHOTO',
+                landId: 'temp', // Will be replaced after land creation
+                photoData: base64Data,
+                fileName
+              }
+            });
+            
+            if (photoResult?.success) {
+              uploadedPhotos.push(photoResult.data.url);
+            }
+          } catch (photoError) {
+            console.error('Photo upload error:', photoError);
+            // Continue with land creation even if photo upload fails
+          }
+        }
+      }
       
-      const landData: LandCreateInput = {
+      const landData = {
         name: formData.name.trim(),
-        farmer_id: user.id,
         tenant_id: tenant?.id || '',
         area_acres: calculatedArea,
         survey_number: formData.survey_number.trim() || undefined,
@@ -167,8 +258,9 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         location_context: enhancedData?.locationContext ? {
           ...enhancedData.locationContext,
           totalPoints: enhancedData.totalPoints,
-          recordingMethod: enhancedData.boundaryMethod
-        } : {}
+          recordingMethod: enhancedData.boundaryMethod,
+          photos: uploadedPhotos
+        } : { photos: uploadedPhotos }
       };
 
       // Create proper GeoJSON for PostGIS (ensure closed polygon)
@@ -190,9 +282,23 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
         } : null
       };
 
-      console.log('Submitting land data:', finalLandData);
+      console.log('Submitting land data via edge function:', finalLandData);
       
-      await createLandMutation.mutateAsync(finalLandData);
+      // Use the enhanced edge function
+      const { data: result, error } = await supabase.functions.invoke('land-operations', {
+        body: {
+          action: 'CREATE',
+          ...finalLandData
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to create land');
+      }
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to create land');
+      }
       
       toast({
         title: "Success!",
@@ -282,17 +388,24 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., North Field, Main Farm"
                       required
+                      disabled={isGeneratingName}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => handleVoiceInput('name')}
+                      onClick={generateUniqueLandName}
+                      disabled={isGeneratingName}
                       className="px-3"
                     >
-                      🎤
+                      {isGeneratingName ? '⏳' : '🔄'}
                     </Button>
                   </div>
+                  {isGeneratingName && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Generating unique name...
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -416,15 +529,66 @@ export const LandFormModal: React.FC<LandFormModalProps> = ({
               {/* Photo Capture */}
               <div>
                 <Label>Land Photos (Optional)</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePhotoCapture}
-                  className="w-full mt-2"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Capture Land Photos
-                </Button>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePhotoCapture}
+                    className="flex-1"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Take Photo
+                  </Button>
+                  <div className="relative">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => document.getElementById('photo-upload')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload
+                    </Button>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                
+                {/* Photo Preview */}
+                {capturedPhotos.length > 0 && (
+                  <div className="mt-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      {capturedPhotos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={photo} 
+                            alt={`Land photo ${index + 1}`}
+                            className="w-full h-20 object-cover rounded border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removePhoto(index)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {capturedPhotos.length} photo(s) captured
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground mt-1">
                   Add photos to help identify your land visually
                 </p>

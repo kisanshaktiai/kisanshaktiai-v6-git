@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Droplets, Activity, TrendingUp, TestTube, Satellite, WifiOff } from 'lucide-react';
+import { MapPin, Droplets, Activity, TrendingUp, TestTube, Satellite, WifiOff, Eye, MoreVertical } from 'lucide-react';
 import { LandWithDetails } from '@/types/land';
 import { useTenant } from '@/hooks/useTenant';
 import { LandWeatherCard } from '@/components/weather/LandWeatherCard';
@@ -89,41 +89,90 @@ export const LandCard: React.FC<LandCardProps> = ({
   return (
     <LandErrorBoundary>
       <Card 
-        className={`cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${
-          selected ? 'ring-2 ring-primary' : ''
-        } ${isOffline ? 'opacity-75 border-dashed' : ''}`}
+        className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 ${
+          selected ? 'ring-2 ring-primary shadow-lg' : ''
+        } ${isOffline ? 'opacity-75 border-dashed' : ''} bg-gradient-to-br from-background to-background/50 border border-border/50`}
         onClick={() => onSelect?.(land)}
       >
-      {/* Map Thumbnail Header */}
-      <div className="relative h-24 bg-gradient-to-br from-sky-100 to-green-100 rounded-t-lg overflow-hidden">
+      {/* Enhanced Map Thumbnail Header */}
+      <div className="relative h-32 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 rounded-t-lg overflow-hidden">
         <div 
           ref={mapRef}
-          className="absolute inset-0 opacity-80"
+          className="absolute inset-0 opacity-70 transition-opacity group-hover:opacity-90"
         />
-        <div className="absolute top-2 left-2">
-          <Badge variant="secondary" className="text-xs">
-            {land.area_acres} acres
+        
+        {/* Glassmorphism overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+        
+        {/* Area Badge */}
+        <div className="absolute top-3 left-3">
+          <Badge 
+            variant="secondary" 
+            className="bg-background/90 backdrop-blur-sm text-xs font-medium shadow-sm"
+          >
+            {land.area_acres.toFixed(1)} acres
           </Badge>
         </div>
-        <div className="absolute top-2 right-2">
+        
+        {/* Health Score */}
+        <div className="absolute top-3 right-3">
           {land.health_score && (
-            <div className={`w-3 h-3 rounded-full ${getHealthColor(land.health_score)}`} 
-                 title={getHealthLabel(land.health_score)} />
+            <div 
+              className={`w-4 h-4 rounded-full ${getHealthColor(land.health_score)} shadow-sm ring-2 ring-background/80`} 
+              title={`Health: ${getHealthLabel(land.health_score)}`} 
+            />
           )}
         </div>
-        <div className="absolute bottom-2 left-2">
-          <Satellite className="w-4 h-4 text-white/80" />
+        
+        {/* Type Badge */}
+        <div className="absolute bottom-3 left-3">
+          <Badge 
+            variant="outline" 
+            className="bg-background/80 backdrop-blur-sm text-xs border-white/20"
+          >
+            <Satellite className="w-3 h-3 mr-1" />
+            {land.ownership_type}
+          </Badge>
+        </div>
+        
+        {/* Quick Action */}
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button 
+            size="sm" 
+            variant="secondary"
+            className="h-7 w-7 p-0 bg-background/80 backdrop-blur-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(land);
+            }}
+          >
+            <Eye className="w-3 h-3" />
+          </Button>
         </div>
       </div>
 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg truncate">{land.name}</CardTitle>
-          <div className="flex items-center space-x-1">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg font-semibold truncate text-foreground group-hover:text-primary transition-colors">
+              {land.name}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {land.survey_number ? `Survey: ${land.survey_number}` : 'GPS Mapped'}
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
             {land.health_score && (
-              <span className="text-xs font-medium px-2 py-1 rounded-full bg-background/50">
+              <Badge 
+                variant="outline" 
+                className={`text-xs font-medium ${
+                  land.health_score >= 4 ? 'border-green-500/50 text-green-700 bg-green-50' :
+                  land.health_score >= 3 ? 'border-yellow-500/50 text-yellow-700 bg-yellow-50' :
+                  'border-red-500/50 text-red-700 bg-red-50'
+                }`}
+              >
                 {getHealthLabel(land.health_score)}
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -131,106 +180,176 @@ export const LandCard: React.FC<LandCardProps> = ({
       <CardContent className="space-y-4">
         {/* Weather Integration */}
         {showWeather && land.boundary_polygon && (
-          <LandWeatherCard
-            landId={land.id}
-            latitude={18.5} // fallback - would extract from boundary in real implementation
-            longitude={73.7}
-            cropType={land.current_crop?.crop_name}
-            compact
-          />
-        )}
-        {/* Basic Info */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Area:</span>
-            <div className="font-medium">{land.area_acres} acres</div>
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-100">
+            <LandWeatherCard
+              landId={land.id}
+              latitude={18.5} // fallback - would extract from boundary in real implementation
+              longitude={73.7}
+              cropType={land.current_crop?.crop_name}
+              compact
+            />
           </div>
-          <div>
-            <span className="text-gray-600">Type:</span>
-            <div className="font-medium capitalize">{land.ownership_type}</div>
+        )}
+        
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-green-600 font-medium">Total Area</p>
+                <p className="text-lg font-bold text-green-700">{land.area_acres.toFixed(1)}</p>
+                <p className="text-xs text-green-500">acres</p>
+              </div>
+              <div className="w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-green-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-3 border border-purple-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-purple-600 font-medium">Type</p>
+                <p className="text-lg font-bold text-purple-700 capitalize">{land.ownership_type}</p>
+                <p className="text-xs text-purple-500">ownership</p>
+              </div>
+              <div className="w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center">
+                <Activity className="w-4 h-4 text-purple-600" />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Current Crop */}
         {land.current_crop && (
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600">Current Crop:</span>
-            <Badge variant="outline">{land.current_crop.crop_name}</Badge>
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 border border-amber-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-amber-600 font-medium">Current Crop</p>
+                <p className="text-sm font-semibold text-amber-700">{land.current_crop.crop_name}</p>
+                {land.current_crop.variety && (
+                  <p className="text-xs text-amber-500">{land.current_crop.variety}</p>
+                )}
+              </div>
+              <Badge 
+                variant="outline" 
+                className="border-amber-200 text-amber-700 bg-amber-50"
+              >
+                {land.current_crop.growth_stage || 'Active'}
+              </Badge>
+            </div>
           </div>
         )}
 
-        {/* Soil Health Summary */}
+        {/* Enhanced Soil Health Summary */}
         {land.soil_health && (
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="text-center">
-              <div className="text-gray-600">pH</div>
-              <div className="font-medium">{land.soil_health.ph_level || 'N/A'}</div>
+          <div className="bg-gradient-to-r from-stone-50 to-slate-50 rounded-lg p-3 border border-stone-100">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-stone-600 font-medium">Soil Health</p>
+              <TestTube className="w-3 h-3 text-stone-500" />
             </div>
-            <div className="text-center">
-              <div className="text-gray-600">N</div>
-              <div className="font-medium capitalize">
-                {land.soil_health.nitrogen_level || 'N/A'}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <div className="text-xs text-stone-500">pH Level</div>
+                <div className="font-bold text-stone-700">
+                  {land.soil_health.ph_level?.toFixed(1) || 'N/A'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-stone-500">Nitrogen</div>
+                <div className="font-bold text-stone-700 capitalize">
+                  {land.soil_health.nitrogen_level || 'N/A'}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-stone-500">OC %</div>
+                <div className="font-bold text-stone-700">
+                  {land.soil_health.organic_carbon?.toFixed(1) || 'N/A'}
+                </div>
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-gray-600">OC</div>
-              <div className="font-medium">{land.soil_health.organic_carbon || 'N/A'}%</div>
-            </div>
           </div>
         )}
 
-        {/* Location */}
-        <div className="flex items-center text-sm text-gray-600">
-          <MapPin className="w-4 h-4 mr-1" />
-          {land.survey_number ? `Survey: ${land.survey_number}` : 'Location set'}
+        {/* Enhanced Quick Stats */}
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="flex items-center space-x-2 bg-blue-50 rounded-lg p-2 border border-blue-100">
+            <Droplets className="w-4 h-4 text-blue-600" />
+            <div>
+              <p className="text-blue-600 font-medium">Irrigation</p>
+              <p className="text-blue-700 font-semibold truncate">
+                {land.irrigation_source || 'Not set'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 bg-indigo-50 rounded-lg p-2 border border-indigo-100">
+            <Activity className="w-4 h-4 text-indigo-600" />
+            <div>
+              <p className="text-indigo-600 font-medium">Activities</p>
+              <p className="text-indigo-700 font-semibold">
+                {land.recent_activities?.length || 0} recent
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Droplets className="w-3 h-3" />
-            <span>{land.irrigation_source || 'No irrigation'}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Activity className="w-3 h-3" />
-            <span>{land.recent_activities?.length || 0} activities</span>
-          </div>
-        </div>
-
-        {/* NDVI Indicator */}
+        {/* NDVI Health Indicator */}
         {land.recent_ndvi && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600">Crop Health (NDVI):</span>
-            <div className="flex items-center space-x-1">
-              <TrendingUp className="w-3 h-3 text-green-500" />
-              <span className="font-medium">{land.recent_ndvi.ndvi_value?.toFixed(2) || 'N/A'}</span>
+          <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-3 border border-teal-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-teal-600 font-medium">Crop Health (NDVI)</p>
+                <p className="text-lg font-bold text-teal-700">
+                  {land.recent_ndvi.ndvi_value?.toFixed(2) || 'N/A'}
+                </p>
+                <p className="text-xs text-teal-500">satellite data</p>
+              </div>
+              <div className="flex items-center space-x-1">
+                <TrendingUp className="w-4 h-4 text-teal-600" />
+                <Satellite className="w-4 h-4 text-teal-500" />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex space-x-2 pt-2">
+
+        {/* Enhanced Action Buttons */}
+        <div className="flex space-x-2 pt-2 border-t border-border/50">
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm" 
-            className="flex-1"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onEdit?.(land);
             }}
           >
+            <Eye className="w-4 h-4 mr-2" />
             View Details
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
+            className="border-primary/20 text-primary hover:bg-primary/10"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit?.(land); // This will open detail modal, from there user can access soil data
+              onEdit?.(land);
             }}
-            title="Get Soil Data"
+            title="Soil Analysis"
           >
             <TestTube className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-primary/20 text-primary hover:bg-primary/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Add more actions menu
+            }}
+            title="More Actions"
+          >
+            <MoreVertical className="w-4 h-4" />
           </Button>
         </div>
         {/* Offline indicator */}
