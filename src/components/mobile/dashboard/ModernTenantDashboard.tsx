@@ -55,8 +55,6 @@ export const ModernTenantDashboard: React.FC = () => {
         {/* Weather Card */}
         <TenantWeatherCard />
 
-        {/* Today's Tasks */}
-        <TenantTasksSection />
 
         {/* Quick Actions */}
         <TenantQuickActions />
