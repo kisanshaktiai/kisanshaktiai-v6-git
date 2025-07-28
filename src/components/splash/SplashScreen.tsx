@@ -171,7 +171,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   // Show activation screen if required
   if (showActivation) {
     return (
-      <ActivationCodeScreen
+        <ActivationCodeScreen
         onActivationSuccess={handleActivationSuccess}
         onSkip={handleActivationSkip}
       />
