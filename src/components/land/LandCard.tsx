@@ -3,22 +3,28 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Droplets, Activity, TrendingUp, TestTube, Satellite } from 'lucide-react';
+import { MapPin, Droplets, Activity, TrendingUp, TestTube, Satellite, WifiOff } from 'lucide-react';
 import { LandWithDetails } from '@/types/land';
 import { useTenant } from '@/hooks/useTenant';
+import { LandWeatherCard } from '@/components/weather/LandWeatherCard';
+import { LandErrorBoundary } from '@/components/common/LandErrorBoundary';
 
 interface LandCardProps {
   land: LandWithDetails;
   onSelect?: (land: LandWithDetails) => void;
   onEdit?: (land: LandWithDetails) => void;
   selected?: boolean;
+  isOffline?: boolean;
+  showWeather?: boolean;
 }
 
 export const LandCard: React.FC<LandCardProps> = ({ 
   land, 
   onSelect, 
   onEdit, 
-  selected = false 
+  selected = false,
+  isOffline = false,
+  showWeather = true
 }) => {
   const { tenant } = useTenant();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -81,12 +87,13 @@ export const LandCard: React.FC<LandCardProps> = ({
   };
 
   return (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${
-        selected ? 'ring-2 ring-primary' : ''
-      }`}
-      onClick={() => onSelect?.(land)}
-    >
+    <LandErrorBoundary>
+      <Card 
+        className={`cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${
+          selected ? 'ring-2 ring-primary' : ''
+        } ${isOffline ? 'opacity-75 border-dashed' : ''}`}
+        onClick={() => onSelect?.(land)}
+      >
       {/* Map Thumbnail Header */}
       <div className="relative h-24 bg-gradient-to-br from-sky-100 to-green-100 rounded-t-lg overflow-hidden">
         <div 
@@ -122,6 +129,16 @@ export const LandCard: React.FC<LandCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Weather Integration */}
+        {showWeather && land.boundary_polygon && (
+          <LandWeatherCard
+            landId={land.id}
+            latitude={18.5} // fallback - would extract from boundary in real implementation
+            longitude={73.7}
+            cropType={land.current_crop?.crop_name}
+            compact
+          />
+        )}
         {/* Basic Info */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
@@ -216,7 +233,15 @@ export const LandCard: React.FC<LandCardProps> = ({
             <TestTube className="w-4 h-4" />
           </Button>
         </div>
+        {/* Offline indicator */}
+        {isOffline && (
+          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+            <WifiOff className="w-3 h-3" />
+            <span>Saved offline - will sync when connected</span>
+          </div>
+        )}
       </CardContent>
     </Card>
+    </LandErrorBoundary>
   );
 };
