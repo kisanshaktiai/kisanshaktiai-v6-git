@@ -108,31 +108,25 @@ export const TenantQuickActions: React.FC = () => {
     );
   };
 
+  // Combine all actions for proper 3x3 grid
+  const allActions = [...quickActions, ...primaryActions, ...secondaryActions];
+
   return (
-    <div className="px-4 space-y-4 mb-4">
-      {/* Primary Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        {quickActions.map((action) => (
-          <ActionButton key={action.id} action={action} />
-        ))}
+    <div className="px-4 mb-4">
+      <div className="mb-3">
+        <h3 className="text-lg font-semibold text-foreground mb-1">
+          {t('dashboard.quickActions.title', 'Quick Actions')}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {t('dashboard.quickActions.subtitle', 'Access your farming tools')}
+        </p>
       </div>
-
-      {/* Center Primary Action */}
+      
+      {/* 3x3 Grid Layout */}
       <div className="grid grid-cols-3 gap-3">
-        <div></div>
-        {primaryActions.map((action) => (
+        {allActions.slice(0, 6).map((action) => (
           <ActionButton key={action.id} action={action} />
         ))}
-        <div></div>
-      </div>
-
-      {/* Secondary Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        <div></div>
-        {secondaryActions.map((action) => (
-          <ActionButton key={action.id} action={action} />
-        ))}
-        <div></div>
       </div>
     </div>
   );

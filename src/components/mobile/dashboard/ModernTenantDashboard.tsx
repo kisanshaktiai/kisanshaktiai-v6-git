@@ -7,7 +7,7 @@ import { createTenantTheme, applyTenantTheme } from '@/utils/multiTenantTheme';
 import { ModernTopBar } from './ModernTopBar';
 import { TenantPromoBanner } from './TenantPromoBanner';
 import { TenantWeatherCard } from './TenantWeatherCard';
-import { TenantTasksSection } from './TenantTasksSection';
+import { TenantTasksList } from './TenantTasksList';
 import { TenantQuickActions } from './TenantQuickActions';
 import { TenantBottomNav } from './TenantBottomNav';
 
@@ -55,6 +55,8 @@ export const ModernTenantDashboard: React.FC = () => {
         {/* Weather Card */}
         <TenantWeatherCard />
 
+        {/* Tasks List */}
+        <TenantTasksList />
 
         {/* Quick Actions */}
         <TenantQuickActions />
