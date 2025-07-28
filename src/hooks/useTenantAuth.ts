@@ -113,8 +113,9 @@ export const useTenantAuth = () => {
       }
 
       // Create a default tenant if no tenant system is needed
+      const defaultTenantId = '00000000-0000-0000-0000-000000000001'; // Use a valid UUID for default tenant
       const defaultTenant: Tenant = {
-        id: 'default',
+        id: defaultTenantId,
         name: 'KisanShakti AI',
         slug: 'default',
         type: 'agri_company',
@@ -134,7 +135,7 @@ export const useTenantAuth = () => {
       const defaultUserTenant: UserTenant = {
         id: 'default-user-tenant',
         user_id: user.id,
-        tenant_id: 'default',
+        tenant_id: defaultTenantId,
         role: 'farmer',
         is_active: true,
         is_primary: true,
@@ -146,7 +147,7 @@ export const useTenantAuth = () => {
       // Set default branding and features
       const defaultBranding: TenantBranding = {
         id: 'default-branding',
-        tenant_id: 'default',
+        tenant_id: defaultTenantId,
         app_name: 'KisanShakti AI',
         logo_url: '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png',
         primary_color: '#10b981',
@@ -161,7 +162,7 @@ export const useTenantAuth = () => {
 
       const defaultFeatures: TenantFeatures = {
         id: 'default-features',
-        tenant_id: 'default',
+        tenant_id: defaultTenantId,
         ai_chat: true,
         weather_forecast: true,
         marketplace: true,

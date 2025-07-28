@@ -24,8 +24,8 @@ export const useTenant = () => {
       let tenantId = await secureStorage.get(STORAGE_KEYS.TENANT_ID);
       
       if (!tenantId) {
-        // Default to 'default' tenant if none found
-        tenantId = 'default';
+        // Default to valid UUID tenant if none found
+        tenantId = '00000000-0000-0000-0000-000000000001';
         await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
       }
 
@@ -40,7 +40,7 @@ export const useTenant = () => {
         console.warn('Tenant not found, using default');
         // Create default tenant data
         dispatch(setCurrentTenant({
-          id: 'default',
+          id: '00000000-0000-0000-0000-000000000001',
           name: 'KisanShakti AI',
           slug: 'default',
           type: 'default',
