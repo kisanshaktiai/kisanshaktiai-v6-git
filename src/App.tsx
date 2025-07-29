@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from './store';
 import { AuthProvider } from './hooks/useAuth';
 import { TenantProvider } from './context/TenantContext';
+import { LanguageProvider } from './components/providers/LanguageProvider';
 import { MobileApp } from './components/mobile/MobileApp';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Toaster } from './components/ui/sonner';
@@ -34,7 +35,8 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TenantProvider>
-              <Router>
+              <LanguageProvider>
+                <Router>
                 <div className="min-h-screen bg-background">
                   <Routes>
                     <Route 
@@ -44,7 +46,8 @@ function App() {
                   </Routes>
                   <Toaster />
                 </div>
-              </Router>
+                </Router>
+              </LanguageProvider>
             </TenantProvider>
           </AuthProvider>
         </QueryClientProvider>
