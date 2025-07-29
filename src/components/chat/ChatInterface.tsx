@@ -114,23 +114,23 @@ export const ChatInterface: React.FC = () => {
         profile?.preferred_language as any || 'hi'
       );
 
-      if (response) {
+      if (response && typeof response === 'object' && 'message' in response) {
         const aiMessage: Message = {
           id: Date.now().toString() + '-ai',
-          content: response.message,
+          content: response.message as string,
           type: 'text',
           sender: 'ai',
           timestamp: new Date(),
           metadata: {
-            confidence: response.confidence,
+            confidence: (response as any).confidence || 1,
             context: chatContext.activeContext,
           },
-          isOffline: response.isOffline,
+          isOffline: (response as any).isOffline || false,
         };
 
         setMessages(prev => [...prev, aiMessage]);
         
-        if (response.isOffline) {
+        if ((response as any).isOffline) {
           toast({
             title: t('Working Offline'),
             description: t('Response provided from cached data. Will sync when online.'),

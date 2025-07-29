@@ -1,11 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+type SupportedLanguage = 'hi' | 'en' | 'mr' | 'pa' | 'te' | 'ta' | 'gu' | 'kn' | 'ml' | 'or' | 'bn' | 'ur' | 'ne';
+
 export interface UserProfile {
   id: string;
   mobile_number: string;
   full_name?: string;
-  preferred_language?: string;
+  preferred_language?: SupportedLanguage;
   location?: string;
   is_active: boolean;
   created_at: string;
@@ -62,7 +64,7 @@ class SimplifiedAuthService {
           .single();
 
         if (updateError) throw updateError;
-        user = updatedUser;
+        user = updatedUser as unknown as UserProfile;
 
         // Get farmer profile
         const { data: farmerData, error: farmerError } = await supabase
@@ -91,7 +93,7 @@ class SimplifiedAuthService {
           .single();
 
         if (createError) throw createError;
-        user = newUser;
+        user = newUser as unknown as UserProfile;
 
         // Create farmer profile
         const { data: newFarmer, error: farmerCreateError } = await supabase
@@ -133,17 +135,17 @@ class SimplifiedAuthService {
       .update({
         ...updates,
         updated_at: new Date().toISOString()
-      })
+      } as any)
       .eq('id', this.cachedProfile.id)
       .select()
       .single();
 
     if (error) throw error;
 
-    this.cachedProfile = data;
+    this.cachedProfile = data as unknown as UserProfile;
     localStorage.setItem('user_profile', JSON.stringify(data));
 
-    return data;
+    return data as unknown as UserProfile;
   }
 
   async updateFarmerProfile(updates: Partial<FarmerProfile>): Promise<FarmerProfile> {

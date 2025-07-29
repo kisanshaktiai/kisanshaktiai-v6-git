@@ -69,6 +69,7 @@ const VirtualChatContainer = memo(({ messages, onSave, onShare, height }: Virtua
     <List
       ref={listRef}
       height={height}
+      width="100%"
       itemCount={messages.length}
       itemSize={120}
       itemData={itemData}

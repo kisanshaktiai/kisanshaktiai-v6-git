@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useAI } from '@/hooks/useAI';
+import { AgentType, SupportedLanguage } from '@/types/ai';
 
 interface DebouncedAIOptions {
   delay?: number;
@@ -16,7 +17,7 @@ export const useDebouncedAI = (options: DebouncedAIOptions = {}) => {
   const lastExecutionRef = useRef<number>(0);
 
   const debouncedAskAgent = useCallback(
-    async (query: string, agentType?: string, language?: string) => {
+    async (query: string, agentType?: AgentType, language?: SupportedLanguage) => {
       const now = Date.now();
       
       // Clear existing timeouts
