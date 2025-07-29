@@ -1,17 +1,16 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Mic, Camera, MapPin, Paperclip, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { ChatMessage } from './ChatMessage';
+import VirtualChatContainer from './VirtualChatContainer';
 import { VoiceRecorder } from './VoiceRecorder';
 import { ImageUploader } from './ImageUploader';
 import { QuickActions } from './QuickActions';
 import { ContextChips } from './ContextChips';
-import { useAI } from '@/hooks/useAI';
+import { useDebouncedAI } from '@/hooks/useDebouncedAI';
 import { useTenant } from '@/context/TenantContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +40,7 @@ interface ChatContext {
 export const ChatInterface: React.FC = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { askAgent, loading } = useAI();
+  const { debouncedAskAgent, isDebouncing } = useDebouncedAI({ delay: 500 });
   const { currentTenant, profile } = useTenant();
   
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,16 +53,23 @@ export const ChatInterface: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [offlineQueue, setOfflineQueue] = useState<Message[]>([]);
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(400);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Update container height on resize
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerHeight(rect.height);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   // Load initial welcome message
   useEffect(() => {
@@ -79,7 +85,7 @@ export const ChatInterface: React.FC = () => {
     setMessages([welcomeMessage]);
   }, [profile?.preferred_language]);
 
-  const sendMessage = async (content: string, type: 'text' | 'voice' | 'image' | 'location' | 'document' = 'text', metadata?: any) => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'voice' | 'image' | 'location' | 'document' = 'text', metadata?: any) => {
     if (!content.trim() && type === 'text') return;
 
     const userMessage: Message = {
@@ -102,7 +108,7 @@ export const ChatInterface: React.FC = () => {
       else if (content.toLowerCase().includes('weather') || content.toLowerCase().includes('मौसम')) agentType = 'weather';
       else if (content.toLowerCase().includes('market') || content.toLowerCase().includes('बाजार')) agentType = 'market_advisor';
 
-      const response = await askAgent(
+      const response = await debouncedAskAgent(
         content, 
         agentType, 
         profile?.preferred_language as any || 'hi'
@@ -149,9 +155,17 @@ export const ChatInterface: React.FC = () => {
     } finally {
       setIsTyping(false);
     }
-  };
+  }, [debouncedAskAgent, profile?.preferred_language, chatContext.activeContext, t, toast]);
 
-  const handleVoiceMessage = (audioBlob: Blob, transcript?: string) => {
+  const handleSave = useCallback((messageId: string) => {
+    toast({ title: t('Message saved'), description: t('Added to your saved messages') });
+  }, [t, toast]);
+
+  const handleShare = useCallback((messageId: string) => {
+    toast({ title: t('Sharing options'), description: t('Choose how to share this message') });
+  }, [t, toast]);
+
+  const handleVoiceMessage = useCallback((audioBlob: Blob, transcript?: string) => {
     if (transcript) {
       sendMessage(transcript, 'voice', { audioBlob });
     } else {
@@ -161,9 +175,9 @@ export const ChatInterface: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [sendMessage, t, toast]);
 
-  const handleImageUpload = (file: File, description?: string) => {
+  const handleImageUpload = useCallback((file: File, description?: string) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const imageData = e.target?.result as string;
@@ -173,9 +187,9 @@ export const ChatInterface: React.FC = () => {
       });
     };
     reader.readAsDataURL(file);
-  };
+  }, [sendMessage, t]);
 
-  const handleLocationShare = () => {
+  const handleLocationShare = useCallback(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -200,9 +214,9 @@ export const ChatInterface: React.FC = () => {
         }
       );
     }
-  };
+  }, [sendMessage, t, toast]);
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = useCallback((action: string) => {
     const quickActions: Record<string, string> = {
       weather: profile?.preferred_language === 'hi' ? 'आज का मौसम कैसा है?' : 'What\'s the weather today?',
       crop_advice: profile?.preferred_language === 'hi' ? 'मेरी फसल के लिए सलाह दें' : 'Give advice for my crops',
@@ -214,7 +228,7 @@ export const ChatInterface: React.FC = () => {
     if (message) {
       sendMessage(message);
     }
-  };
+  }, [sendMessage, profile?.preferred_language]);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -227,43 +241,34 @@ export const ChatInterface: React.FC = () => {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <ChatMessage 
-              key={message.id}
-              message={message}
-              onSave={(messageId) => {
-                toast({ title: t('Message saved'), description: t('Added to your saved messages') });
-              }}
-              onShare={(messageId) => {
-                toast({ title: t('Sharing options'), description: t('Choose how to share this message') });
-              }}
-            />
-          ))}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg p-3 max-w-xs">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
+      <div ref={containerRef} className="flex-1 p-4">
+        <VirtualChatContainer
+          messages={messages}
+          onSave={handleSave}
+          onShare={handleShare}
+          height={containerHeight}
+        />
+        
+        {(isTyping || isDebouncing) && (
+          <div className="flex justify-start mt-4">
+            <div className="bg-muted rounded-lg p-3 max-w-xs">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
-          )}
-          
-          {offlineQueue.length > 0 && (
-            <div className="text-center py-2">
-              <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                {t('{{count}} messages queued for sync', { count: offlineQueue.length })}
-              </Badge>
-            </div>
-          )}
-        </div>
-        <div ref={messagesEndRef} />
-      </ScrollArea>
+          </div>
+        )}
+        
+        {offlineQueue.length > 0 && (
+          <div className="text-center py-2">
+            <Badge variant="outline" className="bg-orange-50 text-orange-700">
+              {t('{{count}} messages queued for sync', { count: offlineQueue.length })}
+            </Badge>
+          </div>
+        )}
+      </div>
 
       {/* Quick Actions */}
       <QuickActions onAction={handleQuickAction} />
@@ -290,7 +295,7 @@ export const ChatInterface: React.FC = () => {
               variant="ghost"
               className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
               onClick={() => sendMessage(inputText)}
-              disabled={!inputText.trim() || loading}
+              disabled={!inputText.trim() || isDebouncing}
             >
               <Send className="h-4 w-4" />
             </Button>
