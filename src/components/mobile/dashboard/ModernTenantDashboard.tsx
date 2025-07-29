@@ -2,8 +2,10 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
-import { useTenantData } from '@/hooks/useTenantData';
+import { useUnifiedTenantData } from '@/hooks/useUnifiedTenantData';
 import { applyTenantTheme } from '@/utils/tenantTheme';
+import { TenantErrorBoundary } from '@/components/error-boundaries/TenantErrorBoundary';
+import { QueryErrorBoundary } from '@/components/error-boundaries/QueryErrorBoundary';
 import { ModernTopBar } from './ModernTopBar';
 import { TenantPromoBanner } from './TenantPromoBanner';
 import { TenantWeatherCard } from './TenantWeatherCard';
@@ -12,17 +14,24 @@ import { TenantQuickActions } from './TenantQuickActions';
 import { TenantBottomNav } from './TenantBottomNav';
 
 export const ModernTenantDashboard: React.FC = () => {
-  const { tenantBranding, currentTenant, loading } = useSelector((state: RootState) => state.tenant);
-  const { refreshTenant } = useTenantData();
+  const { currentTenant } = useSelector((state: RootState) => state.tenant);
+  const { 
+    tenant, 
+    branding, 
+    features, 
+    isLoading, 
+    isError, 
+    error 
+  } = useUnifiedTenantData(currentTenant?.id);
 
   // Apply tenant theming only when branding changes
   useEffect(() => {
-    if (tenantBranding) {
-      applyTenantTheme(tenantBranding);
+    if (branding) {
+      applyTenantTheme(branding);
     }
-  }, [tenantBranding]);
+  }, [branding]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -34,32 +43,50 @@ export const ModernTenantDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <ModernTopBar />
+    <TenantErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Dashboard error:', error, errorInfo);
+      }}
+    >
+      <QueryErrorBoundary 
+        level="page" 
+        context="tenant dashboard"
+        onRetry={() => window.location.reload()}
+      >
+        <div className="min-h-screen bg-background">
+          {/* Top Bar */}
+          <ModernTopBar />
 
-      {/* Main Content */}
-      <main className="pb-24">
-        {/* Promotional Banner */}
-        <div className="pt-4">
-          <TenantPromoBanner />
+          {/* Main Content */}
+          <main className="pb-24">
+            {/* Promotional Banner */}
+            <div className="pt-4">
+              <TenantPromoBanner />
+            </div>
+
+            {/* Weather Card */}
+            <QueryErrorBoundary level="component" context="weather data">
+              <TenantWeatherCard />
+            </QueryErrorBoundary>
+
+            {/* Single Task Roller */}
+            <QueryErrorBoundary level="component" context="task data">
+              <SingleTaskRoller />
+            </QueryErrorBoundary>
+
+            {/* Quick Actions */}
+            <QueryErrorBoundary level="component" context="quick actions">
+              <TenantQuickActions />
+            </QueryErrorBoundary>
+
+            {/* Extra spacing for better UX */}
+            <div className="h-6" />
+          </main>
+
+          {/* Bottom Navigation */}
+          <TenantBottomNav />
         </div>
-
-        {/* Weather Card */}
-        <TenantWeatherCard />
-
-        {/* Single Task Roller */}
-        <SingleTaskRoller />
-
-        {/* Quick Actions */}
-        <TenantQuickActions />
-
-        {/* Extra spacing for better UX */}
-        <div className="h-6" />
-      </main>
-
-      {/* Bottom Navigation */}
-      <TenantBottomNav />
-    </div>
+      </QueryErrorBoundary>
+    </TenantErrorBoundary>
   );
 };
