@@ -149,5 +149,214 @@
       "title": "Special Offers Available",
       "subtitle": "Tap to explore exclusive deals"
     }
+  },
+  "profile": {
+    "title": "Profile",
+    "verifiedAccount": "Verified Account",
+    "locationNotSet": "Not Set",
+    "lands": "Lands",
+    "aiChats": "AI Chats",
+    "daysActive": "Active Days",
+    "accountSettings": "Account Settings",
+    "accountSettingsDesc": "Manage your account preferences",
+    "notifications": "Notifications",
+    "notificationsDesc": "Configure notification preferences",
+    "privacySecurity": "Privacy & Security",
+    "privacySecurityDesc": "Manage privacy and security settings",
+    "languageSettings": "Language Settings",
+    "preferredLanguage": "Preferred Language",
+    "preferredLanguageDesc": "Choose your preferred language for the app",
+    "languageNote": "Language changes will be applied immediately throughout the app",
+    "languageUpdated": "Language Updated",
+    "languageUpdatedDesc": "Your language preference has been saved",
+    "languageUpdateError": "Update Failed",
+    "languageUpdateErrorDesc": "Failed to update language preference",
+    "language": "Language",
+    "languageDesc": "Change app language",
+    "logout": "Logout",
+    "completion": {
+      "title": "Complete Your Profile",
+      "subtitle": "Help us provide better recommendations",
+      "personalInfo": "Personal Information",
+      "locationInfo": "Location Details",
+      "farmInfo": "Farm Information",
+      "skipForNow": "Skip for now",
+      "completeProfile": "Complete Profile",
+      "profileCompleted": "Profile Completed!",
+      "profileCompletedDesc": "Your profile has been successfully updated"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "phoneRequired": "Phone number is required",
+      "locationRequired": "Location is required",
+      "invalidPhone": "Invalid phone number format",
+      "minNameLength": "Name must be at least 2 characters",
+      "invalidPincode": "Invalid PIN code format"
+    }
+  },
+  "forms": {
+    "personalInfo": {
+      "title": "Personal Information",
+      "subtitle": "Tell us about yourself",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "age": "Age",
+      "agePlaceholder": "Age",
+      "gender": "Gender",
+      "genderPlaceholder": "Select",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "education": "Education Level",
+      "educationPlaceholder": "Select education level",
+      "familyMembers": "Family Members",
+      "familyMembersPlaceholder": "How many family members?",
+      "required": "Required field"
+    },
+    "locationInfo": {
+      "title": "Location Information",
+      "subtitle": "Your farming location",
+      "village": "Village",
+      "villagePlaceholder": "Enter your village name",
+      "taluka": "Taluka",
+      "talukaPlaceholder": "Taluka",
+      "district": "District",
+      "districtPlaceholder": "District",
+      "state": "State",
+      "statePlaceholder": "Select state",
+      "pincode": "PIN Code",
+      "pincodePlaceholder": "123456"
+    },
+    "farmInfo": {
+      "title": "Farm Information",
+      "subtitle": "Details about your farm",
+      "totalLand": "Total Land (Acres)",
+      "totalLandPlaceholder": "0.0",
+      "ownedLand": "Owned Land (Acres)",
+      "ownedLandPlaceholder": "0.0",
+      "leasedLand": "Leased Land (Acres)",
+      "leasedLandPlaceholder": "0.0",
+      "soilType": "Soil Type",
+      "soilTypePlaceholder": "Select soil type",
+      "waterSource": "Water Source",
+      "waterSourcePlaceholder": "Select water source"
+    },
+    "cropInfo": {
+      "title": "Crop Information",
+      "subtitle": "What do you grow?",
+      "primaryCrops": "Primary Crops",
+      "secondaryCrops": "Secondary Crops",
+      "farmingExperience": "Farming Experience (Years)",
+      "farmingType": "Farming Type",
+      "selectCrops": "Select your crops"
+    },
+    "resources": {
+      "title": "Resources & Equipment",
+      "subtitle": "Available resources",
+      "hasTractor": "Own Tractor",
+      "hasIrrigation": "Irrigation System",
+      "irrigationType": "Irrigation Type",
+      "hasStorage": "Storage Facility",
+      "equipment": "Other Equipment"
+    },
+    "financial": {
+      "title": "Financial Information",
+      "subtitle": "Economic details",
+      "annualIncome": "Annual Income Range",
+      "hasLoan": "Have Agricultural Loan",
+      "loanAmount": "Loan Amount",
+      "hasInsurance": "Have Crop Insurance",
+      "bankAccount": "Bank Account"
+    },
+    "navigation": {
+      "next": "Next",
+      "previous": "Previous", 
+      "complete": "Complete Setup",
+      "skip": "Skip",
+      "step": "Step {{current}} of {{total}}",
+      "completePercent": "Complete"
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalidNumber": "Please enter a valid number",
+      "invalidEmail": "Please enter a valid email",
+      "minLength": "Minimum {count} characters required",
+      "maxLength": "Maximum {count} characters allowed"
+    }
+  },
+  "agriculture": {
+    "education": {
+      "noFormalEducation": "No Formal Education",
+      "primary": "Primary (1-5)",
+      "middle": "Middle (6-8)",
+      "secondary": "Secondary (9-10)",
+      "higherSecondary": "Higher Secondary (11-12)",
+      "graduation": "Graduation",
+      "postGraduation": "Post Graduation"
+    },
+    "states": {
+      "andhraPradesh": "Andhra Pradesh",
+      "bihar": "Bihar",
+      "gujarat": "Gujarat",
+      "haryana": "Haryana",
+      "karnataka": "Karnataka",
+      "madhyaPradesh": "Madhya Pradesh",
+      "maharashtra": "Maharashtra",
+      "punjab": "Punjab",
+      "rajasthan": "Rajasthan",
+      "tamilNadu": "Tamil Nadu",
+      "telangana": "Telangana",
+      "uttarPradesh": "Uttar Pradesh",
+      "westBengal": "West Bengal"
+    },
+    "soilTypes": {
+      "alluvial": "Alluvial Soil",
+      "black": "Black Soil",
+      "red": "Red Soil",
+      "laterite": "Laterite Soil",
+      "mountain": "Mountain Soil",
+      "desert": "Desert Soil"
+    },
+    "waterSources": {
+      "rainwater": "Rainwater",
+      "tubewell": "Tubewell",
+      "canal": "Canal",
+      "river": "River",
+      "pond": "Pond",
+      "borewell": "Borewell"
+    },
+    "crops": {
+      "wheat": "Wheat",
+      "rice": "Rice",
+      "sugarcane": "Sugarcane",
+      "cotton": "Cotton",
+      "maize": "Maize",
+      "bajra": "Bajra",
+      "jowar": "Jowar",
+      "pulses": "Pulses",
+      "oilseeds": "Oilseeds",
+      "vegetables": "Vegetables",
+      "fruits": "Fruits",
+      "spices": "Spices"
+    },
+    "farmingTypes": {
+      "organic": "Organic Farming",
+      "conventional": "Conventional Farming",
+      "mixed": "Mixed Farming",
+      "sustainable": "Sustainable Farming"
+    },
+    "irrigationTypes": {
+      "drip": "Drip Irrigation",
+      "sprinkler": "Sprinkler Irrigation",
+      "flood": "Flood Irrigation",
+      "furrow": "Furrow Irrigation"
+    },
+    "incomeRanges": {
+      "below50k": "Below ₹50,000",
+      "50kTo1L": "₹50,000 - ₹1,00,000",
+      "1LTo2L": "₹1,00,000 - ₹2,00,000",
+      "2LTo5L": "₹2,00,000 - ₹5,00,000",
+      "above5L": "Above ₹5,00,000"
+    }
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -37,46 +36,46 @@ interface FormStep {
   fields: string[];
 }
 
-const formSteps: FormStep[] = [
+const getFormSteps = (t: any): FormStep[] => [
   {
     id: 'personal',
-    title: 'व्यक्तिगत जानकारी',
-    subtitle: 'Personal Information',
+    title: t('forms.personalInfo.title'),
+    subtitle: t('forms.personalInfo.subtitle'),
     icon: User,
     fields: ['fullName', 'age', 'gender', 'education', 'familyMembers']
   },
   {
     id: 'location',
-    title: 'स्थान की जानकारी',
-    subtitle: 'Location Details',
+    title: t('forms.locationInfo.title'),
+    subtitle: t('forms.locationInfo.subtitle'),
     icon: MapPin,
     fields: ['village', 'taluka', 'district', 'state', 'pincode']
   },
   {
     id: 'farm',
-    title: 'खेत की जानकारी',
-    subtitle: 'Farm Information',
+    title: t('forms.farmInfo.title'),
+    subtitle: t('forms.farmInfo.subtitle'),
     icon: Home,
     fields: ['totalLand', 'ownedLand', 'leasedLand', 'soilType', 'waterSource']
   },
   {
     id: 'crops',
-    title: 'फसल की जानकारी',
-    subtitle: 'Crop Information',
+    title: t('forms.cropInfo.title'),
+    subtitle: t('forms.cropInfo.subtitle'),
     icon: Sprout,
     fields: ['primaryCrops', 'secondaryCrops', 'farmingExperience', 'farmingType']
   },
   {
     id: 'resources',
-    title: 'संसाधन और उपकरण',
-    subtitle: 'Resources & Equipment',
+    title: t('forms.resources.title'),
+    subtitle: t('forms.resources.subtitle'),
     icon: Tractor,
     fields: ['hasTractor', 'hasIrrigation', 'irrigationType', 'hasStorage', 'equipment']
   },
   {
     id: 'financial',
-    title: 'आर्थिक जानकारी',
-    subtitle: 'Financial Information',
+    title: t('forms.financial.title'),
+    subtitle: t('forms.financial.subtitle'),
     icon: IndianRupee,
     fields: ['annualIncome', 'hasLoan', 'loanAmount', 'hasInsurance', 'bankAccount']
   }
@@ -133,6 +132,8 @@ export const ProfessionalFarmerProfileForm: React.FC<{
   const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  
+  const formSteps = getFormSteps(t);
   
   const [formData, setFormData] = useState<ProfileFormData>({
     fullName: '',
@@ -281,11 +282,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                पूरा नाम / Full Name *
+                {t('forms.personalInfo.fullName')} *
               </label>
               <Input
                 type="text"
-                placeholder="अपना पूरा नाम दर्ज करें"
+                placeholder={t('forms.personalInfo.fullNamePlaceholder')}
                 value={formData.fullName}
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 className="text-center"
@@ -295,11 +296,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  उम्र / Age *
+                  {t('forms.personalInfo.age')} *
                 </label>
                 <Input
                   type="number"
-                  placeholder="उम्र"
+                  placeholder={t('forms.personalInfo.agePlaceholder')}
                   value={formData.age}
                   onChange={(e) => handleInputChange('age', e.target.value)}
                   className="text-center"
@@ -307,16 +308,16 @@ export const ProfessionalFarmerProfileForm: React.FC<{
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  लिंग / Gender *
+                  {t('forms.personalInfo.gender')} *
                 </label>
                 <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="चुनें" />
+                    <SelectValue placeholder={t('forms.personalInfo.genderPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">पुरुष / Male</SelectItem>
-                    <SelectItem value="female">महिला / Female</SelectItem>
-                    <SelectItem value="other">अन्य / Other</SelectItem>
+                    <SelectItem value="male">{t('forms.personalInfo.male')}</SelectItem>
+                    <SelectItem value="female">{t('forms.personalInfo.female')}</SelectItem>
+                    <SelectItem value="other">{t('forms.personalInfo.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -324,31 +325,31 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                शिक्षा / Education Level *
+                {t('forms.personalInfo.education')} *
               </label>
               <Select value={formData.education} onValueChange={(value) => handleInputChange('education', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="शिक्षा का स्तर चुनें" />
+                  <SelectValue placeholder={t('forms.personalInfo.educationPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no_formal_education">औपचारिक शिक्षा नहीं</SelectItem>
-                  <SelectItem value="primary">प्राथमिक (1-5)</SelectItem>
-                  <SelectItem value="middle">मध्यम (6-8)</SelectItem>
-                  <SelectItem value="secondary">माध्यमिक (9-10)</SelectItem>
-                  <SelectItem value="higher_secondary">उच्च माध्यमिक (11-12)</SelectItem>
-                  <SelectItem value="graduation">स्नातक</SelectItem>
-                  <SelectItem value="post_graduation">स्नातकोत्तर</SelectItem>
+                  <SelectItem value="no_formal_education">{t('agriculture.education.noFormalEducation')}</SelectItem>
+                  <SelectItem value="primary">{t('agriculture.education.primary')}</SelectItem>
+                  <SelectItem value="middle">{t('agriculture.education.middle')}</SelectItem>
+                  <SelectItem value="secondary">{t('agriculture.education.secondary')}</SelectItem>
+                  <SelectItem value="higher_secondary">{t('agriculture.education.higherSecondary')}</SelectItem>
+                  <SelectItem value="graduation">{t('agriculture.education.graduation')}</SelectItem>
+                  <SelectItem value="post_graduation">{t('agriculture.education.postGraduation')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                परिवार के सदस्य / Family Members *
+                {t('forms.personalInfo.familyMembers')} *
               </label>
               <Input
                 type="number"
-                placeholder="परिवार में कितने सदस्य हैं?"
+                placeholder={t('forms.personalInfo.familyMembersPlaceholder')}
                 value={formData.familyMembers}
                 onChange={(e) => handleInputChange('familyMembers', e.target.value)}
                 className="text-center"
@@ -370,11 +371,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                गाँव / Village *
+                {t('forms.locationInfo.village')} *
               </label>
               <Input
                 type="text"
-                placeholder="अपना गाँव का नाम दर्ज करें"
+                placeholder={t('forms.locationInfo.villagePlaceholder')}
                 value={formData.village}
                 onChange={(e) => handleInputChange('village', e.target.value)}
               />
@@ -383,22 +384,22 @@ export const ProfessionalFarmerProfileForm: React.FC<{
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  तालुका / Taluka *
+                  {t('forms.locationInfo.taluka')} *
                 </label>
                 <Input
                   type="text"
-                  placeholder="तालुका"
+                  placeholder={t('forms.locationInfo.talukaPlaceholder')}
                   value={formData.taluka}
                   onChange={(e) => handleInputChange('taluka', e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  जिला / District *
+                  {t('forms.locationInfo.district')} *
                 </label>
                 <Input
                   type="text"
-                  placeholder="जिला"
+                  placeholder={t('forms.locationInfo.districtPlaceholder')}
                   value={formData.district}
                   onChange={(e) => handleInputChange('district', e.target.value)}
                 />
@@ -408,36 +409,36 @@ export const ProfessionalFarmerProfileForm: React.FC<{
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  राज्य / State *
+                  {t('forms.locationInfo.state')} *
                 </label>
                 <Select value={formData.state} onValueChange={(value) => handleInputChange('state', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="राज्य चुनें" />
+                    <SelectValue placeholder={t('forms.locationInfo.statePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="andhra_pradesh">आंध्र प्रदेश</SelectItem>
-                    <SelectItem value="bihar">बिहार</SelectItem>
-                    <SelectItem value="gujarat">गुजरात</SelectItem>
-                    <SelectItem value="haryana">हरियाणा</SelectItem>
-                    <SelectItem value="karnataka">कर्नाटक</SelectItem>
-                    <SelectItem value="madhya_pradesh">मध्य प्रदेश</SelectItem>
-                    <SelectItem value="maharashtra">महाराष्ट्र</SelectItem>
-                    <SelectItem value="punjab">पंजाब</SelectItem>
-                    <SelectItem value="rajasthan">राजस्थान</SelectItem>
-                    <SelectItem value="tamil_nadu">तमिल नाडु</SelectItem>
-                    <SelectItem value="telangana">तेलंगाना</SelectItem>
-                    <SelectItem value="uttar_pradesh">उत्तर प्रदेश</SelectItem>
-                    <SelectItem value="west_bengal">पश्चिम बंगाल</SelectItem>
+                    <SelectItem value="andhra_pradesh">{t('agriculture.states.andhraPradesh')}</SelectItem>
+                    <SelectItem value="bihar">{t('agriculture.states.bihar')}</SelectItem>
+                    <SelectItem value="gujarat">{t('agriculture.states.gujarat')}</SelectItem>
+                    <SelectItem value="haryana">{t('agriculture.states.haryana')}</SelectItem>
+                    <SelectItem value="karnataka">{t('agriculture.states.karnataka')}</SelectItem>
+                    <SelectItem value="madhya_pradesh">{t('agriculture.states.madhyaPradesh')}</SelectItem>
+                    <SelectItem value="maharashtra">{t('agriculture.states.maharashtra')}</SelectItem>
+                    <SelectItem value="punjab">{t('agriculture.states.punjab')}</SelectItem>
+                    <SelectItem value="rajasthan">{t('agriculture.states.rajasthan')}</SelectItem>
+                    <SelectItem value="tamil_nadu">{t('agriculture.states.tamilNadu')}</SelectItem>
+                    <SelectItem value="telangana">{t('agriculture.states.telangana')}</SelectItem>
+                    <SelectItem value="uttar_pradesh">{t('agriculture.states.uttarPradesh')}</SelectItem>
+                    <SelectItem value="west_bengal">{t('agriculture.states.westBengal')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  पिन कोड / PIN Code *
+                  {t('forms.locationInfo.pincode')} *
                 </label>
                 <Input
                   type="text"
-                  placeholder="123456"
+                  placeholder={t('forms.locationInfo.pincodePlaceholder')}
                   value={formData.pincode}
                   onChange={(e) => handleInputChange('pincode', e.target.value)}
                   maxLength={6}
@@ -460,11 +461,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                कुल जमीन (एकड़ में) / Total Land (in Acres) *
+                {t('forms.farmInfo.totalLand')} *
               </label>
               <Input
                 type="number"
-                placeholder="0.0"
+                placeholder={t('forms.farmInfo.totalLandPlaceholder')}
                 value={formData.totalLand}
                 onChange={(e) => handleInputChange('totalLand', e.target.value)}
                 step="0.1"
@@ -474,11 +475,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  अपनी जमीन (एकड़) *
+                  {t('forms.farmInfo.ownedLand')} *
                 </label>
                 <Input
                   type="number"
-                  placeholder="0.0"
+                  placeholder={t('forms.farmInfo.ownedLandPlaceholder')}
                   value={formData.ownedLand}
                   onChange={(e) => handleInputChange('ownedLand', e.target.value)}
                   step="0.1"
@@ -486,11 +487,11 @@ export const ProfessionalFarmerProfileForm: React.FC<{
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  किराए की जमीन (एकड़) *
+                  {t('forms.farmInfo.leasedLand')} *
                 </label>
                 <Input
                   type="number"
-                  placeholder="0.0"
+                  placeholder={t('forms.farmInfo.leasedLandPlaceholder')}
                   value={formData.leasedLand}
                   onChange={(e) => handleInputChange('leasedLand', e.target.value)}
                   step="0.1"
@@ -500,38 +501,38 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                मिट्टी का प्रकार / Soil Type *
+                {t('forms.farmInfo.soilType')} *
               </label>
               <Select value={formData.soilType} onValueChange={(value) => handleInputChange('soilType', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="मिट्टी का प्रकार चुनें" />
+                  <SelectValue placeholder={t('forms.farmInfo.soilTypePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="clay">चिकनी मिट्टी / Clay</SelectItem>
-                  <SelectItem value="sandy">रेतीली मिट्टी / Sandy</SelectItem>
-                  <SelectItem value="loamy">दोमट मिट्टी / Loamy</SelectItem>
-                  <SelectItem value="black_cotton">काली कपासी मिट्टी / Black Cotton</SelectItem>
-                  <SelectItem value="red_laterite">लाल लेटराइट मिट्टी / Red Laterite</SelectItem>
-                  <SelectItem value="alluvial">जलोढ़ मिट्टी / Alluvial</SelectItem>
+                  <SelectItem value="alluvial">{t('agriculture.soilTypes.alluvial')}</SelectItem>
+                  <SelectItem value="black">{t('agriculture.soilTypes.black')}</SelectItem>
+                  <SelectItem value="red">{t('agriculture.soilTypes.red')}</SelectItem>
+                  <SelectItem value="laterite">{t('agriculture.soilTypes.laterite')}</SelectItem>
+                  <SelectItem value="mountain">{t('agriculture.soilTypes.mountain')}</SelectItem>
+                  <SelectItem value="desert">{t('agriculture.soilTypes.desert')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                पानी का स्रोत / Water Source *
+                {t('forms.farmInfo.waterSource')} *
               </label>
               <Select value={formData.waterSource} onValueChange={(value) => handleInputChange('waterSource', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="पानी का स्रोत चुनें" />
+                  <SelectValue placeholder={t('forms.farmInfo.waterSourcePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="borewell">बोरवेल / Borewell</SelectItem>
-                  <SelectItem value="well">कुआं / Well</SelectItem>
-                  <SelectItem value="canal">नहर / Canal</SelectItem>
-                  <SelectItem value="river">नदी / River</SelectItem>
-                  <SelectItem value="pond">तालाब / Pond</SelectItem>
-                  <SelectItem value="rainwater">बारिश का पानी / Rainwater</SelectItem>
+                  <SelectItem value="borewell">{t('agriculture.waterSources.borewell')}</SelectItem>
+                  <SelectItem value="tubewell">{t('agriculture.waterSources.tubewell')}</SelectItem>
+                  <SelectItem value="canal">{t('agriculture.waterSources.canal')}</SelectItem>
+                  <SelectItem value="river">{t('agriculture.waterSources.river')}</SelectItem>
+                  <SelectItem value="pond">{t('agriculture.waterSources.pond')}</SelectItem>
+                  <SelectItem value="rainwater">{t('agriculture.waterSources.rainwater')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -540,7 +541,7 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
       // Add more cases for other steps...
       default:
-        return <div>Step content for {currentStepData.id}</div>;
+        return <div>{t('forms.validation.required')}</div>;
     }
   };
 
@@ -551,10 +552,10 @@ export const ProfessionalFarmerProfileForm: React.FC<{
         <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">
-              चरण {currentStep + 1} का {formSteps.length}
+              {t('forms.navigation.step', { current: currentStep + 1, total: formSteps.length })}
             </span>
             <Badge variant="outline" className="text-green-600 border-green-200">
-              {Math.round(progress)}% पूर्ण
+              {Math.round(progress)}% {t('forms.navigation.completePercent')}
             </Badge>
           </div>
           <Progress value={progress} className="h-2" />
@@ -569,41 +570,42 @@ export const ProfessionalFarmerProfileForm: React.FC<{
 
         {/* Navigation */}
         <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="outline"
-            onClick={currentStep === 0 ? onBack : handlePrev}
+          <Button 
+            variant="outline" 
+            onClick={handlePrev}
+            disabled={currentStep === 0}
             className="flex-1"
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
-            वापस
+            {t('forms.navigation.previous')}
           </Button>
-
-          {currentStep < formSteps.length - 1 ? (
-            <Button
-              onClick={handleNext}
-              disabled={!isStepValid()}
-              className="flex-1"
-            >
-              आगे
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          ) : (
-            <Button
+          
+          {currentStep === formSteps.length - 1 ? (
+            <Button 
               onClick={handleComplete}
               disabled={!isStepValid() || loading}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1"
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  पूर्ण कर रहे हैं...
+                  <Gauge className="w-4 h-4 mr-2 animate-spin" />
+                  {t('common.loading')}
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  प्रोफाइल पूर्ण करें
+                  {t('forms.navigation.complete')}
                 </>
               )}
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleNext}
+              disabled={!isStepValid()}
+              className="flex-1"
+            >
+              {t('forms.navigation.next')}
+              <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           )}
         </div>

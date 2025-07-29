@@ -292,5 +292,214 @@
     "rainfall": "बारिश",
     "forecast": "पूर्वानुमान",
     "alerts": "अलर्ट"
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "verifiedAccount": "सत्यापित खाता",
+    "locationNotSet": "सेट नहीं है",
+    "lands": "भूमि",
+    "aiChats": "AI चैट",
+    "daysActive": "सक्रिय दिन",
+    "accountSettings": "खाता सेटिंग्स",
+    "accountSettingsDesc": "अपनी खाता प्राथमिकताएं प्रबंधित करें",
+    "notifications": "सूचनाएं",
+    "notificationsDesc": "सूचना प्राथमिकताएं कॉन्फ़िगर करें",
+    "privacySecurity": "गोपनीयता और सुरक्षा",
+    "privacySecurityDesc": "गोपनीयता और सुरक्षा सेटिंग्स प्रबंधित करें",
+    "languageSettings": "भाषा सेटिंग्स",
+    "preferredLanguage": "पसंदीदा भाषा",
+    "preferredLanguageDesc": "ऐप के लिए अपनी पसंदीदा भाषा चुनें",
+    "languageNote": "भाषा परिवर्तन तुरंत पूरे ऐप में लागू होंगे",
+    "languageUpdated": "भाषा अपडेट की गई",
+    "languageUpdatedDesc": "आपकी भाषा प्राथमिकता सेव कर दी गई है",
+    "languageUpdateError": "अपडेट विफल",
+    "languageUpdateErrorDesc": "भाषा प्राथमिकता अपडेट करने में विफल",
+    "language": "भाषा",
+    "languageDesc": "ऐप भाषा बदलें",
+    "logout": "लॉगआउट",
+    "completion": {
+      "title": "अपनी प्रोफ़ाइल पूरी करें",
+      "subtitle": "बेहतर सुझाव देने में हमारी मदद करें",
+      "personalInfo": "व्यक्तिगत जानकारी",
+      "locationInfo": "स्थान विवरण",
+      "farmInfo": "खेत की जानकारी",
+      "skipForNow": "अभी के लिए छोड़ें",
+      "completeProfile": "प्रोफ़ाइल पूरी करें",
+      "profileCompleted": "प्रोफ़ाइल पूरी हो गई!",
+      "profileCompletedDesc": "आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है"
+    },
+    "validation": {
+      "nameRequired": "नाम आवश्यक है",
+      "phoneRequired": "फोन नंबर आवश्यक है",
+      "locationRequired": "स्थान आवश्यक है",
+      "invalidPhone": "अमान्य फोन नंबर प्रारूप",
+      "minNameLength": "नाम कम से कम 2 अक्षर का होना चाहिए",
+      "invalidPincode": "अमान्य पिन कोड प्रारूप"
+    }
+  },
+  "forms": {
+    "personalInfo": {
+      "title": "व्यक्तिगत जानकारी",
+      "subtitle": "अपने बारे में बताएं",
+      "fullName": "पूरा नाम",
+      "fullNamePlaceholder": "अपना पूरा नाम दर्ज करें",
+      "age": "उम्र",
+      "agePlaceholder": "उम्र",
+      "gender": "लिंग",
+      "genderPlaceholder": "चुनें",
+      "male": "पुरुष",
+      "female": "महिला",
+      "other": "अन्य",
+      "education": "शिक्षा स्तर",
+      "educationPlaceholder": "शिक्षा का स्तर चुनें",
+      "familyMembers": "परिवार के सदस्य",
+      "familyMembersPlaceholder": "परिवार में कितने सदस्य हैं?",
+      "required": "आवश्यक फ़ील्ड"
+    },
+    "locationInfo": {
+      "title": "स्थान की जानकारी",
+      "subtitle": "आपकी खेती का स्थान",
+      "village": "गाँव",
+      "villagePlaceholder": "अपना गाँव का नाम दर्ज करें",
+      "taluka": "तालुका",
+      "talukaPlaceholder": "तालुका",
+      "district": "जिला",
+      "districtPlaceholder": "जिला",
+      "state": "राज्य",
+      "statePlaceholder": "राज्य चुनें",
+      "pincode": "पिन कोड",
+      "pincodePlaceholder": "123456"
+    },
+    "farmInfo": {
+      "title": "खेत की जानकारी",
+      "subtitle": "आपके खेत के बारे में विवरण",
+      "totalLand": "कुल जमीन (एकड़ में)",
+      "totalLandPlaceholder": "0.0",
+      "ownedLand": "अपनी जमीन (एकड़)",
+      "ownedLandPlaceholder": "0.0",
+      "leasedLand": "किराए की जमीन (एकड़)",
+      "leasedLandPlaceholder": "0.0",
+      "soilType": "मिट्टी का प्रकार",
+      "soilTypePlaceholder": "मिट्टी का प्रकार चुनें",
+      "waterSource": "जल स्रोत",
+      "waterSourcePlaceholder": "जल स्रोत चुनें"
+    },
+    "cropInfo": {
+      "title": "फसल की जानकारी",
+      "subtitle": "आप क्या उगाते हैं?",
+      "primaryCrops": "मुख्य फसलें",
+      "secondaryCrops": "द्वितीयक फसलें",
+      "farmingExperience": "खेती का अनुभव (वर्ष)",
+      "farmingType": "खेती का प्रकार",
+      "selectCrops": "अपनी फसलें चुनें"
+    },
+    "resources": {
+      "title": "संसाधन और उपकरण",
+      "subtitle": "उपलब्ध संसाधन",
+      "hasTractor": "ट्रैक्टर है",
+      "hasIrrigation": "सिंचाई प्रणाली",
+      "irrigationType": "सिंचाई का प्रकार",
+      "hasStorage": "भंडारण सुविधा",
+      "equipment": "अन्य उपकरण"
+    },
+    "financial": {
+      "title": "आर्थिक जानकारी",
+      "subtitle": "आर्थिक विवरण",
+      "annualIncome": "वार्षिक आय सीमा",
+      "hasLoan": "कृषि ऋण है",
+      "loanAmount": "ऋण राशि",
+      "hasInsurance": "फसल बीमा है",
+      "bankAccount": "बैंक खाता"
+    },
+    "navigation": {
+      "next": "अगला",
+      "previous": "पिछला",
+      "complete": "सेटअप पूरा करें",
+      "skip": "छोड़ें",
+      "step": "चरण {{current}} का {{total}}",
+      "completePercent": "पूर्ण"
+    },
+    "validation": {
+      "required": "यह फ़ील्ड आवश्यक है",
+      "invalidNumber": "कृपया एक वैध संख्या दर्ज करें",
+      "invalidEmail": "कृपया एक वैध ईमेल दर्ज करें",
+      "minLength": "कम से कम {count} अक्षर आवश्यक",
+      "maxLength": "अधिकतम {count} अक्षर की अनुमति"
+    }
+  },
+  "agriculture": {
+    "education": {
+      "noFormalEducation": "औपचारिक शिक्षा नहीं",
+      "primary": "प्राथमिक (1-5)",
+      "middle": "मध्यम (6-8)",
+      "secondary": "माध्यमिक (9-10)",
+      "higherSecondary": "उच्च माध्यमिक (11-12)",
+      "graduation": "स्नातक",
+      "postGraduation": "स्नातकोत्तर"
+    },
+    "states": {
+      "andhraPradesh": "आंध्र प्रदेश",
+      "bihar": "बिहार",
+      "gujarat": "गुजरात",
+      "haryana": "हरियाणा",
+      "karnataka": "कर्नाटक",
+      "madhyaPradesh": "मध्य प्रदेश",
+      "maharashtra": "महाराष्ट्र",
+      "punjab": "पंजाब",
+      "rajasthan": "राजस्थान",
+      "tamilNadu": "तमिल नाडु",
+      "telangana": "तेलंगाना",
+      "uttarPradesh": "उत्तर प्रदेश",
+      "westBengal": "पश्चिम बंगाल"
+    },
+    "soilTypes": {
+      "alluvial": "जलोढ़ मिट्टी",
+      "black": "काली मिट्टी",
+      "red": "लाल मिट्टी",
+      "laterite": "लेटराइट मिट्टी",
+      "mountain": "पर्वतीय मिट्टी",
+      "desert": "रेगिस्तानी मिट्टी"
+    },
+    "waterSources": {
+      "rainwater": "बारिश का पानी",
+      "tubewell": "नलकूप",
+      "canal": "नहर",
+      "river": "नदी",
+      "pond": "तालाब",
+      "borewell": "बोरवेल"
+    },
+    "crops": {
+      "wheat": "गेहूं",
+      "rice": "चावल",
+      "sugarcane": "गन्ना",
+      "cotton": "कपास",
+      "maize": "मक्का",
+      "bajra": "बाजरा",
+      "jowar": "ज्वार",
+      "pulses": "दाल",
+      "oilseeds": "तिलहन",
+      "vegetables": "सब्जियां",
+      "fruits": "फल",
+      "spices": "मसाले"
+    },
+    "farmingTypes": {
+      "organic": "जैविक खेती",
+      "conventional": "पारंपरिक खेती",
+      "mixed": "मिश्रित खेती",
+      "sustainable": "टिकाऊ खेती"
+    },
+    "irrigationTypes": {
+      "drip": "ड्रिप सिंचाई",
+      "sprinkler": "स्प्रिंकलर सिंचाई",
+      "flood": "बाढ़ सिंचाई",
+      "furrow": "कूंड सिंचाई"
+    },
+    "incomeRanges": {
+      "below50k": "₹50,000 से कम",
+      "50kTo1L": "₹50,000 - ₹1,00,000",
+      "1LTo2L": "₹1,00,000 - ₹2,00,000",
+      "2LTo5L": "₹2,00,000 - ₹5,00,000",
+      "above5L": "₹5,00,000 से अधिक"
+    }
   }
 }
