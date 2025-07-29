@@ -8,8 +8,9 @@ import { useTenant } from '@/context/TenantContext';
 import { setAuthenticated, setOnboardingCompleted } from '@/store/slices/authSlice';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
+import { PageLoadingFallback } from '@/components/common/PageLoadingFallback';
 
-// Lazy load route components for better performance
+// Lazy load all route components for optimal performance
 const MobileHome = lazy(() => import('@/pages/mobile/MobileHome'));
 const MyLands = lazy(() => import('@/pages/mobile/MyLands').then(m => ({ default: m.MyLands })));
 const AiChat = lazy(() => import('@/pages/mobile/AiChat').then(m => ({ default: m.AiChat })));
@@ -76,14 +77,7 @@ export const MobileApp: React.FC = () => {
   // Show main app immediately after authentication (no profile gate)
   return (
     <div className="min-h-screen bg-background">
-      <Suspense fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<PageLoadingFallback />}>
         <Routes>
           <Route path="/" element={<MobileHome />} />
           <Route path="/my-lands" element={<MyLands />} />
