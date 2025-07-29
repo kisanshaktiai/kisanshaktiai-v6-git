@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +14,7 @@ import {
   BarChart3
 } from 'lucide-react';
 
-export const CoreFeatureGrid: React.FC = () => {
+export const CoreFeatureGrid: React.FC = React.memo(() => {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
 
@@ -149,4 +148,4 @@ export const CoreFeatureGrid: React.FC = () => {
       </div>
     </div>
   );
-};
+});

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { useTenantData } from '@/hooks/useTenantData';
-import { createTenantTheme, applyTenantTheme } from '@/utils/multiTenantTheme';
+import { applyTenantTheme } from '@/utils/tenantTheme';
 import { ModernTopBar } from './ModernTopBar';
 import { TenantPromoBanner } from './TenantPromoBanner';
 import { TenantWeatherCard } from './TenantWeatherCard';
@@ -15,27 +15,20 @@ export const ModernTenantDashboard: React.FC = () => {
   const { tenantBranding, currentTenant, loading } = useSelector((state: RootState) => state.tenant);
   const { refreshTenant } = useTenantData();
 
-  // Apply tenant theming
+  // Apply tenant theming only when branding changes
   useEffect(() => {
     if (tenantBranding) {
-      const theme = createTenantTheme({
-        logoUrl: tenantBranding.logo_url,
-        appName: tenantBranding.app_name,
-        primaryColor: tenantBranding.primary_color,
-        secondaryColor: tenantBranding.secondary_color,
-        accentColor: tenantBranding.accent_color,
-        backgroundColor: tenantBranding.background_color,
-        textColor: tenantBranding.text_color
-      });
-      
-      applyTenantTheme(theme);
+      applyTenantTheme(tenantBranding);
     }
   }, [tenantBranding]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
       </div>
     );
   }

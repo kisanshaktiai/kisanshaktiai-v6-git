@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, X } from 'lucide-react';
+import { DebouncedInput } from '@/components/common/DebouncedInput';
 
 interface LandFiltersProps {
   searchTerm: string;
@@ -39,11 +40,12 @@ export const LandFilters: React.FC<LandFiltersProps> = ({
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
+          <DebouncedInput
             placeholder="Search lands by name..."
             value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onDebouncedChange={onSearchChange}
             className="pl-10"
+            debounceMs={500}
           />
         </div>
 

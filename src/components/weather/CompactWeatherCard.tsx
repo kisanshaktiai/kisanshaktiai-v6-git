@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import {
   CloudRain
 } from 'lucide-react';
 
-export const CompactWeatherCard: React.FC = () => {
+export const CompactWeatherCard: React.FC = React.memo(() => {
   const { t } = useTranslation('dashboard');
   const { 
     currentWeather, 
@@ -130,4 +129,4 @@ export const CompactWeatherCard: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
+});
