@@ -32,17 +32,6 @@ export default defineConfig(({ mode }) => ({
           'i18n-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
           'capacitor-vendor': ['@capacitor/core', '@capacitor/app', '@capacitor/camera', '@capacitor/geolocation'],
           'chart-vendor': ['recharts'],
-          // Feature chunks
-          'auth-features': [
-            './src/components/auth',
-            './src/components/onboarding',
-            './src/hooks/useAuth',
-            './src/services/authService'
-          ],
-          'mobile-features': [
-            './src/components/mobile',
-            './src/pages/mobile'
-          ],
         },
       },
     },
