@@ -120,5 +120,30 @@
   "common": {
     "fetchingLocation": "Getting location...",
     "tryAgain": "Tap to retry"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "subtitle": "Access your farming tools"
+  },
+  "recommendations": {
+    "title": "Smart Recommendations",
+    "subtitle": "AI-powered farming insights",
+    "viewAll": "View All Recommendations",
+    "newRecommendation": "New"
+  },
+  "fields": {
+    "management": {
+      "title": "Field Management",
+      "subtitle": "Monitor your fields"
+    }
+  },
+  "notifications": {
+    "new": "new",
+    "active": "active"
+  },
+  "sync": {
+    "syncing": "Syncing...",
+    "lastUpdated": "Last updated",
+    "offline": "You're offline"
   }
 }

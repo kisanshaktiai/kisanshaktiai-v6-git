@@ -70,6 +70,71 @@
     "community": "समुदाय",
     "profile": "प्रोफाइल"
   },
+  "weather": {
+    "location": "स्थान",
+    "conditions": {
+      "cloudy": "बादल छाए हुए",
+      "sunny": "धूप",
+      "rainy": "बारिश",
+      "clear": "साफ",
+      "thunderstorm": "तूफान",
+      "snow": "बर्फ"
+    }
+  },
+  "tasks": {
+    "allCompleted": "सभी कार्य पूरे हो गए!",
+    "tapToViewSchedule": "शेड्यूल में देखने के लिए टैप करें",
+    "noTasksToday": "आज कोई कार्य नहीं",
+    "markComplete": "पूर्ण के रूप में चिह्नित करें",
+    "examples": {
+      "waterCrops": "फसल की सिंचाई करें",
+      "checkPestTraps": "कीट जाल की जांच करें",
+      "harvestTomatoes": "टमाटर की कटाई करें",
+      "equipmentMaintenance": "उपकरण रखरखाव"
+    },
+    "descriptions": {
+      "fieldWatering": "फील्ड ए को तुरंत पानी देने की जरूरत है",
+      "trapInspection": "सभी जालों का साप्ताहिक निरीक्षण",
+      "harvestReady": "सेक्शन सी कटाई के लिए तैयार है",
+      "tractorMaintenance": "ट्रैक्टर इंजन का तेल जांचें"
+    }
+  },
+  "priority": {
+    "high": "उच्च प्राथमिकता",
+    "medium": "मध्यम प्राथमिकता",
+    "low": "कम प्राथमिकता"
+  },
+  "units": {
+    "acres": "एकड़",
+    "hectares": "हेक्टेयर",
+    "kgPerHa": "किग्रा/हेक्टेयर",
+    "celsius": "°सेल्सियस",
+    "kmh": "किमी/घंटा",
+    "percent": "%"
+  },
+  "navigation": {
+    "home": "होम",
+    "my_lands": "मेरी भूमि",
+    "ai_chat": "एआई चैट",
+    "crop_schedule": "फसल शेड्यूल",
+    "market": "बाजार",
+    "instaScan": "इंस्टास्कैन",
+    "weather": "मौसम",
+    "analytics": "एनालिटिक्स",
+    "community": "समुदाय",
+    "profile": "प्रोफाइल"
+  },
+  "errors": {
+    "pageNotFound": "पेज नहीं मिला",
+    "returnToHome": "होम पर वापस जाएं",
+    "connectionError": "कनेक्शन त्रुटि",
+    "tryAgain": "फिर कोशिश करें"
+  },
+  "auth": {
+    "signingIn": "साइन इन हो रहा है...",
+    "creatingAccount": "खाता बनाया जा रहा है...",
+    "getStarted": "शुरू करें"
+  },
   "features": {
     "aiPoweredAdvice": "AI-संचालित सलाह",
     "aiPoweredAdviceDesc": "व्यक्तिगत कृषि सिफारिशें प्राप्त करें",

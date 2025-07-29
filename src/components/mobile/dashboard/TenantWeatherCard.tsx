@@ -86,7 +86,7 @@ export const TenantWeatherCard: React.FC = () => {
             <div className="flex items-center space-x-1 mb-1">
               <MapPin className="w-3 h-3 text-white/80" />
               <span className="text-xs text-white/80 truncate max-w-[100px]">
-                {location?.district || 'Location'}
+                {location?.district || t('weather.location')}
               </span>
             </div>
             <div className="flex items-center space-x-3">

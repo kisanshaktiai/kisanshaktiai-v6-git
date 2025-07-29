@@ -115,10 +115,10 @@ export const TenantQuickActions: React.FC = () => {
     <div className="px-4 mb-4">
       <div className="mb-3">
         <h3 className="text-lg font-semibold text-foreground mb-1">
-          {t('dashboard.quickActions.title', 'Quick Actions')}
+          {t('dashboard:quickActions.title')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {t('dashboard.quickActions.subtitle', 'Access your farming tools')}
+          {t('dashboard:quickActions.subtitle')}
         </p>
       </div>
       

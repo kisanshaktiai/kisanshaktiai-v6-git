@@ -1,7 +1,89 @@
 {
   "common": {
     "notifications": "Notifications",
+    "profile": "Profile",
+    "active": "active",
+    "loading": "Loading...",
+    "error": "Error",
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "viewAll": "View All",
+    "online": "Online",
+    "offline": "Offline",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "location": "Location",
+    "continue": "Continue",
+    "welcome": "Welcome",
+    "getStarted": "Get Started",
+    "new": "New"
+  },
+  "weather": {
+    "location": "Location",
+    "conditions": {
+      "cloudy": "Cloudy",
+      "sunny": "Sunny",
+      "rainy": "Rainy",
+      "clear": "Clear",
+      "thunderstorm": "Thunderstorm",
+      "snow": "Snow"
+    }
+  },
+  "tasks": {
+    "allCompleted": "All tasks completed!",
+    "tapToViewSchedule": "Tap to view in schedule",
+    "noTasksToday": "No tasks for today",
+    "markComplete": "Mark Complete",
+    "examples": {
+      "waterCrops": "Water the crops",
+      "checkPestTraps": "Check pest traps",
+      "harvestTomatoes": "Harvest tomatoes",
+      "equipmentMaintenance": "Equipment maintenance"
+    },
+    "descriptions": {
+      "fieldWatering": "Field A needs immediate watering",
+      "trapInspection": "Weekly inspection of all traps",
+      "harvestReady": "Section C is ready for harvest",
+      "tractorMaintenance": "Check tractor engine oil"
+    }
+  },
+  "priority": {
+    "high": "High Priority",
+    "medium": "Medium Priority",
+    "low": "Low Priority"
+  },
+  "units": {
+    "acres": "Acres",
+    "hectares": "Hectares",
+    "kgPerHa": "kg/ha",
+    "celsius": "°C",
+    "kmh": "km/h",
+    "percent": "%"
+  },
+  "navigation": {
+    "home": "Home",
+    "my_lands": "My Lands",
+    "ai_chat": "AI Chat",
+    "crop_schedule": "Crop Schedule",
+    "market": "Market",
+    "instaScan": "InstaScan",
+    "weather": "Weather",
+    "analytics": "Analytics",
+    "community": "Community",
     "profile": "Profile"
+  },
+  "errors": {
+    "pageNotFound": "Page not found",
+    "returnToHome": "Return to Home",
+    "connectionError": "Connection error",
+    "tryAgain": "Try again"
+  },
+  "auth": {
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "getStarted": "Get Started"
   },
   "dashboard": {
     "weather": {

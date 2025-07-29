@@ -19,33 +19,33 @@ const mockTasks: Task[] = [
   {
     id: '1',
     time: '9:00 AM',
-    title: 'Water the crops',
+    title: 'Water the crops', // Will be translated below
     status: 'urgent',
-    description: 'Field A needs immediate watering',
+    description: 'Field A needs immediate watering', // Will be translated below
     priority: 'high'
   },
   {
     id: '2',
     time: '11:00 AM',
-    title: 'Check pest traps',
+    title: 'Check pest traps', // Will be translated below
     status: 'pending',
-    description: 'Weekly inspection of all traps',
+    description: 'Weekly inspection of all traps', // Will be translated below
     priority: 'medium'
   },
   {
     id: '3',
     time: '4:00 PM',
-    title: 'Harvest tomatoes',
+    title: 'Harvest tomatoes', // Will be translated below
     status: 'pending',
-    description: 'Section C is ready for harvest',
+    description: 'Section C is ready for harvest', // Will be translated below
     priority: 'medium'
   },
   {
     id: '4',
     time: '6:00 PM',
-    title: 'Equipment maintenance',
+    title: 'Equipment maintenance', // Will be translated below
     status: 'pending',
-    description: 'Check tractor engine oil',
+    description: 'Check tractor engine oil', // Will be translated below
     priority: 'low'
   }
 ];
@@ -57,8 +57,21 @@ export const SingleTaskRoller: React.FC = () => {
   const [isAutoRolling, setIsAutoRolling] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
 
+  // Translate mock tasks
+  const translatedTasks: Task[] = mockTasks.map(task => ({
+    ...task,
+    title: task.id === '1' ? t('tasks.examples.waterCrops') :
+           task.id === '2' ? t('tasks.examples.checkPestTraps') :
+           task.id === '3' ? t('tasks.examples.harvestTomatoes') :
+           task.id === '4' ? t('tasks.examples.equipmentMaintenance') : task.title,
+    description: task.id === '1' ? t('tasks.descriptions.fieldWatering') :
+                 task.id === '2' ? t('tasks.descriptions.trapInspection') :
+                 task.id === '3' ? t('tasks.descriptions.harvestReady') :
+                 task.id === '4' ? t('tasks.descriptions.tractorMaintenance') : task.description
+  }));
+
   // Filter out completed tasks for rolling display
-  const activeTasks = mockTasks.filter(task => task.status !== 'completed');
+  const activeTasks = translatedTasks.filter(task => task.status !== 'completed');
   const currentTask = activeTasks[currentTaskIndex];
 
   // Auto-roll functionality
@@ -131,7 +144,7 @@ export const SingleTaskRoller: React.FC = () => {
       <Card className="mx-4 mb-4 bg-card/50 backdrop-blur-sm border border-border/50">
         <CardContent className="p-6 text-center">
           <CheckCircle className="w-8 h-8 text-success mx-auto mb-2" />
-          <p className="text-muted-foreground">{t('dashboard.tasks.allComplete', 'All tasks completed!')}</p>
+          <p className="text-muted-foreground">{t('tasks.allCompleted')}</p>
         </CardContent>
       </Card>
     );
@@ -146,7 +159,7 @@ export const SingleTaskRoller: React.FC = () => {
             {t('dashboard.tasks.title', 'Today\'s Tasks')}
           </h3>
           <Badge variant="outline" className="text-xs">
-            {activeTasks.length} active
+            {activeTasks.length} {t('common.active')}
           </Badge>
         </div>
         
@@ -199,7 +212,7 @@ export const SingleTaskRoller: React.FC = () => {
                 <div className="flex items-center justify-between">
                   {getStatusBadge(currentTask.status)}
                   <div className="text-xs text-muted-foreground">
-                    Tap to view in schedule
+                    {t('tasks.tapToViewSchedule')}
                   </div>
                 </div>
               </div>

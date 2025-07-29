@@ -1,44 +1,149 @@
 
 {
-  "dashboard": {
-    "defaultFarmerName": "किसान",
+  "welcome": {
     "goodMorning": "सुप्रभात",
-    "goodAfternoon": "नमस्कार",
+    "goodAfternoon": "शुभ दोपहर", 
     "goodEvening": "शुभ संध्या",
-    "welcomeMessage": "आपके डैशबोर्ड में वापस स्वागत है",
-    "quickOverview": "त्वरित अवलोकन",
+    "goodNight": "शुभ रात्रि",
+    "lateNight": "देर रात",
+    "subtitle": "स्मार्ट कृषि डैशबोर्ड",
+    "defaultFarmerName": "किसान"
+  },
+  "header": {
+    "welcome": "आपका स्वागत है",
+    "search": "खोजें",
+    "notifications": "सूचनाएं"
+  },
+  "weather": {
+    "loadingWeather": "मौसम लोड हो रहा है...",
+    "dataUnavailable": "मौसम डेटा उपलब्ध नहीं",
+    "feelsLike": "महसूस होता है",
+    "precipitation": "वर्षा",
+    "windSpeed": "हवा की गति",
+    "humidity": "आर्द्रता",
+    "location": "वर्तमान स्थान"
+  },
+  "quickOverview": {
+    "title": "त्वरित अवलोकन",
+    "subtitle": "एक नज़र में आपका खेत",
     "totalLand": "कुल भूमि",
-    "acres": "एकड़",
     "activeCrops": "सक्रिय फसलें",
-    "varieties": "किस्में",
-    "lastYield": "पिछली उपज",
-    "perAcre": "प्रति एकड़",
     "netIncome": "शुद्ध आय",
-    "lastMonth": "पिछले 30 दिन",
-    "features": "सुविधाएं",
-    "recommendations": "सुझाव",
-    "seasonalCalendar": "इस सप्ताह के कार्य"
+    "efficiency": "दक्षता",
+    "productivity": "उत्पादकता",
+    "thisMonth": "इस महीने",
+    "acres": "एकड़",
+    "varieties": "किस्में",
+    "crops": "फसलें"
+  },
+  "myFields": {
+    "title": "मेरे खेत",
+    "subtitle": "अपने फसली खेतों का प्रबंधन करें",
+    "categories": {
+      "fruit": "फल",
+      "vegetable": "सब्जी", 
+      "grain": "अनाज",
+      "orchards": "बगीचे",
+      "other": "अन्य"
+    },
+    "fields": {
+      "appleField": "सेब का खेत",
+      "grapeField": "अंगूर का खेत",
+      "wheatField": "गेहूं का खेत",
+      "tomatoField": "टमाटर का खेत"
+    },
+    "harvest": {
+      "ready": "कटाई के लिए तैयार",
+      "days": "दिन",
+      "inDays": "{{count}} दिनों में"
+    },
+    "health": {
+      "good": "अच्छा स्वास्थ्य",
+      "excellent": "उत्कृष्ट",
+      "average": "औसत"
+    }
+  },
+  "tasks": {
+    "title": "आज के कार्य",
+    "subtitle": "आपकी कृषि गतिविधियां",
+    "expandTasks": "अधिक कार्य दिखाएं",
+    "markComplete": "पूर्ण के रूप में चिह्नित करें",
+    "reschedule": "पुनर्निर्धारण",
+    "noTasks": "आज कोई कार्य नहीं",
+    "allCaughtUp": "आप सभी कार्यों के साथ अप-टू-डेट हैं!",
+    "priority": {
+      "high": "उच्च",
+      "medium": "मध्यम", 
+      "low": "कम"
+    }
   },
   "features": {
-    "myLands": "मेरी भूमि",
-    "myLandsDesc": "अपने खेतों का प्रबंधन करें",
-    "cropSchedule": "फसल कैलेंडर",
-    "cropScheduleDesc": "AI-संचालित कार्यक्रम",
-    "aiChat": "AI सहायक",
-    "aiChatDesc": "खेती की सलाह लें",
-    "weather": "मौसम",
-    "weatherDesc": "स्थानीय पूर्वानुमान",
-    "marketplace": "बाज़ार",
-    "marketplaceDesc": "खरीदें और बेचें",
-    "analytics": "विश्लेषण",
-    "analyticsDesc": "अंतर्दृष्टि और रिपोर्ट",
-    "community": "समुदाय",
-    "communityDesc": "किसानों से जुड़ें",
-    "satellite": "उपग्रह डेटा",
-    "satelliteDesc": "NDVI और फसल स्वास्थ्य",
-    "reports": "रिपोर्ट",
-    "reportsDesc": "उपज लॉग और दस्तावेज़",
-    "schemes": "योजनाएं",
-    "schemesDesc": "सरकारी सब्सिडी और बीमा"
+    "title": "मुख्य सुविधाएं",
+    "subtitle": "आवश्यक कृषि उपकरण",
+    "new": "नया",
+    "myLands": {
+      "title": "मेरी भूमि",
+      "description": "अपनी खेती की भूमि का प्रबंधन करें"
+    },
+    "aiChat": {
+      "title": "AI चैट", 
+      "description": "कृषि सलाह प्राप्त करें"
+    },
+    "cropSchedule": {
+      "title": "फसल कार्यक्रम",
+      "description": "अपनी फसलों की योजना बनाएं"
+    },
+    "fertilizerGuide": {
+      "title": "उर्वरक गाइड",
+      "description": "मिट्टी पोषण सलाह"
+    },
+    "satelliteData": {
+      "title": "सैटेलाइट डेटा",
+      "description": "फसल निगरानी"
+    },
+    "market": {
+      "title": "बाजार",
+      "description": "कीमतें और व्यापार"
+    }
+  },
+  "actions": {
+    "refresh": "रिफ्रेश करें",
+    "viewAll": "सभी देखें",
+    "viewLess": "कम देखें"
+  },
+  "status": {
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन", 
+    "syncing": "सिंक हो रहा है...",
+    "lastUpdated": "अंतिम अपडेट"
+  },
+  "common": {
+    "fetchingLocation": "स्थान प्राप्त कर रहे हैं...",
+    "tryAgain": "पुनः प्रयास के लिए टैप करें"
+  },
+  "quickActions": {
+    "title": "त्वरित क्रियाएं",
+    "subtitle": "अपने कृषि उपकरणों तक पहुंचें"
+  },
+  "recommendations": {
+    "title": "स्मार्ट सिफारिशें",
+    "subtitle": "AI-संचालित कृषि अंतर्दृष्टि",
+    "viewAll": "सभी सिफारिशें देखें",
+    "newRecommendation": "नया"
+  },
+  "fields": {
+    "management": {
+      "title": "खेत प्रबंधन",
+      "subtitle": "अपने खेतों की निगरानी करें"
+    }
+  },
+  "notifications": {
+    "new": "नया",
+    "active": "सक्रिय"
+  },
+  "sync": {
+    "syncing": "सिंक हो रहा है...",
+    "lastUpdated": "अंतिम अपडेट",
+    "offline": "आप ऑफलाइन हैं"
   }
 }
