@@ -13,17 +13,21 @@ import { Toaster } from './components/ui/sonner';
 import './i18n';
 import './App.css';
 
-// Create a client with optimized default settings
+// Create a client with enhanced default settings for better performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-      retry: 1,
-      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
+      gcTime: 30 * 60 * 1000, // 30 minutes - cache kept longer 
+      retry: 2,
+      refetchOnWindowFocus: true, // Refresh when user returns to tab
+      refetchOnMount: 'always', // Always fetch fresh data on mount
+      refetchInterval: 10 * 60 * 1000, // Background refresh every 10 minutes
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
-      retry: 1,
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     },
   },
 });
