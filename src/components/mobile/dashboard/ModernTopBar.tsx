@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfessionalHamburgerMenu } from '@/components/mobile/navigation/ProfessionalHamburgerMenu';
 
 export const ModernTopBar: React.FC = () => {
   const { t } = useTranslation();
@@ -60,33 +61,21 @@ export const ModernTopBar: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Notifications and Profile */}
+        {/* Right: Notifications and Menu */}
         <div className="flex items-center space-x-3">
           {/* Notification Bell */}
           <Button
             variant="ghost"
             size="sm"
-            className="relative w-10 h-10 rounded-xl hover:bg-muted/80"
+            className="relative w-10 h-10 rounded-xl hover:bg-muted/80 transition-all duration-200"
             aria-label={t('common.notifications')}
           >
             <Bell className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-background" />
           </Button>
 
-          {/* User Avatar */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-1 h-auto rounded-xl hover:bg-muted/80"
-            aria-label={t('common.profile')}
-          >
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || ''} />
-              <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
+          {/* Professional Hamburger Menu */}
+          <ProfessionalHamburgerMenu />
         </div>
       </div>
     </header>

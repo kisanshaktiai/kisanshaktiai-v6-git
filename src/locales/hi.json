@@ -1,6 +1,9 @@
 
 {
   "common": {
+    "notifications": "सूचनाएं",
+    "profile": "प्रोफ़ाइल",
+    "active": "सक्रिय",
     "loading": "लोड हो रहा है...",
     "error": "त्रुटि",
     "success": "सफलता",
@@ -33,7 +36,34 @@
     "viewCalendar": "कैलेंडर देखें",
     "ready": "तैयार!",
     "tryAgain": "पुनः प्रयास करें",
-    "pleaseWait": "कृपया प्रतीक्षा करें..."
+    "pleaseWait": "कृपया प्रतीक्षा करें...",
+    "getStarted": "शुरू करें",
+    "settings": "सेटिंग्स",
+    "language": "भाषा",
+    "version": "संस्करण"
+  },
+  "menu": {
+    "title": "मेनू",
+    "account": "खाता",
+    "community": "समुदाय",
+    "services": "सेवाएं",
+    "profile": "प्रोफ़ाइल",
+    "settings": "सेटिंग्स",
+    "reports": "रिपोर्ट और एनालिटिक्स",
+    "govtSchemes": "सरकारी योजनाएं",
+    "insurance": "बीमा",
+    "logout": "लॉग आउट",
+    "profileDesc": "अपनी व्यक्तिगत जानकारी प्रबंधित करें",
+    "settingsDesc": "ऐप प्राथमिकताएं और कॉन्फ़िगरेशन",
+    "communityDesc": "साथी किसानों से जुड़ें",
+    "reportsDesc": "एनालिटिक्स और रिपोर्ट देखें",
+    "govtSchemesDesc": "सरकारी लाभों का पता लगाएं",
+    "insuranceDesc": "फसल और जीवन बीमा विकल्प",
+    "languageSelection": "भाषा चयन",
+    "notifications": "सूचनाएं",
+    "privacy": "गोपनीयता सेटिंग्स",
+    "help": "सहायता और समर्थन",
+    "about": "के बारे में"
   },
   "onboarding": {
     "welcome_title": "किसानशक्ति AI में आपका स्वागत है",

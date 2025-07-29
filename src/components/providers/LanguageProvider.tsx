@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { setLanguage } from '@/store/slices/farmerSlice';
 import { loadLanguageResources } from '@/i18n';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LanguageContextType {
   currentLanguage: string;
@@ -16,6 +17,7 @@ interface LanguageContextType {
     name: string;
     nativeName: string;
   }>;
+  updateProfileLanguage: (languageCode: string) => Promise<void>;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -35,11 +37,23 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { i18n } = useTranslation();
   const dispatch = useDispatch();
+  const { updateProfile, profile } = useAuth();
   const { selectedLanguage } = useSelector((state: RootState) => state.farmer);
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   
   const languageService = LanguageService.getInstance();
   const supportedLanguages = languageService.getSupportedLanguages();
+
+  const updateProfileLanguage = async (languageCode: string) => {
+    try {
+      if (updateProfile && profile) {
+        await updateProfile({ preferred_language: languageCode as any });
+        console.log(`Updated profile language to: ${languageCode}`);
+      }
+    } catch (error) {
+      console.error('Failed to update profile language:', error);
+    }
+  };
 
   const changeLanguage = async (languageCode: string) => {
     if (languageCode === i18n.language) return;
@@ -63,6 +77,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       // Update LanguageService
       await languageService.changeLanguage(languageCode);
       
+      // Update user profile language preference
+      await updateProfileLanguage(languageCode);
+      
+      // Store in localStorage as backup
+      localStorage.setItem('selectedLanguage', languageCode);
+      
       // Force re-render of all components
       document.documentElement.lang = languageCode;
       
@@ -74,18 +94,36 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     }
   };
 
-  // Initialize language on mount
+  // Initialize language on mount and when profile changes
   useEffect(() => {
     const initializeLanguage = async () => {
-      const storedLanguage = selectedLanguage || localStorage.getItem('i18nextLng') || 'en';
+      // Priority order: profile preferred_language > Redux selectedLanguage > localStorage > default
+      const profileLanguage = profile?.preferred_language;
+      const reduxLanguage = selectedLanguage;
+      const localLanguage = localStorage.getItem('selectedLanguage') || localStorage.getItem('i18nextLng');
+      const defaultLanguage = 'hi'; // Default for Indian farmers
       
-      if (storedLanguage !== i18n.language) {
-        await changeLanguage(storedLanguage);
+      const languageToUse = profileLanguage || reduxLanguage || localLanguage || defaultLanguage;
+      
+      console.log('Language initialization:', {
+        profileLanguage,
+        reduxLanguage, 
+        localLanguage,
+        defaultLanguage,
+        chosen: languageToUse,
+        current: i18n.language
+      });
+      
+      if (languageToUse && languageToUse !== i18n.language) {
+        await changeLanguage(languageToUse);
       }
     };
 
-    initializeLanguage();
-  }, []);
+    // Only initialize when we have profile data or on initial mount
+    if (profile !== undefined) {
+      initializeLanguage();
+    }
+  }, [profile?.preferred_language]);
 
   // Listen for language changes from other sources
   useEffect(() => {
@@ -108,6 +146,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     changeLanguage,
     isChangingLanguage,
     supportedLanguages,
+    updateProfileLanguage,
   };
 
   return (
