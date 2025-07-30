@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { useUnifiedTenantData } from '@/hooks';
 import { LocationService } from '@/services/LocationService';
-import { LanguageService } from '@/services/LanguageService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,28 +53,84 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
       setIsLoading(true);
       setError(null);
       try {
-        // 1. Get location
-        const location = await LocationService.getLocationInfo();
+        // 1. Get location using available LocationService methods
+        const locationService = LocationService.getInstance();
+        const coordinates = await locationService.getCurrentLocation();
+        const locationData = await locationService.reverseGeocode(
+          coordinates.latitude, 
+          coordinates.longitude
+        );
+        
+        const location: LocationInfo = {
+          state: locationData.state,
+          district: locationData.district,
+          coordinates: {
+            lat: coordinates.latitude,
+            lng: coordinates.longitude,
+          }
+        };
+        
         setLocationInfo(location);
 
-        // 2. Get language recommendations
-        if (location?.coordinates) {
-          const languages = await LanguageService.getLanguageRecommendations(
-            location.coordinates.lat,
-            location.coordinates.lng
-          );
-          setLanguageRecommendations(
-            languages.map(lang => ({
-              ...lang,
-              isRecommended: lang.confidence > 0.5,
-            }))
-          );
-        } else {
-          console.warn('Location coordinates missing, skipping language recommendations.');
-        }
+        // 2. Get language recommendations based on state (simplified mapping)
+        const stateLanguageMap: Record<string, LanguageRecommendation[]> = {
+          'Andhra Pradesh': [
+            { code: 'te', name: 'తెలుగు', nativeName: 'Telugu', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Telangana': [
+            { code: 'te', name: 'తెలుగు', nativeName: 'Telugu', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Tamil Nadu': [
+            { code: 'ta', name: 'தமிழ்', nativeName: 'Tamil', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Karnataka': [
+            { code: 'kn', name: 'ಕನ್ನಡ', nativeName: 'Kannada', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Kerala': [
+            { code: 'ml', name: 'മലയാളം', nativeName: 'Malayalam', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Maharashtra': [
+            { code: 'mr', name: 'मराठी', nativeName: 'Marathi', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Gujarat': [
+            { code: 'gu', name: 'ગુજરાતી', nativeName: 'Gujarati', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Punjab': [
+            { code: 'pa', name: 'ਪੰਜਾਬੀ', nativeName: 'Punjabi', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'West Bengal': [
+            { code: 'bn', name: 'বাংলা', nativeName: 'Bengali', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ],
+          'Odisha': [
+            { code: 'or', name: 'ଓଡ଼ିଆ', nativeName: 'Odia', confidence: 0.9, isRecommended: true },
+            { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+          ]
+        };
+        
+        const recommendations = stateLanguageMap[locationData.state] || [
+          { code: 'hi', name: 'हिंदी', nativeName: 'Hindi', confidence: 0.8, isRecommended: true },
+          { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+        ];
+        
+        setLanguageRecommendations(recommendations);
+        
       } catch (err: any) {
         console.error('Error loading location and languages:', err);
         setError(t('location.errorLoading'));
+        // Set default recommendations on error
+        setLanguageRecommendations([
+          { code: 'hi', name: 'हिंदी', nativeName: 'Hindi', confidence: 0.8, isRecommended: true },
+          { code: 'en', name: 'English', nativeName: 'English', confidence: 0.7, isRecommended: true }
+        ]);
         toast({
           title: t('common.error'),
           description: t('location.errorLoading'),
@@ -110,6 +166,7 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
       toast({
         title: t('common.warning'),
         description: t('language.selectLanguage'),
+        variant: 'destructive',
       });
     }
   };
@@ -149,11 +206,14 @@ export const LocationBasedLanguageScreen: React.FC<LocationBasedLanguageScreenPr
                     <Button
                       key={lang.code}
                       variant={selectedLanguage === lang.code ? 'secondary' : 'outline'}
-                      className="justify-start text-sm"
+                      className="justify-start text-sm p-3 h-auto"
                       onClick={() => handleLanguageSelect(lang.code)}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span>{lang.name}</span>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="font-medium">{lang.name}</span>
+                          <span className="text-xs text-muted-foreground">{lang.nativeName}</span>
+                        </div>
                         {selectedLanguage === lang.code && (
                           <Check className="h-4 w-4 ml-2 text-green-500" />
                         )}

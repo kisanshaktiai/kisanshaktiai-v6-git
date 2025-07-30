@@ -1,414 +1,329 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { useAuth } from '@/hooks/useAuth';
-import { useLanguage } from '@/components/providers/LanguageProvider';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { logout } from '@/store/slices/authSlice';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Menu,
-  User,
-  Settings,
-  Users,
-  FileText,
-  Building2,
-  Shield,
-  LogOut,
-  ChevronRight,
-  Bell,
-  Lock,
-  HelpCircle,
-  Info,
-  Languages,
-  Smartphone,
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Menu, 
+  User, 
+  Settings, 
+  LogOut, 
+  HelpCircle, 
+  Shield, 
+  MapPin,
+  Phone,
   Globe,
-  Star,
-  TrendingUp,
-  MessageSquare,
-  Calendar,
+  X,
+  MessageCircle,
+  BarChart3,
+  Bell,
   CreditCard,
+  HeadphonesIcon
 } from 'lucide-react';
 
-interface MenuSection {
-  title: string;
-  items: MenuItem[];
+interface ProfessionalHamburgerMenuProps {
+  className?: string;
 }
 
-interface MenuItem {
-  icon: React.ElementType;
-  label: string;
-  path?: string;
-  action?: () => void;
-  description: string;
-  badge?: string;
-  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
-  isNew?: boolean;
-  isHot?: boolean;
-}
-
-export const ProfessionalHamburgerMenu: React.FC = () => {
+export const ProfessionalHamburgerMenu: React.FC<ProfessionalHamburgerMenuProps> = ({ className }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { signOut, profile } = useAuth();
-  const { changeLanguage, currentLanguage, supportedLanguages, isChangingLanguage } = useLanguage();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const dispatch = useDispatch();
+  const { profile } = useAuth();
+  const { currentTenant, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { tenant, branding } = useUnifiedTenantData(currentTenant);
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const menuSections: MenuSection[] = [
-    {
-      title: t('menu.account'),
-      items: [
-        {
-          icon: User,
-          label: t('menu.profile'),
-          path: '/profile',
-          description: t('menu.profileDesc'),
-        },
-        {
-          icon: Settings,
-          label: t('menu.settings'),
-          path: '/settings',
-          description: t('menu.settingsDesc'),
-        },
-        {
-          icon: Bell,
-          label: t('menu.notifications'),
-          path: '/notifications',
-          description: 'Manage your notification preferences',
-          badge: '3',
-          badgeVariant: 'destructive',
-        },
-        {
-          icon: Lock,
-          label: t('menu.privacy'),
-          path: '/privacy',
-          description: 'Privacy and security settings',
-        },
-      ]
-    },
-    {
-      title: t('menu.community'),
-      items: [
-        {
-          icon: Users,
-          label: t('menu.community'),
-          path: '/community',
-          description: t('menu.communityDesc'),
-          isNew: true,
-        },
-        {
-          icon: MessageSquare,
-          label: 'Forum Discussions',
-          path: '/forum',
-          description: 'Join farming discussions',
-          badge: 'Active',
-          badgeVariant: 'secondary',
-        },
-        {
-          icon: FileText,
-          label: t('menu.reports'),
-          path: '/analytics',
-          description: t('menu.reportsDesc'),
-        },
-        {
-          icon: TrendingUp,
-          label: 'Performance Analytics',
-          path: '/performance',
-          description: 'Track your farming progress',
-        },
-      ]
-    },
-    {
-      title: t('menu.services'),
-      items: [
-        {
-          icon: Building2,
-          label: t('menu.govtSchemes'),
-          path: '/govt-schemes',
-          description: t('menu.govtSchemesDesc'),
-          isHot: true,
-        },
-        {
-          icon: Shield,
-          label: t('menu.insurance'),
-          path: '/insurance',
-          description: t('menu.insuranceDesc'),
-        },
-        {
-          icon: CreditCard,
-          label: 'Loans & Credit',
-          path: '/loans',
-          description: 'Agricultural loan services',
-          badge: 'New',
-          badgeVariant: 'secondary',
-        },
-        {
-          icon: Calendar,
-          label: 'Extension Services',
-          path: '/extension',
-          description: 'Agricultural extension support',
-        },
-      ]
-    },
-    {
-      title: 'Support',
-      items: [
-        {
-          icon: HelpCircle,
-          label: t('menu.help'),
-          path: '/help',
-          description: 'Get help and support',
-        },
-        {
-          icon: Info,
-          label: t('menu.about'),
-          path: '/about',
-          description: 'About KisanShakti AI',
-        },
-      ]
-    }
-  ];
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      setIsOpen(false);
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsOpen(false);
+    navigate('/auth');
   };
 
-  const handleNavigate = (path: string) => {
+  const handleNavigation = (path: string) => {
     navigate(path);
     setIsOpen(false);
   };
 
-  const handleLanguageChange = async (languageCode: string) => {
-    try {
-      await changeLanguage(languageCode);
-    } catch (error) {
-      console.error('Language change error:', error);
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
     }
+    return 'F';
   };
 
-  const getProfileName = (): string => {
-    if (profile?.full_name) return profile.full_name;
-    return t('common.farmer');
-  };
+  const primaryMenuItems = [
+    {
+      icon: User,
+      label: t('menu.profile'),
+      path: '/profile',
+      description: t('menu.profileDesc', 'Manage your account settings'),
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      icon: MapPin,
+      label: t('menu.myLands'),
+      path: '/my-lands',
+      description: t('menu.myLandsDesc', 'View and manage your farms'),
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      icon: MessageCircle,
+      label: t('menu.aiChat'),
+      path: '/ai-chat',
+      description: t('menu.aiChatDesc', 'Get AI farming assistance'),
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50'
+    },
+    {
+      icon: BarChart3,
+      label: t('menu.analytics'),
+      path: '/analytics',
+      description: t('menu.analyticsDesc', 'View farm performance data'),
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    }
+  ];
 
-  const getInitials = (): string => {
-    const name = getProfileName();
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getBadgeVariant = (item: MenuItem) => {
-    if (item.isHot) return 'destructive';
-    if (item.isNew) return 'secondary';
-    return item.badgeVariant || 'outline';
-  };
-
-  const getBadgeText = (item: MenuItem) => {
-    if (item.isHot) return 'Hot';
-    if (item.isNew) return 'New';
-    return item.badge || '';
-  };
+  const secondaryMenuItems = [
+    {
+      icon: Settings,
+      label: t('menu.settings'),
+      path: '/settings',
+      description: t('menu.settingsDesc', 'App preferences and configuration')
+    },
+    {
+      icon: Bell,
+      label: t('menu.notifications'),
+      path: '/notifications',
+      description: t('menu.notificationsDesc', 'Manage your alerts')
+    },
+    {
+      icon: CreditCard,
+      label: t('menu.billing'),
+      path: '/billing',
+      description: t('menu.billingDesc', 'Subscription and payments')
+    },
+    {
+      icon: HelpCircle,
+      label: t('menu.help'),
+      path: '/help',
+      description: t('menu.helpDesc', 'Get support and tutorials')
+    }
+  ];
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="relative w-10 h-10 rounded-xl hover:bg-muted/80 transition-all duration-200"
-          aria-label={t('menu.title')}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent 
-        side="right" 
-        className="w-80 p-0 bg-gradient-to-br from-background via-background to-muted/20 backdrop-blur-xl border-l border-border/30"
+    <div className={className} ref={menuRef}>
+      {/* Menu Toggle Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-10 h-10 rounded-xl hover:bg-muted/80 transition-all duration-200"
+        aria-label={t('menu.toggle')}
       >
-        <div className="flex flex-col h-full">
-          {/* Enhanced Header with Glassmorphism */}
-          <SheetHeader className="p-6 pb-4">
-            <div 
-              className="rounded-2xl p-5 backdrop-blur-md border border-white/10 shadow-lg"
-              style={{
-                background: tenantBranding?.primary_color 
-                  ? `linear-gradient(135deg, ${tenantBranding.primary_color}10, ${tenantBranding.accent_color || tenantBranding.primary_color}05)`
-                  : 'linear-gradient(135deg, hsl(var(--primary))10, hsl(var(--accent))05)'
-              }}
-            >
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-14 h-14 ring-2 ring-primary/20 shadow-lg">
-                  <AvatarImage src={profile?.avatar_url} alt={getProfileName()} />
-                  <AvatarFallback 
-                    className="text-lg font-bold"
-                    style={{
-                      backgroundColor: tenantBranding?.primary_color ? `${tenantBranding.primary_color}20` : undefined,
-                      color: tenantBranding?.primary_color || undefined
-                    }}
-                  >
-                    {getInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <SheetTitle className="text-xl font-bold text-left mb-1">
-                    {getProfileName()}
-                  </SheetTitle>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Farmer Profile
-                  </p>
-                  <Badge variant="outline" className="text-xs">
-                    {tenantBranding?.app_name || 'KisanShakti AI'}
-                  </Badge>
+        <Menu className="w-5 h-5" />
+      </Button>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in-0"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Menu Panel */}
+      {isOpen && (
+        <div className="fixed right-0 top-0 h-full w-96 bg-background border-l shadow-2xl z-50 animate-in slide-in-from-right-full duration-300">
+          <div className="flex flex-col h-full">
+            {/* Header with User Profile */}
+            <div className="p-6 border-b bg-gradient-to-r from-muted/30 to-muted/10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  {branding?.logo_url ? (
+                    <img
+                      src={branding.logo_url}
+                      alt={branding.app_name || 'Logo'}
+                      className="w-10 h-10 object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <span className="text-primary font-bold">🌾</span>
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-lg">
+                      {branding?.app_name || 'KisanShakti AI'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {tenant?.type || 'Agricultural Platform'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </SheetHeader>
-
-          {/* Language Selector */}
-          <div className="px-6 py-3">
-            <div className="flex items-center space-x-3 p-3 rounded-xl bg-card/50 border border-border/30">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Languages className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  {t('common.language')}
-                </label>
-                <Select 
-                  value={currentLanguage} 
-                  onValueChange={handleLanguageChange}
-                  disabled={isChangingLanguage}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 hover:bg-muted/60"
                 >
-                  <SelectTrigger className="h-8 text-xs border-0 bg-transparent p-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supportedLanguages.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        <div className="flex items-center space-x-2">
-                          <Globe className="w-3 h-3" />
-                          <span>{lang.nativeName}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-            </div>
-          </div>
 
-          {/* Menu Content with ScrollArea */}
-          <ScrollArea className="flex-1 px-6">
-            <div className="space-y-6 pb-6">
-              {menuSections.map((section, sectionIndex) => (
-                <div key={sectionIndex}>
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center">
-                    {section.title}
-                    <div className="ml-2 h-px bg-border/50 flex-1" />
-                  </h3>
-                  <div className="space-y-2">
-                    {section.items.map((item, itemIndex) => {
-                      const Icon = item.icon;
-                      const hasAction = item.action || item.path;
-                      
-                      return (
-                        <button
-                          key={itemIndex}
-                          onClick={() => {
-                            if (item.action) {
-                              item.action();
-                            } else if (item.path) {
-                              handleNavigate(item.path);
-                            }
-                          }}
-                          disabled={!hasAction}
-                          className="w-full flex items-center space-x-3 p-3 rounded-xl bg-card/50 hover:bg-accent/50 transition-all duration-300 group border border-transparent hover:border-border/50 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <div 
-                            className="p-2.5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-105"
-                            style={{
-                              backgroundColor: tenantBranding?.primary_color ? `${tenantBranding.primary_color}15` : undefined
-                            }}
-                          >
-                            <Icon className="w-4 h-4 text-primary" />
+              {/* User Profile Section */}
+              {isAuthenticated && profile && (
+                <div className="flex items-center space-x-4 p-4 bg-white/50 rounded-xl">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={profile.avatar_url || ''} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm truncate">
+                      {profile.full_name || profile.phone_number}
+                    </h4>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {profile.location || 'Location not set'}
+                    </p>
+                    <Badge variant="secondary" className="text-xs mt-1">
+                      <Shield className="w-3 h-3 mr-1" />
+                      {t('menu.verified')}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Items */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Primary Actions */}
+              <div className="space-y-3">
+                <h5 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                  {t('menu.mainFeatures')}
+                </h5>
+                <div className="space-y-2">
+                  {primaryMenuItems.map((item) => (
+                    <Card 
+                      key={item.path}
+                      className="cursor-pointer hover:shadow-lg transition-all duration-200 border-0 bg-gradient-to-r from-white to-muted/20 hover:from-muted/30 hover:to-muted/40"
+                      onClick={() => handleNavigation(item.path)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start space-x-4">
+                          <div className={`w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center`}>
+                            <item.icon className={`w-6 h-6 ${item.color}`} />
                           </div>
-                          <div className="flex-1 text-left">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-foreground">{item.label}</span>
-                              <div className="flex items-center space-x-2">
-                                {(item.badge || item.isNew || item.isHot) && (
-                                  <Badge 
-                                    variant={getBadgeVariant(item)} 
-                                    className="text-xs px-2 py-0.5 font-medium"
-                                  >
-                                    {getBadgeText(item)}
-                                  </Badge>
-                                )}
-                                {hasAction && (
-                                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm">{item.label}</h4>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {item.description}
                             </p>
                           </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              </div>
 
-          {/* Enhanced Footer */}
-          <div className="p-6 pt-4 border-t border-border/30 bg-muted/20 backdrop-blur-sm">
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="w-full justify-start space-x-3 h-12 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition-all duration-300 font-medium"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>{t('menu.logout')}</span>
-            </Button>
-            <div className="mt-3 text-center">
-              <p className="text-xs text-muted-foreground">
-                {t('common.version')} 2.0.0 • KisanShakti AI
-              </p>
+              <Separator />
+
+              {/* Secondary Actions */}
+              <div className="space-y-3">
+                <h5 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                  {t('menu.settings')}
+                </h5>
+                <div className="space-y-1">
+                  {secondaryMenuItems.map((item) => (
+                    <Button
+                      key={item.path}
+                      variant="ghost"
+                      className="w-full justify-start h-auto p-3 hover:bg-muted/60"
+                      onClick={() => handleNavigation(item.path)}
+                    >
+                      <item.icon className="w-4 h-4 mr-3 text-muted-foreground" />
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-sm">{item.label}</div>
+                        <div className="text-xs text-muted-foreground">{item.description}</div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-4 border-t bg-muted/20 space-y-4">
+              {/* Quick Info */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <Globe className="w-3 h-3" />
+                  <span>{t('common.version')} 1.0.0</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-1 text-xs"
+                  onClick={() => handleNavigation('/support')}
+                >
+                  <HeadphonesIcon className="w-3 h-3 mr-1" />
+                  {t('menu.support')}
+                </Button>
+              </div>
+
+              {/* Logout Button */}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleLogout}
+                className="w-full justify-start hover:bg-destructive/90 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('auth.logout')}
+              </Button>
             </div>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </div>
   );
 };

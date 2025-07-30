@@ -1,215 +1,217 @@
 
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { logout } from '@/store/slices/authSlice';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Menu,
-  User,
-  Settings,
-  Users,
-  FileText,
-  Building2,
-  Shield,
-  LogOut,
-  ChevronRight,
+import { 
+  Menu, 
+  User, 
+  Settings, 
+  LogOut, 
+  HelpCircle, 
+  Shield, 
+  MapPin,
+  Phone,
+  Globe,
+  X
 } from 'lucide-react';
 
-export const HamburgerMenu: React.FC = () => {
+interface HamburgerMenuProps {
+  className?: string;
+}
+
+export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ className }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { phoneNumber } = useSelector((state: RootState) => state.auth);
-  const { profile } = useSelector((state: RootState) => state.farmer);
-  const { currentTenant, tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { tenant, branding } = useUnifiedTenantData(currentTenant);
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const menuSections = [
-    {
-      title: t('menu.account'),
-      items: [
-        {
-          icon: User,
-          label: t('menu.profile'),
-          path: '/profile',
-          description: t('menu.profileDesc'),
-        },
-        {
-          icon: Settings,
-          label: t('menu.settings'),
-          path: '/settings',
-          description: t('menu.settingsDesc'),
-        },
-      ]
-    },
-    {
-      title: t('menu.community'),
-      items: [
-        {
-          icon: Users,
-          label: t('menu.community'),
-          path: '/community',
-          description: t('menu.communityDesc'),
-          badge: 'New',
-        },
-        {
-          icon: FileText,
-          label: t('menu.reports'),
-          path: '/reports',
-          description: t('menu.reportsDesc'),
-        },
-      ]
-    },
-    {
-      title: t('menu.services'),
-      items: [
-        {
-          icon: Building2,
-          label: t('menu.govtSchemes'),
-          path: '/govt-schemes',
-          description: t('menu.govtSchemesDesc'),
-          badge: 'Hot',
-        },
-        {
-          icon: Shield,
-          label: t('menu.insurance'),
-          path: '/insurance',
-          description: t('menu.insuranceDesc'),
-        },
-      ]
-    },
-  ];
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const handleLogout = () => {
     dispatch(logout());
+    setIsOpen(false);
+    navigate('/auth');
   };
 
-  const getProfileName = (): string => {
-    if (!profile?.name) return t('common.farmer', 'Farmer');
-    if (typeof profile.name === 'string') return profile.name;
-    return profile.name.en || profile.name.hi || t('common.farmer', 'Farmer');
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsOpen(false);
   };
+
+  const menuItems = [
+    {
+      icon: User,
+      label: t('menu.profile'),
+      path: '/profile',
+      description: t('menu.profileDesc', 'Manage your account settings')
+    },
+    {
+      icon: MapPin,
+      label: t('menu.myLands'),
+      path: '/my-lands',
+      description: t('menu.myLandsDesc', 'View and manage your farms')
+    },
+    {
+      icon: Settings,
+      label: t('menu.settings'),
+      path: '/settings',
+      description: t('menu.settingsDesc', 'App preferences and configuration')
+    },
+    {
+      icon: HelpCircle,
+      label: t('menu.help'),
+      path: '/help',
+      description: t('menu.helpDesc', 'Get support and tutorials')
+    }
+  ];
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent 
-        side="right" 
-        className="w-80 p-0 bg-gradient-to-br from-background via-background to-muted/30 backdrop-blur-xl border-l border-border/50"
+    <div className={className} ref={menuRef}>
+      {/* Menu Toggle Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-10 h-10 rounded-xl hover:bg-muted/80 transition-all duration-200"
+        aria-label={t('menu.toggle')}
       >
-        <div className="flex flex-col h-full">
-          {/* Header with Profile */}
-          <SheetHeader className="p-6 pb-4">
-            <div 
-              className="rounded-2xl p-4 backdrop-blur-sm"
-              style={{
-                background: tenantBranding?.primary_color 
-                  ? `linear-gradient(135deg, ${tenantBranding.primary_color}15, ${tenantBranding.accent_color || tenantBranding.primary_color}08)`
-                  : 'linear-gradient(135deg, hsl(var(--primary))15, hsl(var(--accent))08)'
-              }}
-            >
-              <div className="flex items-center space-x-3">
-                <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-                  <AvatarFallback 
-                    className="text-lg font-semibold"
-                    style={{
-                      backgroundColor: tenantBranding?.primary_color ? `${tenantBranding.primary_color}20` : undefined,
-                      color: tenantBranding?.primary_color || undefined
-                    }}
-                  >
-                    {getProfileName().charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <SheetTitle className="text-lg font-bold text-left">
-                    {getProfileName()}
-                  </SheetTitle>
-                  <p className="text-sm text-muted-foreground">{phoneNumber}</p>
-                  <Badge variant="outline" className="mt-1 text-xs">
-                    {currentTenant?.name || 'KisanShakti AI'}
+        <Menu className="w-5 h-5" />
+      </Button>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in-0"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Menu Panel */}
+      {isOpen && (
+        <div className="fixed right-0 top-0 h-full w-80 bg-background border-l shadow-2xl z-50 animate-in slide-in-from-right-full duration-300">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="p-6 border-b bg-muted/30">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  {branding?.logo_url && (
+                    <img
+                      src={branding.logo_url}
+                      alt={branding.app_name || 'Logo'}
+                      className="w-8 h-8 object-contain"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {branding?.app_name || 'KisanShakti AI'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {tenant?.type || 'Agricultural Platform'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* User Status */}
+              {isAuthenticated && (
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="text-xs">
+                    <Shield className="w-3 h-3 mr-1" />
+                    {t('menu.authenticated')}
                   </Badge>
                 </div>
-              </div>
+              )}
             </div>
-          </SheetHeader>
 
-          {/* Menu Content */}
-          <div className="flex-1 px-6 py-2 space-y-6 overflow-y-auto">
-            {menuSections.map((section, sectionIndex) => (
-              <div key={sectionIndex}>
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  {section.title}
-                </h3>
-                <div className="space-y-2">
-                  {section.items.map((item, itemIndex) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={itemIndex}
-                        onClick={() => navigate(item.path)}
-                        className="w-full flex items-center space-x-3 p-3 rounded-xl bg-card/50 hover:bg-accent/50 transition-all duration-200 group border border-transparent hover:border-border/50"
-                      >
-                        <div 
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors"
-                          style={{
-                            backgroundColor: tenantBranding?.primary_color ? `${tenantBranding.primary_color}15` : undefined
-                          }}
-                        >
-                          <Icon className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-foreground">{item.label}</span>
-                            <div className="flex items-center space-x-2">
-                              {item.badge && (
-                                <Badge 
-                                  variant={item.badge === 'Hot' ? 'destructive' : 'secondary'} 
-                                  className="text-xs px-2 py-0"
-                                >
-                                  {item.badge}
-                                </Badge>
-                              )}
-                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
+            {/* Menu Items */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {menuItems.map((item) => (
+                <Card 
+                  key={item.path}
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 border-0 bg-muted/20 hover:bg-muted/40"
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <item.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{item.label}</h4>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-4 border-t bg-muted/30 space-y-3">
+              {/* Quick Info */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <Globe className="w-3 h-3" />
+                  <span>{t('common.version')} 1.0</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Phone className="w-3 h-3" />
+                  <span>{t('menu.support')}</span>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Footer with Logout */}
-          <div className="p-6 pt-4 border-t border-border/50">
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="w-full justify-start space-x-3 h-12 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:border-destructive/30"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>{t('menu.logout')}</span>
-            </Button>
+              {/* Logout Button */}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleLogout}
+                className="w-full justify-start"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('auth.logout')}
+              </Button>
+            </div>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </div>
   );
 };

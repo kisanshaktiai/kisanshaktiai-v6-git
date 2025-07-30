@@ -7,6 +7,7 @@ import { RootState } from '@/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { useUnifiedTenantData } from '@/hooks';
 import { ModernProfileModal } from '@/components/common/ModernProfileModal';
 import { 
   MapPin, 
@@ -182,7 +183,8 @@ const FeatureCard: React.FC<{
 export const FeatureGrid: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantFeatures } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { features: tenantFeatures } = useUnifiedTenantData(currentTenant);
   const { isProfileComplete, refreshProfileStatus } = useProfileCompletion();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string>('');

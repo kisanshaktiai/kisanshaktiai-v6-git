@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -35,21 +36,49 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
       setIsLoading(true);
       setError(null);
       try {
-        // 1. Get location
-        const locationData = await LocationService.getLocationInfo();
+        // 1. Get location using available LocationService methods
+        const locationService = LocationService.getInstance();
+        const coordinates = await locationService.getCurrentLocation();
+        const locationData = await locationService.reverseGeocode(
+          coordinates.latitude, 
+          coordinates.longitude
+        );
+        
         setLocation({
-          city: locationData?.city || null,
-          country: locationData?.country || null,
+          city: locationData?.district || null,
+          country: locationData?.state || null,
         });
 
-        // 2. Get recommended languages
-        const languageData = await LanguageService.getRecommendedLanguages(
-          locationData?.countryCode
-        );
-        setRecommendedLanguages(languageData);
+        // 2. Get recommended languages based on location (simplified approach)
+        const stateLanguageMap: Record<string, string[]> = {
+          'Andhra Pradesh': ['te', 'en'],
+          'Telangana': ['te', 'en'],
+          'Tamil Nadu': ['ta', 'en'],
+          'Karnataka': ['kn', 'en'],
+          'Kerala': ['ml', 'en'],
+          'Maharashtra': ['mr', 'en'],
+          'Gujarat': ['gu', 'en'],
+          'Punjab': ['pa', 'en'],
+          'West Bengal': ['bn', 'en'],
+          'Odisha': ['or', 'en'],
+          'Uttar Pradesh': ['hi', 'en'],
+          'Madhya Pradesh': ['hi', 'en'],
+          'Rajasthan': ['hi', 'en'],
+          'Bihar': ['hi', 'en'],
+          'Jharkhand': ['hi', 'en'],
+          'Chhattisgarh': ['hi', 'en'],
+          'Haryana': ['hi', 'en'],
+          'Delhi': ['hi', 'en'],
+        };
+        
+        const stateLangs = stateLanguageMap[locationData?.state || ''] || ['hi', 'en'];
+        setRecommendedLanguages(stateLangs);
+        
       } catch (err: any) {
         console.error('Error during language screen load:', err);
         setError(t('onboarding.languageError', 'Failed to determine language'));
+        // Set default recommendations on error
+        setRecommendedLanguages(['hi', 'en']);
         toast({
           title: t('common.error'),
           description: t('onboarding.languageError', 'Failed to determine language'),
@@ -72,7 +101,7 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
       toast({
         title: t('common.warning'),
         description: t('onboarding.selectLanguage', 'Please select a language'),
-        variant: 'warning',
+        variant: 'destructive',
       });
       return;
     }
@@ -91,9 +120,33 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
       });
   };
 
+  // Available languages with their display names
+  const availableLanguages = [
+    { code: 'hi', name: 'हिंदी', nativeName: 'Hindi' },
+    { code: 'en', name: 'English', nativeName: 'English' },
+    { code: 'te', name: 'తెలుగు', nativeName: 'Telugu' },
+    { code: 'ta', name: 'தமிழ்', nativeName: 'Tamil' },
+    { code: 'kn', name: 'ಕನ್ನಡ', nativeName: 'Kannada' },
+    { code: 'ml', name: 'മലയാളം', nativeName: 'Malayalam' },
+    { code: 'mr', name: 'मराठी', nativeName: 'Marathi' },
+    { code: 'gu', name: '�gujarātī', nativeName: 'Gujarati' },
+    { code: 'pa', name: 'ਪੰਜਾਬੀ', nativeName: 'Punjabi' },
+    { code: 'bn', name: 'বাংলা', nativeName: 'Bengali' },
+    { code: 'or', name: 'ଓଡ଼ିଆ', nativeName: 'Odia' },
+    { code: 'ur', name: 'اردو', nativeName: 'Urdu' },
+  ];
+
+  const recommendedLanguageItems = availableLanguages.filter(lang => 
+    recommendedLanguages.includes(lang.code)
+  );
+
+  const otherLanguageItems = availableLanguages.filter(lang => 
+    !recommendedLanguages.includes(lang.code)
+  );
+
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardContent className="grid gap-4">
+      <CardContent className="grid gap-4 p-6">
         <div className="text-center">
           <Globe className="w-10 h-10 mx-auto text-gray-500 mb-2" />
           <h2 className="text-lg font-semibold">{t('onboarding.languagePreferences', 'Language Preferences')}</h2>
@@ -125,35 +178,43 @@ export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
               </div>
             )}
 
-            <div>
-              <h3 className="text-md font-semibold mb-2">{t('onboarding.recommendedLanguages', 'Recommended Languages')}</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {recommendedLanguages.map((lang) => (
-                  <Button
-                    key={lang}
-                    variant={selectedLanguage === lang ? 'secondary' : 'outline'}
-                    className="justify-start text-sm"
-                    onClick={() => handleLanguageSelect(lang)}
-                  >
-                    {t(`languages.${lang}`)}
-                    {selectedLanguage === lang && <Check className="w-4 h-4 ml-auto" />}
-                  </Button>
-                ))}
+            {recommendedLanguageItems.length > 0 && (
+              <div>
+                <h3 className="text-md font-semibold mb-2">{t('onboarding.recommendedLanguages', 'Recommended Languages')}</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {recommendedLanguageItems.map((lang) => (
+                    <Button
+                      key={lang.code}
+                      variant={selectedLanguage === lang.code ? 'secondary' : 'outline'}
+                      className="justify-start text-sm p-3 h-auto"
+                      onClick={() => handleLanguageSelect(lang.code)}
+                    >
+                      <div className="flex flex-col items-start text-left">
+                        <span className="font-medium">{lang.name}</span>
+                        <span className="text-xs text-muted-foreground">{lang.nativeName}</span>
+                      </div>
+                      {selectedLanguage === lang.code && <Check className="w-4 h-4 ml-auto" />}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <h3 className="text-md font-semibold mb-2">{t('onboarding.allLanguages', 'All Languages')}</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {i18n.languages.map((lang) => (
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {otherLanguageItems.map((lang) => (
                   <Button
-                    key={lang}
-                    variant={selectedLanguage === lang ? 'secondary' : 'outline'}
-                    className="justify-start text-sm"
-                    onClick={() => handleLanguageSelect(lang)}
+                    key={lang.code}
+                    variant={selectedLanguage === lang.code ? 'secondary' : 'outline'}
+                    className="justify-start text-sm p-3 h-auto"
+                    onClick={() => handleLanguageSelect(lang.code)}
                   >
-                    {t(`languages.${lang}`)}
-                    {selectedLanguage === lang && <Check className="w-4 h-4 ml-auto" />}
+                    <div className="flex flex-col items-start text-left">
+                      <span className="font-medium">{lang.name}</span>
+                      <span className="text-xs text-muted-foreground">{lang.nativeName}</span>
+                    </div>
+                    {selectedLanguage === lang.code && <Check className="w-4 h-4 ml-auto" />}
                   </Button>
                 ))}
               </div>
