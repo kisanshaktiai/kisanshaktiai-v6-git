@@ -6,8 +6,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
-import { LocationBasedLanguageScreen } from './LocationBasedLanguageScreen';
+import { EnhancedLanguageSelectionScreen } from './EnhancedLanguageSelectionScreen';
 import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
+import { useLanguage } from '../providers/LanguageProvider';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
@@ -15,6 +16,7 @@ export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
   const { isAuthenticated, user, profile } = useAuth();
+  const { changeLanguage } = useLanguage();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
@@ -30,25 +32,24 @@ export const OnboardingFlow: React.FC = () => {
 
   const handleSplashComplete = () => {
     setIsInitialized(true);
-    
-    // Check if language was already selected on this device
-    const savedLanguage = localStorage.getItem('selectedLanguage');
-    const languageSelectedAt = localStorage.getItem('languageSelectedAt');
-    
-    // Show language selection if not previously selected or if it was selected more than 30 days ago
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    if (!savedLanguage || !languageSelectedAt || new Date(languageSelectedAt) < thirtyDaysAgo) {
-      setCurrentStep('language');
-    } else {
-      // Language recently selected, proceed to auth
-      setCurrentStep('auth');
-    }
+    // Always show language selection for better user experience
+    setCurrentStep('language');
   };
 
-  const handleLanguageComplete = () => {
-    setCurrentStep('auth');
+  const handleLanguageComplete = async (languageCode: string) => {
+    try {
+      // Change language using the enhanced language service
+      await changeLanguage(languageCode);
+      
+      // Store selection timestamp
+      localStorage.setItem('selectedLanguage', languageCode);
+      localStorage.setItem('languageSelectedAt', new Date().toISOString());
+      
+      console.log(`Language selected: ${languageCode}`);
+      setCurrentStep('auth');
+    } catch (error) {
+      console.error('Failed to change language:', error);
+    }
   };
 
   const handleAuthComplete = () => {
@@ -73,10 +74,10 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Location-based language selection step
+  // Enhanced language selection step
   if (currentStep === 'language') {
     return (
-      <LocationBasedLanguageScreen 
+      <EnhancedLanguageSelectionScreen 
         onNext={handleLanguageComplete}
       />
     );
