@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageService } from '@/services';
+import { EnhancedLanguageService } from '@/services/EnhancedLanguageService';
+import { LanguageConfigService, LanguageInfo } from '@/config/languages';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { setLanguage } from '@/store/slices/farmerSlice';
@@ -12,12 +14,10 @@ interface LanguageContextType {
   currentLanguage: string;
   changeLanguage: (languageCode: string) => Promise<void>;
   isChangingLanguage: boolean;
-  supportedLanguages: Array<{
-    code: string;
-    name: string;
-    nativeName: string;
-  }>;
+  supportedLanguages: LanguageInfo[];
   updateProfileLanguage: (languageCode: string) => Promise<void>;
+  getRecommendedLanguages: () => Promise<LanguageInfo[]>;
+  searchLanguages: (query: string) => LanguageInfo[];
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -42,7 +42,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   
   const languageService = LanguageService.getInstance();
-  const supportedLanguages = languageService.getSupportedLanguages();
+  const enhancedLanguageService = EnhancedLanguageService.getInstance();
+  const supportedLanguages = LanguageConfigService.getAllLanguagesSorted();
 
   const updateProfileLanguage = async (languageCode: string) => {
     try {
@@ -68,20 +69,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         languageCode = 'en';
       }
       
-      // Change language in i18n
-      await i18n.changeLanguage(languageCode);
+      // Change language using enhanced service
+      await enhancedLanguageService.changeLanguage(languageCode);
       
       // Update Redux state
       dispatch(setLanguage(languageCode));
       
-      // Update LanguageService
-      await languageService.changeLanguage(languageCode);
-      
       // Update user profile language preference
       await updateProfileLanguage(languageCode);
-      
-      // Store in localStorage as backup
-      localStorage.setItem('selectedLanguage', languageCode);
       
       // Force re-render of all components
       document.documentElement.lang = languageCode;
@@ -94,22 +89,44 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     }
   };
 
+  const getRecommendedLanguages = async (): Promise<LanguageInfo[]> => {
+    try {
+      const detection = await enhancedLanguageService.detectBestLanguage();
+      return detection.recommended;
+    } catch (error) {
+      console.error('Failed to get language recommendations:', error);
+      return LanguageConfigService.getRecommendedLanguages();
+    }
+  };
+
+  const searchLanguages = (query: string): LanguageInfo[] => {
+    return LanguageConfigService.searchLanguages(query);
+  };
+
   // Initialize language on mount and when profile changes
   useEffect(() => {
     const initializeLanguage = async () => {
-      // Priority order: profile preferred_language > Redux selectedLanguage > localStorage > default
+      // Priority order: profile preferred_language > Redux selectedLanguage > localStorage > detected language
       const profileLanguage = profile?.preferred_language;
       const reduxLanguage = selectedLanguage;
       const localLanguage = localStorage.getItem('selectedLanguage') || localStorage.getItem('i18nextLng');
-      const defaultLanguage = 'hi'; // Default for Indian farmers
       
-      const languageToUse = profileLanguage || reduxLanguage || localLanguage || defaultLanguage;
+      let languageToUse = profileLanguage || reduxLanguage || localLanguage;
+      
+      // If no language is set, detect the best one
+      if (!languageToUse) {
+        try {
+          const detection = await enhancedLanguageService.detectBestLanguage();
+          languageToUse = detection.recommended[0]?.code || 'hi';
+        } catch (error) {
+          languageToUse = 'hi'; // Fallback to Hindi
+        }
+      }
       
       console.log('Language initialization:', {
         profileLanguage,
         reduxLanguage, 
         localLanguage,
-        defaultLanguage,
         chosen: languageToUse,
         current: i18n.language
       });
@@ -147,6 +164,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     isChangingLanguage,
     supportedLanguages,
     updateProfileLanguage,
+    getRecommendedLanguages,
+    searchLanguages,
   };
 
   return (
