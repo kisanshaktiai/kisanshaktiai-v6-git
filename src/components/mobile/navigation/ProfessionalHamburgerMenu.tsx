@@ -87,6 +87,17 @@ export const ProfessionalHamburgerMenu: React.FC<ProfessionalHamburgerMenuProps>
     return 'F';
   };
 
+  const getLocationString = () => {
+    if (profile?.village && profile?.district) {
+      return `${profile.village}, ${profile.district}`;
+    } else if (profile?.district) {
+      return profile.district;
+    } else if (profile?.state) {
+      return profile.state;
+    }
+    return 'Location not set';
+  };
+
   const primaryMenuItems = [
     {
       icon: User,
@@ -219,10 +230,10 @@ export const ProfessionalHamburgerMenu: React.FC<ProfessionalHamburgerMenuProps>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm truncate">
-                      {profile.full_name || profile.phone_number}
+                      {profile.full_name || profile.mobile_number}
                     </h4>
                     <p className="text-xs text-muted-foreground truncate">
-                      {profile.location || 'Location not set'}
+                      {getLocationString()}
                     </p>
                     <Badge variant="secondary" className="text-xs mt-1">
                       <Shield className="w-3 h-3 mr-1" />
