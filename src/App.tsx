@@ -1,14 +1,10 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { store } from './store';
-import { AuthProvider } from './hooks/useAuth';
-import { TenantProvider } from './context/TenantContext';
-import { LanguageProvider } from './components/providers/LanguageProvider';
-import { MobileApp } from './components/mobile/MobileApp';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { QueryClient } from '@tanstack/react-query';
+import { AppProviders } from '@/providers/AppProviders';
+import { MobileApp } from '@/components';
+import { ErrorBoundary } from '@/components';
 import { Toaster } from './components/ui/sonner';
 import './i18n';
 import './App.css';
@@ -35,27 +31,19 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TenantProvider>
-              <LanguageProvider>
-                <Router>
-                <div className="min-h-screen bg-background">
-                  <Routes>
-                    <Route 
-                      path="/*" 
-                      element={<MobileApp />} 
-                    />
-                  </Routes>
-                  <Toaster />
-                </div>
-                </Router>
-              </LanguageProvider>
-            </TenantProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </Provider>
+      <AppProviders queryClient={queryClient}>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route 
+                path="/*" 
+                element={<MobileApp />} 
+              />
+            </Routes>
+            <Toaster />
+          </div>
+        </Router>
+      </AppProviders>
     </ErrorBoundary>
   );
 }

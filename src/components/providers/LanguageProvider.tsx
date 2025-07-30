@@ -1,12 +1,12 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LanguageService } from '@/services/LanguageService';
+import { LanguageService } from '@/services';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { setLanguage } from '@/store/slices/farmerSlice';
 import { loadLanguageResources } from '@/i18n';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 
 interface LanguageContextType {
   currentLanguage: string;

@@ -6,7 +6,7 @@ import authSlice from './slices/authSlice';
 import farmerSlice from './slices/farmerSlice';
 import syncSlice from './slices/syncSlice';
 import offlineSlice from './slices/offlineSlice';
-import tenantSlice from './slices/tenantSlice';
+import consolidatedSlice from './slices/consolidatedSlice';
 
 // Custom storage for Capacitor
 const capacitorStorage = {
@@ -25,16 +25,17 @@ const capacitorStorage = {
 const persistConfig = {
   key: 'root',
   storage: capacitorStorage,
-  whitelist: ['auth', 'farmer', 'tenant'],
+  // Only persist essential state - server data should be managed by React Query
+  whitelist: ['auth', 'farmer', 'consolidated'],
 };
 
-// Combine the reducers properly
+// Simplified reducer structure - removed tenantSlice as it's now handled by React Query
 const rootReducer = combineReducers({
   auth: authSlice,
   farmer: farmerSlice,
   sync: syncSlice,
   offline: offlineSlice,
-  tenant: tenantSlice,
+  consolidated: consolidatedSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

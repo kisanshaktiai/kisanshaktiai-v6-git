@@ -1,11 +1,13 @@
 
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { useUnifiedTenantData } from '@/hooks/useUnifiedTenantData';
-import { applyTenantTheme } from '@/utils/tenantTheme';
-import { TenantErrorBoundary } from '@/components/error-boundaries/TenantErrorBoundary';
-import { QueryErrorBoundary } from '@/components/error-boundaries/QueryErrorBoundary';
+import { useUnifiedTenantData } from '@/hooks';
+import { applyTenantTheme } from '@/utils';
+import { 
+  TenantErrorBoundary, 
+  QueryErrorBoundary 
+} from '@/components';
 import { ModernTopBar } from './ModernTopBar';
 import { TenantPromoBanner } from './TenantPromoBanner';
 import { TenantWeatherCard } from './TenantWeatherCard';
@@ -14,7 +16,7 @@ import { TenantQuickActions } from './TenantQuickActions';
 import { TenantBottomNav } from './TenantBottomNav';
 
 export const ModernTenantDashboard: React.FC = () => {
-  const { currentTenant } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
   const { 
     tenant, 
     branding, 
@@ -22,7 +24,7 @@ export const ModernTenantDashboard: React.FC = () => {
     isLoading, 
     isError, 
     error 
-  } = useUnifiedTenantData(currentTenant?.id);
+  } = useUnifiedTenantData(currentTenant);
 
   // Apply tenant theming only when branding changes
   useEffect(() => {
