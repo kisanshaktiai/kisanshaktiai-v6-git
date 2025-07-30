@@ -1,298 +1,170 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '@/components/ui/button';
-import { setLanguage } from '@/store/slices/farmerSlice';
-import { LanguageService } from '@/services/LanguageService';
-import { LocationService } from '@/services/LocationService';
-import { Globe, MapPin, Check, Loader, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
+import { LocationService } from '@/services/LocationService';
+import { LanguageService } from '@/services/LanguageService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Globe, MapPin, Check } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface EnhancedLanguageScreenProps {
-  onNext: () => void;
-  onSkip?: () => void;
+  onNext: (language: string) => void;
 }
 
-interface LanguageOption {
-  code: string;
-  name: string;
-  nativeName: string;
-  flag: string;
-  regions: string[];
-}
-
-export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ 
-  onNext, 
-  onSkip 
-}) => {
+export const EnhancedLanguageScreen: React.FC<EnhancedLanguageScreenProps> = ({ onNext }) => {
   const { t, i18n } = useTranslation();
-  const dispatch = useDispatch();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const navigate = useNavigate();
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
   
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [autoDetecting, setAutoDetecting] = useState(true);
-  const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ city: string | null; country: string | null }>({
+    city: null,
+    country: null,
+  });
   const [recommendedLanguages, setRecommendedLanguages] = useState<string[]>([]);
-  
-  const primaryColor = tenantBranding?.primary_color || '#10B981';
-  const appName = tenantBranding?.app_name || 'KisanShakti AI';
-
-  const languages: LanguageOption[] = [
-    { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', flag: '🇮🇳', regions: ['UP', 'MP', 'RJ', 'HR', 'DL', 'UK', 'HP', 'JH', 'CG', 'BR'] },
-    { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', regions: ['PAN'] },
-    { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳', regions: ['MH', 'GOA'] },
-    { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', regions: ['PB', 'HR', 'DL'] },
-    { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳', regions: ['AP', 'TS'] },
-    { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', regions: ['TN', 'PY'] },
-    { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳', regions: ['GJ', 'DD', 'DNH'] },
-    { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳', regions: ['KA'] },
-  ];
-
-  // State code to language mapping
-  const stateLanguageMap: Record<string, string[]> = {
-    'Maharashtra': ['mr', 'hi', 'en'],
-    'Gujarat': ['gu', 'hi', 'en'],
-    'Punjab': ['pa', 'hi', 'en'],
-    'Tamil Nadu': ['ta', 'en', 'hi'],
-    'Karnataka': ['kn', 'en', 'hi'],
-    'Andhra Pradesh': ['te', 'en', 'hi'],
-    'Telangana': ['te', 'en', 'hi'],
-    'Uttar Pradesh': ['hi', 'en'],
-    'Madhya Pradesh': ['hi', 'en'],
-    'Rajasthan': ['hi', 'en'],
-    'Haryana': ['hi', 'pa', 'en'],
-    'Delhi': ['hi', 'pa', 'en'],
-  };
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    detectLocationAndLanguage();
-  }, []);
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // 1. Get location
+        const locationData = await LocationService.getLocationInfo();
+        setLocation({
+          city: locationData?.city || null,
+          country: locationData?.country || null,
+        });
 
-  const detectLocationAndLanguage = async () => {
-    try {
-      setAutoDetecting(true);
-      
-      // Try to get location
-      const hasPermission = await LocationService.getInstance().requestPermissions();
-      
-      if (hasPermission) {
-        const coords = await LocationService.getInstance().getCurrentLocation();
-        const address = await LocationService.getInstance().reverseGeocode(
-          coords.latitude,
-          coords.longitude
+        // 2. Get recommended languages
+        const languageData = await LanguageService.getRecommendedLanguages(
+          locationData?.countryCode
         );
-        
-        setDetectedLocation(`${address.district}, ${address.state}`);
-        
-        // Get recommended languages based on state
-        const stateLangs = stateLanguageMap[address.state] || ['hi', 'en'];
-        setRecommendedLanguages(stateLangs);
-        
-        // Auto-select the primary language for the region
-        const primaryLang = stateLangs[0];
-        setSelectedLanguage(primaryLang);
-        
-        // Apply the language
-        await LanguageService.getInstance().changeLanguage(primaryLang);
-        dispatch(setLanguage(primaryLang));
-        
-        console.log('Location-based language detected:', primaryLang, 'for', address.state);
-      } else {
-        // Fallback to browser language detection
-        const browserLang = navigator.language || navigator.languages?.[0] || 'en';
-        const langCode = browserLang.split('-')[0];
-        
-        const supportedLang = languages.find(lang => lang.code === langCode);
-        const fallbackLang = supportedLang ? langCode : 'hi';
-        
-        setSelectedLanguage(fallbackLang);
-        setRecommendedLanguages([fallbackLang, 'en']);
-        
-        await LanguageService.getInstance().changeLanguage(fallbackLang);
-        dispatch(setLanguage(fallbackLang));
+        setRecommendedLanguages(languageData);
+      } catch (err: any) {
+        console.error('Error during language screen load:', err);
+        setError(t('onboarding.languageError', 'Failed to determine language'));
+        toast({
+          title: t('common.error'),
+          description: t('onboarding.languageError', 'Failed to determine language'),
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Language detection error:', error);
-      // Default fallback
-      setSelectedLanguage('hi');
-      setRecommendedLanguages(['hi', 'en']);
-      await LanguageService.getInstance().changeLanguage('hi');
-      dispatch(setLanguage('hi'));
-    } finally {
-      setAutoDetecting(false);
-    }
+    };
+
+    loadData();
+  }, [t]);
+
+  const handleLanguageSelect = (language: string) => {
+    setSelectedLanguage(language);
   };
 
-  const handleLanguageSelect = async (languageCode: string) => {
-    try {
-      setSelectedLanguage(languageCode);
-      await LanguageService.getInstance().changeLanguage(languageCode);
-      dispatch(setLanguage(languageCode));
-    } catch (error) {
-      console.error('Language change error:', error);
+  const handleNext = () => {
+    if (!selectedLanguage) {
+      toast({
+        title: t('common.warning'),
+        description: t('onboarding.selectLanguage', 'Please select a language'),
+        variant: 'warning',
+      });
+      return;
     }
+
+    i18n.changeLanguage(selectedLanguage)
+      .then(() => {
+        onNext(selectedLanguage);
+      })
+      .catch((err) => {
+        console.error('Error changing language:', err);
+        toast({
+          title: t('common.error'),
+          description: t('onboarding.languageChangeError', 'Failed to change language'),
+          variant: 'destructive',
+        });
+      });
   };
-
-  const handleContinue = () => {
-    if (selectedLanguage) {
-      onNext();
-    }
-  };
-
-  if (autoDetecting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
-            <MapPin className="w-10 h-10" style={{ color: primaryColor }} />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('onboarding.detecting_language')}
-          </h1>
-          <p className="text-gray-600 text-base">
-            {t('onboarding.location_language_subtitle')}
-          </p>
-          <div className="flex items-center justify-center space-x-2">
-            <Loader className="w-5 h-5 animate-spin" style={{ color: primaryColor }} />
-            <span className="text-sm text-gray-500">{t('common.please_wait')}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const recommendedLangs = languages.filter(lang => recommendedLanguages.includes(lang.code));
-  const otherLangs = languages.filter(lang => !recommendedLanguages.includes(lang.code));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-3">
-          <div 
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg"
-            style={{ backgroundColor: `${primaryColor}15`, border: `2px solid ${primaryColor}` }}
-          >
-            <Globe className="w-10 h-10" style={{ color: primaryColor }} />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('onboarding.choose_language')}
-          </h1>
-          <p className="text-gray-600 text-base">
-            {t('onboarding.language_description')}
+    <Card className="w-full max-w-md mx-auto">
+      <CardContent className="grid gap-4">
+        <div className="text-center">
+          <Globe className="w-10 h-10 mx-auto text-gray-500 mb-2" />
+          <h2 className="text-lg font-semibold">{t('onboarding.languagePreferences', 'Language Preferences')}</h2>
+          <p className="text-sm text-gray-500">
+            {t('onboarding.selectPreferredLanguage', 'Select the language you prefer to use in the app.')}
           </p>
-          {detectedLocation && (
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 bg-gray-100 rounded-lg p-2">
-              <MapPin className="w-4 h-4" />
-              <span>{t('onboarding.detected_location')}: {detectedLocation}</span>
-            </div>
-          )}
         </div>
 
-        <div className="space-y-4 max-h-80 overflow-y-auto">
-          {/* Recommended Languages */}
-          {recommendedLangs.length > 0 && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-500 px-2">
-                {t('onboarding.recommended_for_you')}
+        {isLoading && (
+          <div className="text-center">
+            <p>{t('common.loading')}...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center text-red-500">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <>
+            {location.city && location.country && (
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <MapPin className="w-4 h-4" />
+                <span>
+                  {t('onboarding.locationDetected', 'Location Detected')}: {location.city}, {location.country}
+                </span>
               </div>
-              {recommendedLangs.map((language) => (
-                <Button
-                  key={language.code}
-                  variant={selectedLanguage === language.code ? "default" : "outline"}
-                  onClick={() => handleLanguageSelect(language.code)}
-                  className={`w-full p-4 h-auto justify-between group hover:scale-[1.02] transition-all ${
-                    selectedLanguage === language.code 
-                      ? 'ring-2 shadow-lg' 
-                      : 'hover:border-gray-300'
-                  }`}
-                  style={selectedLanguage === language.code ? {
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor
-                  } : {}}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{language.flag}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{language.nativeName}</div>
-                      <div className="text-sm opacity-75">{language.name}</div>
-                    </div>
-                  </div>
-                  {selectedLanguage === language.code ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </Button>
-              ))}
-            </div>
-          )}
+            )}
 
-          {/* Other Languages */}
-          {otherLangs.length > 0 && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-500 px-2">
-                {t('onboarding.other_languages')}
+            <div>
+              <h3 className="text-md font-semibold mb-2">{t('onboarding.recommendedLanguages', 'Recommended Languages')}</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {recommendedLanguages.map((lang) => (
+                  <Button
+                    key={lang}
+                    variant={selectedLanguage === lang ? 'secondary' : 'outline'}
+                    className="justify-start text-sm"
+                    onClick={() => handleLanguageSelect(lang)}
+                  >
+                    {t(`languages.${lang}`)}
+                    {selectedLanguage === lang && <Check className="w-4 h-4 ml-auto" />}
+                  </Button>
+                ))}
               </div>
-              {otherLangs.map((language) => (
-                <Button
-                  key={language.code}
-                  variant={selectedLanguage === language.code ? "default" : "outline"}
-                  onClick={() => handleLanguageSelect(language.code)}
-                  className={`w-full p-4 h-auto justify-between group hover:scale-[1.02] transition-all ${
-                    selectedLanguage === language.code 
-                      ? 'ring-2 shadow-lg' 
-                      : 'hover:border-gray-300'
-                  }`}
-                  style={selectedLanguage === language.code ? {
-                    backgroundColor: primaryColor,
-                    borderColor: primaryColor
-                  } : {}}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{language.flag}</span>
-                    <div className="text-left">
-                      <div className="font-semibold">{language.nativeName}</div>
-                      <div className="text-sm opacity-75">{language.name}</div>
-                    </div>
-                  </div>
-                  {selectedLanguage === language.code ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </Button>
-              ))}
             </div>
-          )}
-        </div>
 
-        <div className="space-y-3 pt-4">
-          <Button 
-            onClick={handleContinue}
-            disabled={!selectedLanguage}
-            className="w-full h-14 text-lg font-semibold rounded-xl"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <div className="flex items-center space-x-2">
-              <span>{t('common.continue')}</span>
-              <ChevronRight className="w-5 h-5" />
+            <div>
+              <h3 className="text-md font-semibold mb-2">{t('onboarding.allLanguages', 'All Languages')}</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {i18n.languages.map((lang) => (
+                  <Button
+                    key={lang}
+                    variant={selectedLanguage === lang ? 'secondary' : 'outline'}
+                    className="justify-start text-sm"
+                    onClick={() => handleLanguageSelect(lang)}
+                  >
+                    {t(`languages.${lang}`)}
+                    {selectedLanguage === lang && <Check className="w-4 h-4 ml-auto" />}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </Button>
 
-          {onSkip && (
-            <Button 
-              variant="ghost" 
-              onClick={onSkip}
-              className="w-full text-gray-600"
-            >
-              {t('onboarding.skip_for_now')}
+            <Button onClick={handleNext} disabled={!selectedLanguage} className="w-full">
+              {t('common.next')}
             </Button>
-          )}
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };

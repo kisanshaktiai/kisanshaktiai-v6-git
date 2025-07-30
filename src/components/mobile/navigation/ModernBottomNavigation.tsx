@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import {
   Home,
   MessageCircle,
@@ -16,7 +16,8 @@ export const ModernBottomNavigation: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
 
   const navItems = [
     {
@@ -58,8 +59,8 @@ export const ModernBottomNavigation: React.FC = () => {
       <div 
         className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/80 border-t border-border/50 safe-area-bottom"
         style={{
-          background: tenantBranding?.primary_color 
-            ? `linear-gradient(135deg, ${tenantBranding.background_color || '#ffffff'}cc, ${tenantBranding.primary_color}11)`
+          background: branding?.primary_color 
+            ? `linear-gradient(135deg, ${branding.background_color || '#ffffff'}cc, ${branding.primary_color}11)`
             : undefined
         }}
       >
@@ -79,8 +80,8 @@ export const ModernBottomNavigation: React.FC = () => {
                         : 'bg-gradient-to-br from-primary to-primary/80 text-white hover:shadow-primary/30'
                     }`}
                     style={{
-                      background: tenantBranding?.primary_color
-                        ? `linear-gradient(135deg, ${tenantBranding.primary_color}, ${tenantBranding.accent_color || tenantBranding.primary_color})`
+                      background: branding?.primary_color
+                        ? `linear-gradient(135deg, ${branding.primary_color}, ${branding.accent_color || branding.primary_color})`
                         : undefined
                     }}
                   >
@@ -110,7 +111,7 @@ export const ModernBottomNavigation: React.FC = () => {
                     <div 
                       className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-primary animate-pulse"
                       style={{
-                        backgroundColor: tenantBranding?.primary_color || undefined
+                        backgroundColor: branding?.primary_color || undefined
                       }}
                     />
                   )}

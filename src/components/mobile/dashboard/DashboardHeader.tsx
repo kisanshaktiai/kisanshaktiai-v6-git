@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { 
   Bell, 
@@ -14,7 +14,8 @@ import {
 export const DashboardHeader: React.FC = () => {
   const { t } = useTranslation('dashboard');
   const { profile } = useAuth();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
   const [greeting, setGreeting] = useState('');
 
   // Update greeting
@@ -58,21 +59,21 @@ export const DashboardHeader: React.FC = () => {
               <div 
                 className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-white shadow-lg backdrop-blur-sm"
                 style={{ 
-                  background: tenantBranding?.primary_color 
-                    ? `${tenantBranding.primary_color}20`
+                  background: branding?.primary_color 
+                    ? `${branding.primary_color}20`
                     : '#10b98120'
                 }}
               >
-                {tenantBranding?.logo_url ? (
+                {branding?.logo_url ? (
                   <img 
-                    src={tenantBranding.logo_url} 
-                    alt={tenantBranding.app_name || "Logo"} 
+                    src={branding.logo_url} 
+                    alt={branding.app_name || "Logo"} 
                     className="w-8 h-8 rounded-full object-contain"
                   />
                 ) : (
                   <User 
                     className="w-6 h-6"
-                    style={{ color: tenantBranding?.primary_color || '#10b981' }}
+                    style={{ color: branding?.primary_color || '#10b981' }}
                   />
                 )}
               </div>
@@ -108,7 +109,7 @@ export const DashboardHeader: React.FC = () => {
               <Bell className="w-5 h-5" />
               <div 
                 className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg"
-                style={{ backgroundColor: tenantBranding?.accent_color || '#f59e0b' }}
+                style={{ backgroundColor: branding?.accent_color || '#f59e0b' }}
               >
                 <span className="text-xs text-white font-bold">3</span>
               </div>

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { Home, MapPin, MessageCircle, Scan, ShoppingCart } from 'lucide-react';
 
 interface NavItem {
@@ -18,7 +18,8 @@ export const TenantBottomNav: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
 
   const navItems: NavItem[] = [
     {
@@ -72,7 +73,7 @@ export const TenantBottomNav: React.FC = () => {
                   onClick={() => handleNavigation(item.path)}
                   className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transform transition-all duration-300 hover:scale-110 active:scale-95 text-white"
                   style={{
-                    background: `linear-gradient(135deg, ${tenantBranding?.primary_color || '#10b981'}, ${tenantBranding?.accent_color || '#059669'})`
+                    background: `linear-gradient(135deg, ${branding?.primary_color || '#10b981'}, ${branding?.accent_color || '#059669'})`
                   }}
                   aria-label={item.label}
                 >
@@ -105,7 +106,7 @@ export const TenantBottomNav: React.FC = () => {
                   <div 
                     className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full animate-pulse"
                     style={{
-                      backgroundColor: tenantBranding?.primary_color || 'hsl(var(--primary))'
+                      backgroundColor: branding?.primary_color || 'hsl(var(--primary))'
                     }}
                   />
                 )}

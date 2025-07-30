@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { CompactWeatherCard } from '@/components/weather/CompactWeatherCard';
 import { HorizontalQuickOverview } from './HorizontalQuickOverview';
 import { CoreFeatureGrid } from './CoreFeatureGrid';
@@ -12,26 +12,27 @@ import { RefreshCw } from 'lucide-react';
 
 export const DashboardHome: React.FC = () => {
   const { t } = useTranslation('dashboard');
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Apply tenant theming
   useEffect(() => {
-    if (tenantBranding) {
-      applyTenantTheme(tenantBranding);
+    if (branding) {
+      applyTenantTheme(branding);
       
       const root = document.documentElement;
-      root.style.setProperty('--tenant-primary', tenantBranding.primary_color || '#10b981');
-      root.style.setProperty('--tenant-secondary', tenantBranding.secondary_color || '#059669');
-      root.style.setProperty('--tenant-accent', tenantBranding.accent_color || '#34d399');
+      root.style.setProperty('--tenant-primary', branding.primary_color || '#10b981');
+      root.style.setProperty('--tenant-secondary', branding.secondary_color || '#059669');
+      root.style.setProperty('--tenant-accent', branding.accent_color || '#34d399');
       
       root.style.setProperty(
         '--tenant-gradient-primary',
-        `linear-gradient(135deg, ${tenantBranding.primary_color || '#10b981'}, ${tenantBranding.secondary_color || '#059669'})`
+        `linear-gradient(135deg, ${branding.primary_color || '#10b981'}, ${branding.secondary_color || '#059669'})`
       );
     }
-  }, [tenantBranding]);
+  }, [branding]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { MapPin, MessageCircle, Calendar, Scan, ShoppingCart } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,8 @@ interface QuickAction {
 export const TenantQuickActions: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
+  const { branding } = useUnifiedTenantData(currentTenant);
 
   const quickActions: QuickAction[] = [
     {
@@ -90,7 +91,7 @@ export const TenantQuickActions: React.FC = () => {
                 : 'w-12 h-12 bg-primary/10 text-primary'
             }`}
             style={action.isPrimary ? {
-              background: `linear-gradient(135deg, ${tenantBranding?.primary_color || '#10b981'}, ${tenantBranding?.accent_color || '#059669'})`
+              background: `linear-gradient(135deg, ${branding?.primary_color || '#10b981'}, ${branding?.accent_color || '#059669'})`
             } : undefined}
           >
             <Icon className={action.isPrimary ? 'w-7 h-7' : 'w-6 h-6'} />
