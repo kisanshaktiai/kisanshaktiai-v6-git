@@ -16,5 +16,8 @@ export { useEnhancedWeather } from './useEnhancedWeather';
 
 // Utility Hooks
 export { useDebounce } from './useDebounce';
-export { useMobile } from './use-mobile';
+export { useIsMobile } from './use-mobile';
 export { useToast } from './use-toast';
+
+// State Hooks
+export { useConsolidatedState } from './useConsolidatedState';

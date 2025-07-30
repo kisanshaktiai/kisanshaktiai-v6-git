@@ -28,13 +28,12 @@ export class StateManager {
    * - User preferences (language, theme)
    * - App-wide settings
    * - Offline sync state
-   * - Current tenant selection
    */
   getReduxManagedData() {
     return {
       auth: 'Authentication state, user ID, tokens',
       farmer: 'User preferences, selected language, location',
-      tenant: 'Current tenant selection, branding cache',
+      consolidated: 'UI state, preferences, app settings',
       sync: 'Offline sync status, network state',
       offline: 'Queued actions, cached data for offline use'
     };
@@ -64,7 +63,6 @@ export class StateManager {
    */
   auditStateOverlap(): string[] {
     return [
-      'Tenant data exists in both Redux (tenantSlice) and React Query (useUnifiedTenantData)',
       'User profile cached in Redux and also fetched via React Query',
       'Language preferences stored in Redux but also in React Query for server sync'
     ];
@@ -81,7 +79,7 @@ export class StateManager {
         this.queryClient.invalidateQueries({ queryKey: ['optimized-profile'] });
         this.queryClient.invalidateQueries({ queryKey: ['unified-tenant-data'] });
         break;
-      case 'tenant':
+      case 'consolidated':
         this.queryClient.invalidateQueries({ queryKey: ['unified-tenant-data'] });
         break;
       case 'farmer':

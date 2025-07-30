@@ -1,7 +1,7 @@
 
 // Theme utilities
 export { applyTenantTheme } from './tenantTheme';
-export { applyMultiTenantTheme } from './multiTenantTheme';
+export { applyTenantTheme as applyMultiTenantTheme } from './multiTenantTheme';
 
 // Weather utilities  
 export { getWeatherBackground } from './weatherBackgrounds';

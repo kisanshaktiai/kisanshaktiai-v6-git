@@ -6,7 +6,7 @@ interface AuthState {
   userId: string | null;
   phoneNumber: string | null;
   onboardingCompleted: boolean;
-  tenantId: string | null;
+  currentTenant: string | null; // Track current tenant ID
 }
 
 const initialState: AuthState = {
@@ -14,7 +14,7 @@ const initialState: AuthState = {
   userId: null,
   phoneNumber: null,
   onboardingCompleted: false,
-  tenantId: null,
+  currentTenant: null,
 };
 
 const authSlice = createSlice({
@@ -34,15 +34,15 @@ const authSlice = createSlice({
     setOnboardingCompleted: (state) => {
       state.onboardingCompleted = true;
     },
-    setTenantId: (state, action: PayloadAction<string>) => {
-      state.tenantId = action.payload;
+    setCurrentTenant: (state, action: PayloadAction<string>) => {
+      state.currentTenant = action.payload;
     },
     logout: (state) => {
       state.isAuthenticated = false;
       state.userId = null;
       state.phoneNumber = null;
       state.onboardingCompleted = false;
-      state.tenantId = null;
+      state.currentTenant = null;
     },
   },
 });
@@ -51,7 +51,7 @@ export const {
   setAuthenticated, 
   setPhoneNumber, 
   setOnboardingCompleted, 
-  setTenantId, 
+  setCurrentTenant, 
   logout 
 } = authSlice.actions;
 

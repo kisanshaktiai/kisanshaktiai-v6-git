@@ -2,8 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 
 interface AuthButtonProps {
   loading: boolean;
@@ -21,10 +20,10 @@ export const AuthButton = ({
   isNewUser 
 }: AuthButtonProps) => {
   const { t } = useTranslation();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
   
   const isDisabled = loading || phone.length < 10 || checkingUser;
-  const primaryColor = tenantBranding?.primary_color || '#8BC34A';
+  const primaryColor = branding?.primary_color || '#8BC34A';
   
   // Show different text based on state
   const getButtonText = () => {

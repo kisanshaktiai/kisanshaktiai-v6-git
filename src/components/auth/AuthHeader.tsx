@@ -1,7 +1,6 @@
 
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 
 interface AuthHeaderProps {
   userCheckComplete: boolean;
@@ -10,11 +9,11 @@ interface AuthHeaderProps {
 
 export const AuthHeader = ({ userCheckComplete, isNewUser }: AuthHeaderProps) => {
   const { t } = useTranslation();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
   
-  const logoUrl = tenantBranding?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
-  const appName = tenantBranding?.app_name || 'KisanShakti AI';
-  const tagline = tenantBranding?.app_tagline || t('splash.tagline');
+  const logoUrl = branding?.logo_url || '/lovable-uploads/a4e4d392-b5e2-4f9c-9401-6ff2db3e98d0.png';
+  const appName = branding?.app_name || 'KisanShakti AI';
+  const tagline = branding?.app_tagline || t('splash.tagline');
 
   return (
     <div className="text-center pt-4 pb-2">

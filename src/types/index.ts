@@ -2,14 +2,11 @@
 // Auth types
 export type { 
   AuthContextType, 
-  Profile, 
-  NotificationPreferences,
-  DeviceTokens,
-  UserMetadata 
+  Profile
 } from './auth';
 
 // Database types
-export type { Farmer, Land, Crop } from './database';
+export type { Farmer, Land } from './database';
 
 // Tenant types
 export type { 
@@ -22,23 +19,10 @@ export type {
 
 // AI types
 export type { 
-  AIResponse, 
-  ChatMessage, 
-  QueryContext,
   AgentType 
 } from './ai';
 
-// Land types
-export type { 
-  LandData, 
-  LandFilters, 
-  LandFormData,
-  SoilData 
-} from './land';
-
 // Farmer types
 export type { 
-  FarmerProfile, 
-  FarmerMetrics, 
-  FarmerPreferences 
+  FarmerProfile
 } from './farmer';
