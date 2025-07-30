@@ -1,7 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { useUnifiedTenantData } from '@/hooks';
 import { OfflineIndicator } from '../common/OfflineIndicator';
 
 interface DashboardLayoutProps {
@@ -9,23 +8,23 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
 
   // Apply tenant branding
   React.useEffect(() => {
-    if (tenantBranding) {
+    if (branding) {
       const root = document.documentElement;
-      if (tenantBranding.primary_color) {
-        root.style.setProperty('--color-primary', tenantBranding.primary_color);
+      if (branding.primary_color) {
+        root.style.setProperty('--color-primary', branding.primary_color);
       }
-      if (tenantBranding.secondary_color) {
-        root.style.setProperty('--color-secondary', tenantBranding.secondary_color);
+      if (branding.secondary_color) {
+        root.style.setProperty('--color-secondary', branding.secondary_color);
       }
-      if (tenantBranding.background_color) {
-        root.style.setProperty('--color-background', tenantBranding.background_color);
+      if (branding.background_color) {
+        root.style.setProperty('--color-background', branding.background_color);
       }
     }
-  }, [tenantBranding]);
+  }, [branding]);
 
   return (
     <div className="min-h-screen bg-gray-50">

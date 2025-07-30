@@ -1,16 +1,15 @@
 
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { MessageCircle, Users, Leaf, Shield } from 'lucide-react';
 
 export const FeaturesInfo = () => {
   const { t } = useTranslation();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
   
   // Use tenant icons if available, fallback to default icons
   const getFeatureIcon = (iconName: string, DefaultIcon: any) => {
-    const tenantIcon = tenantBranding?.feature_icons?.[iconName];
+    const tenantIcon = branding?.feature_icons?.[iconName];
     if (tenantIcon) {
       return () => <img src={tenantIcon} alt={iconName} className="w-8 h-8" />;
     }

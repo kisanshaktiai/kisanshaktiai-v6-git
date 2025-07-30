@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnifiedTenantData } from '@/hooks';
 import { Bell, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,7 +11,7 @@ import { ProfessionalHamburgerMenu } from '@/components/mobile/navigation/Profes
 export const ModernTopBar: React.FC = () => {
   const { t } = useTranslation();
   const { profile } = useAuth();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
   
   const getInitials = () => {
     if (profile?.full_name) {
@@ -30,8 +29,8 @@ export const ModernTopBar: React.FC = () => {
     <header 
       className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50 safe-area-top"
       style={{
-        background: tenantBranding?.background_color 
-          ? `${tenantBranding.background_color}95`
+        background: branding?.background_color 
+          ? `${branding.background_color}95`
           : undefined
       }}
     >
@@ -39,16 +38,16 @@ export const ModernTopBar: React.FC = () => {
         {/* Left: Tenant Logo */}
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            {tenantBranding?.logo_url ? (
+            {branding?.logo_url ? (
               <img
-                src={tenantBranding.logo_url}
-                alt={tenantBranding.app_name || 'Logo'}
+                src={branding.logo_url}
+                alt={branding.app_name || 'Logo'}
                 className="w-8 h-8 object-contain"
               />
             ) : (
               <span 
                 className="text-lg font-bold"
-                style={{ color: tenantBranding?.primary_color }}
+                style={{ color: branding?.primary_color }}
               >
                 🌾
               </span>
@@ -56,7 +55,7 @@ export const ModernTopBar: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">
-              {tenantBranding?.app_name || 'KisanShakti AI'}
+              {branding?.app_name || 'KisanShakti AI'}
             </h1>
           </div>
         </div>

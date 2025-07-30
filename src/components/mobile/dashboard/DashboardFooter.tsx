@@ -2,8 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -26,7 +25,7 @@ export const DashboardFooter: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { tenantFeatures } = useSelector((state: RootState) => state.tenant);
+  const { features } = useUnifiedTenantData();
 
   const footerItems: FooterItem[] = [
     {

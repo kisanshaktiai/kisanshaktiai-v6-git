@@ -2,17 +2,24 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
-import { setCurrentTenant, setTenantBranding, setTenantFeatures } from '../store/slices/tenantSlice';
+import { setCurrentTenant } from '../store/slices/authSlice';
 import { supabase } from '../config/supabase';
 import { secureStorage } from '../services/storage/secureStorage';
 import { STORAGE_KEYS } from '../config/constants';
+import { useUnifiedTenantData } from './useUnifiedTenantData';
 
 export const useTenant = () => {
   const dispatch = useDispatch();
-  const { currentTenant, tenantBranding, tenantFeatures, loading } = useSelector(
-    (state: RootState) => state.tenant
-  );
+  const { currentTenant } = useSelector((state: RootState) => state.auth);
   const [error, setError] = useState<string | null>(null);
+
+  // Use React Query for tenant data
+  const { 
+    tenant, 
+    branding, 
+    features, 
+    isLoading: loading 
+  } = useUnifiedTenantData(currentTenant);
 
   useEffect(() => {
     loadTenantData();
@@ -29,48 +36,7 @@ export const useTenant = () => {
         await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
       }
 
-      // Load tenant data
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', tenantId)
-        .single();
-
-      if (tenantError) {
-        console.warn('Tenant not found, using default');
-        // Create default tenant data
-        dispatch(setCurrentTenant({
-          id: '00000000-0000-0000-0000-000000000001',
-          name: 'KisanShakti AI',
-          slug: 'default',
-          type: 'default',
-        }));
-        return;
-      }
-
-      dispatch(setCurrentTenant(tenant));
-
-      // Load branding
-      const { data: branding } = await supabase
-        .from('tenant_branding')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
-
-      if (branding) {
-        dispatch(setTenantBranding(branding));
-      }
-
-      // Load features
-      const { data: features } = await supabase
-        .from('tenant_features')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .single();
-
-      if (features) {
-        dispatch(setTenantFeatures(features));
-      }
+      dispatch(setCurrentTenant(tenantId));
 
     } catch (error) {
       console.error('Error loading tenant data:', error);
@@ -80,13 +46,13 @@ export const useTenant = () => {
 
   const switchTenant = async (tenantId: string) => {
     await secureStorage.set(STORAGE_KEYS.TENANT_ID, tenantId);
-    await loadTenantData();
+    dispatch(setCurrentTenant(tenantId));
   };
 
   return {
-    tenant: currentTenant,
-    branding: tenantBranding,
-    features: tenantFeatures,
+    tenant,
+    branding,
+    features,
     loading,
     error,
     switchTenant,

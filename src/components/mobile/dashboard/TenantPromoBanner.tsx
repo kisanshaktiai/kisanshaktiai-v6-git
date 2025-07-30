@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { RootState } from '@/store';
+import { useUnifiedTenantData } from '@/hooks';
 import { Gift, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
@@ -22,7 +21,7 @@ export const TenantPromoBanner: React.FC<PromoBannerProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenantBranding } = useSelector((state: RootState) => state.tenant);
+  const { branding } = useUnifiedTenantData();
 
   const handleClick = () => {
     navigate(actionUrl);
@@ -32,7 +31,7 @@ export const TenantPromoBanner: React.FC<PromoBannerProps> = ({
     <Card 
       className="mx-4 mb-4 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
       style={{
-        background: `linear-gradient(135deg, ${tenantBranding?.accent_color || '#ff6b35'}, ${tenantBranding?.secondary_color || '#ff8a5b'})`
+        background: `linear-gradient(135deg, ${branding?.accent_color || '#ff6b35'}, ${branding?.secondary_color || '#ff8a5b'})`
       }}
       onClick={handleClick}
     >
