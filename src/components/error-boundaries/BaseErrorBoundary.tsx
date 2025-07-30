@@ -4,7 +4,7 @@ import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
-  children: ReactNode;
+  children: ReactNode | ((props: { hasError: boolean; error: Error | null; onRetry: () => void }) => ReactNode);
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
   onRetry?: () => void;
@@ -54,7 +54,7 @@ export class BaseErrorBoundary extends Component<Props, State> {
     this.props.onRetry?.();
   };
 
-  protected renderError(): ReactNode {
+  private renderError(): ReactNode {
     if (this.props.fallback) {
       return this.props.fallback;
     }
@@ -102,10 +102,23 @@ export class BaseErrorBoundary extends Component<Props, State> {
   }
 
   render() {
-    if (this.state.hasError) {
+    const { children } = this.props;
+    const { hasError, error } = this.state;
+
+    // Support render props pattern
+    if (typeof children === 'function') {
+      return children({
+        hasError,
+        error,
+        onRetry: this.handleRetry,
+      });
+    }
+
+    // Standard error boundary behavior
+    if (hasError) {
       return this.renderError();
     }
 
-    return this.props.children;
+    return children;
   }
 }

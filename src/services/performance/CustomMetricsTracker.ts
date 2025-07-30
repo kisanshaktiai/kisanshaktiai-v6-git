@@ -9,6 +9,7 @@ export class CustomMetricsTracker {
   private static instance: CustomMetricsTracker;
   private metrics: CustomMetric[] = [];
   private timings: Map<string, number> = new Map();
+  public onMetric?: (metric: CustomMetric) => void;
 
   static getInstance(): CustomMetricsTracker {
     if (!this.instance) {
@@ -27,6 +28,9 @@ export class CustomMetricsTracker {
 
     this.metrics.push(metric);
     console.log(`📊 Custom metric: ${name} = ${value}ms`, context);
+
+    // Trigger the callback if set
+    this.onMetric?.(metric);
 
     // Keep only recent metrics
     if (this.metrics.length > 500) {
@@ -88,5 +92,6 @@ export class CustomMetricsTracker {
   cleanup(): void {
     this.metrics = [];
     this.timings.clear();
+    this.onMetric = undefined;
   }
 }
