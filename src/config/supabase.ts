@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 
-const supabaseUrl = "https://qfklkkzxemsbeniyugiz.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 // Custom storage adapter for Capacitor
 const capacitorStorage = {
