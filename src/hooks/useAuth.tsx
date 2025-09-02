@@ -8,7 +8,7 @@ import { setAuthenticated, logout } from '@/store/slices/authSlice';
 import { languageSyncService } from '@/services/LanguageSyncService';
 import { 
   checkUserExists, 
-  fetchProfile, 
+  fetchProfile as fetchProfileService, 
   updateProfile as updateProfileService, 
   signOut as signOutService,
   signInWithPhone as signInWithPhoneService
@@ -24,6 +24,39 @@ export const useAuth = () => {
   return context;
 };
 
+// Helper function to safely parse JSON and transform database response to Profile
+const transformDatabaseProfileToProfile = (data: any): Profile => {
+  const safeJsonParse = (value: any, fallback: any = null) => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return fallback;
+      }
+    }
+    return value;
+  };
+
+  return {
+    ...data,
+    mobile_number: data.mobile_number || '',
+    notification_preferences: safeJsonParse(data.notification_preferences, {
+      sms: true,
+      push: true,
+      email: false,
+      whatsapp: true,
+      calls: false
+    }),
+    device_tokens: safeJsonParse(data.device_tokens, []),
+    expertise_areas: Array.isArray(data.expertise_areas)
+      ? data.expertise_areas
+      : [],
+    metadata: safeJsonParse(data.metadata, {}),
+    coordinates: safeJsonParse(data.coordinates, null)
+  };
+};
+
 interface AuthProviderProps {
   children: React.ReactNode;
 }
@@ -36,6 +69,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!user && !!session;
+
+  // Function to fetch and transform profile
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+    try {
+      const profileData = await fetchProfileService(userId);
+      if (!profileData) return null;
+      
+      return transformDatabaseProfileToProfile(profileData);
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      return null;
+    }
+  };
 
   // Initialize auth state and listen for changes
   useEffect(() => {
@@ -57,14 +103,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setTimeout(async () => {
             try {
               const userProfile = await fetchProfile(session.user.id);
-              setProfile(userProfile);
-              
-              // Apply profile language if available
-              if (userProfile?.preferred_language) {
-                await languageSyncService.applyProfileLanguage(
-                  userProfile.preferred_language,
-                  (updates) => updateProfileService(session.user.id, updates)
-                );
+              if (userProfile) {
+                setProfile(userProfile);
+                
+                // Apply profile language if available
+                if (userProfile.preferred_language) {
+                  await languageSyncService.applyProfileLanguage(
+                    userProfile.preferred_language,
+                    (updates) => updateProfileService(session.user.id, updates)
+                  );
+                }
               }
             } catch (error) {
               console.error('Failed to fetch profile:', error);
@@ -119,7 +167,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const updatedProfile = await updateProfileService(user.id, updates);
+      const updatedProfileData = await updateProfileService(user.id, updates);
+      const updatedProfile = transformDatabaseProfileToProfile(updatedProfileData);
       setProfile(updatedProfile);
       
       // If language preference was updated, sync it
