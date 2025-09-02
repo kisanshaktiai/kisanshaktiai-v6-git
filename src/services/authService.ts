@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { languageSyncService } from './LanguageSyncService';
 
 // Simple client-side cache for user existence checks
 const userExistenceCache = new Map<string, { exists: boolean; timestamp: number }>();
@@ -142,15 +143,15 @@ export const signInWithPhone = async (phone: string, tenantId?: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
     console.log('Starting authentication process for:', cleanPhone.replace(/\d/g, '*'));
 
-    // Get current selected language
-    const selectedLanguage = localStorage.getItem('selectedLanguage') || 'hi';
+    // Get preferred language from sync service
+    const preferredLanguage = await languageSyncService.getLanguageForRegistration();
 
     const startTime = Date.now();
     const { data, error } = await supabase.functions.invoke('mobile-auth', {
       body: {
         mobile_number: cleanPhone,
         tenantId: tenantId || null,
-        preferredLanguage: selectedLanguage
+        preferredLanguage: preferredLanguage
       }
     });
 

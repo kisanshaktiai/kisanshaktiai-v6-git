@@ -8,19 +8,35 @@ import { setOnboardingCompleted } from '@/store/slices/authSlice';
 import { SkeletonSplashScreen } from '../splash/SkeletonSplashScreen';
 import { EnhancedLanguageSelectionScreen } from './EnhancedLanguageSelectionScreen';
 import { PhoneAuthScreen } from '../auth/PhoneAuthScreen';
-import { useLanguage } from '../providers/LanguageProvider';
+import { languageSyncService } from '@/services/LanguageSyncService';
 
 type OnboardingStep = 'splash' | 'language' | 'auth';
 
 export const OnboardingFlow: React.FC = () => {
   const dispatch = useDispatch();
-  const { t, i18n } = useTranslation();
-  const { isAuthenticated, user, profile } = useAuth();
-  const { changeLanguage } = useLanguage();
+  const { t } = useTranslation();
+  const { isAuthenticated, user } = useAuth();
   const { onboardingCompleted } = useSelector((state: RootState) => state.auth);
   
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('splash');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [needsLanguageSelection, setNeedsLanguageSelection] = useState(false);
+
+  // Check if language selection is needed
+  useEffect(() => {
+    const checkLanguageSelection = async () => {
+      try {
+        const needs = await languageSyncService.needsLanguageSelection();
+        setNeedsLanguageSelection(needs);
+        console.log('Language selection needed:', needs);
+      } catch (error) {
+        console.error('Failed to check language selection needs:', error);
+        setNeedsLanguageSelection(true); // Default to showing selection
+      }
+    };
+
+    checkLanguageSelection();
+  }, []);
 
   // If user becomes authenticated during onboarding, complete the flow
   useEffect(() => {
@@ -32,23 +48,25 @@ export const OnboardingFlow: React.FC = () => {
 
   const handleSplashComplete = () => {
     setIsInitialized(true);
-    // Always show language selection for better user experience
-    setCurrentStep('language');
+    
+    // Show language selection only if needed
+    if (needsLanguageSelection) {
+      setCurrentStep('language');
+    } else {
+      // Skip to auth if language is already set
+      setCurrentStep('auth');
+    }
   };
 
   const handleLanguageComplete = async (languageCode: string) => {
     try {
-      // Change language using the enhanced language service
-      await changeLanguage(languageCode);
+      // Store language selection using sync service
+      await languageSyncService.storeLanguageSelection(languageCode);
       
-      // Store selection timestamp
-      localStorage.setItem('selectedLanguage', languageCode);
-      localStorage.setItem('languageSelectedAt', new Date().toISOString());
-      
-      console.log(`Language selected: ${languageCode}`);
+      console.log(`Language selected and stored: ${languageCode}`);
       setCurrentStep('auth');
     } catch (error) {
-      console.error('Failed to change language:', error);
+      console.error('Failed to store language selection:', error);
     }
   };
 
@@ -74,8 +92,8 @@ export const OnboardingFlow: React.FC = () => {
     );
   }
 
-  // Enhanced language selection step
-  if (currentStep === 'language') {
+  // Enhanced language selection step - only if needed
+  if (currentStep === 'language' && needsLanguageSelection) {
     return (
       <EnhancedLanguageSelectionScreen 
         onNext={handleLanguageComplete}

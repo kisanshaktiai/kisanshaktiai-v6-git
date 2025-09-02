@@ -1,10 +1,18 @@
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, AuthContextType } from '@/types/auth';
-import { fetchProfile, updateProfile as updateUserProfile, signOut as authSignOut, checkUserExists, signInWithPhone } from '@/services/authService';
-import { LanguageService } from '@/services/LanguageService';
+import { useDispatch } from 'react-redux';
+import { setAuthenticated, logout } from '@/store/slices/authSlice';
+import { languageSyncService } from '@/services/LanguageSyncService';
+import { 
+  checkUserExists, 
+  fetchProfile, 
+  updateProfile as updateProfileService, 
+  signOut as signOutService,
+  signInWithPhone as signInWithPhoneService
+} from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -16,191 +24,133 @@ export const useAuth = () => {
   return context;
 };
 
-// Helper function to safely parse JSON and ensure proper typing
-const parseProfileData = (rawProfile: any): Profile => {
-  // Helper to safely parse JSON values
-  const safeJsonParse = (value: any, fallback: any) => {
-    if (value === null || value === undefined) return fallback;
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return fallback;
-      }
-    }
-    if (typeof value === 'object') return value;
-    return fallback;
-  };
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
 
-  return {
-    ...rawProfile,
-    notification_preferences: safeJsonParse(rawProfile.notification_preferences, {
-      sms: true,
-      push: true,
-      email: false,
-      whatsapp: true,
-      calls: false
-    }),
-    device_tokens: safeJsonParse(rawProfile.device_tokens, []),
-    coordinates: rawProfile.coordinates,
-    metadata: safeJsonParse(rawProfile.metadata, {}),
-    expertise_areas: Array.isArray(rawProfile.expertise_areas) ? rawProfile.expertise_areas : []
-  };
-};
-
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const dispatch = useDispatch();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const handleFetchProfile = useCallback(async (userId: string, retryCount = 0) => {
-    try {
-      console.log('Fetching profile for user:', userId);
-      const rawProfile = await fetchProfile(userId);
-      
-      if (rawProfile) {
-        console.log('Profile fetched successfully');
-        const parsedProfile = parseProfileData(rawProfile);
-        setProfile(parsedProfile);
-        
-        // Apply user's saved language preference
-        if (parsedProfile.preferred_language) {
-          try {
-            await LanguageService.getInstance().changeLanguage(parsedProfile.preferred_language);
-            console.log('Applied user language preference:', parsedProfile.preferred_language);
-          } catch (error) {
-            console.error('Error applying user language preference:', error);
-          }
-        }
-        
-        return parsedProfile;
-      } else if (retryCount < 3) {
-        // Retry with exponential backoff for new users (profile might be created by trigger)
-        const delay = Math.min((retryCount + 1) * 1000, 3000);
-        console.log(`Profile not found, retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return handleFetchProfile(userId, retryCount + 1);
-      } else {
-        console.log('Profile not found after retries, user might be new');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      if (retryCount < 2) {
-        const delay = Math.min((retryCount + 1) * 1000, 2000);
-        console.log(`Retrying profile fetch in ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return handleFetchProfile(userId, retryCount + 1);
-      }
-      return null;
-    }
-  }, []);
+  const isAuthenticated = !!user && !!session;
 
-  // Initialize auth state
+  // Initialize auth state and listen for changes
   useEffect(() => {
-    let mounted = true;
-
-    console.log('Setting up auth state listener...');
-
-    // Set up auth state change listener
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        if (!mounted) return;
-
+        setSession(session);
+        setUser(session?.user ?? null);
+        
         if (session?.user) {
-          setUser(session.user);
-          setSession(session);
+          dispatch(setAuthenticated({ 
+            userId: session.user.id,
+            phoneNumber: session.user.phone || session.user.user_metadata?.mobile_number
+          }));
           
-          // Fetch profile after a brief delay to allow trigger to execute
-          setTimeout(() => {
-            if (mounted) {
-              handleFetchProfile(session.user.id);
+          // Fetch and apply profile language (deferred to avoid blocking auth)
+          setTimeout(async () => {
+            try {
+              const userProfile = await fetchProfile(session.user.id);
+              setProfile(userProfile);
+              
+              // Apply profile language if available
+              if (userProfile?.preferred_language) {
+                await languageSyncService.applyProfileLanguage(
+                  userProfile.preferred_language,
+                  (updates) => updateProfileService(session.user.id, updates)
+                );
+              }
+            } catch (error) {
+              console.error('Failed to fetch profile:', error);
             }
-          }, 500);
+          }, 0);
         } else {
-          setUser(null);
-          setSession(null);
+          dispatch(logout());
           setProfile(null);
+          languageSyncService.reset();
         }
         
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session check:', session?.user?.id);
-      
-      if (session?.user) {
-        setUser(session.user);
-        setSession(session);
-        handleFetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    }).catch(error => {
-      console.error('Error getting initial session:', error);
-      if (mounted) {
-        setLoading(false);
-      }
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [handleFetchProfile]);
+    return () => subscription.unsubscribe();
+  }, [dispatch]);
 
-  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
-    if (!user) throw new Error('No user logged in');
+  const signInWithPhone = async (phone: string) => {
+    try {
+      // Get language for registration from sync service
+      const preferredLanguage = await languageSyncService.getLanguageForRegistration();
+      
+      const result = await signInWithPhoneService(phone);
+      
+      // Language will be applied through the auth state change listener
+      return result;
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await signOutService();
+      languageSyncService.reset();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+  };
+
+  const updateProfile = async (updates: Partial<Profile>): Promise<Profile> => {
+    if (!user) throw new Error('User not authenticated');
     
     try {
-      const updatedProfile = await updateUserProfile(user.id, updates);
-      if (updatedProfile) {
-        const parsedProfile = parseProfileData(updatedProfile);
-        setProfile(parsedProfile);
-        return parsedProfile;
+      const updatedProfile = await updateProfileService(user.id, updates);
+      setProfile(updatedProfile);
+      
+      // If language preference was updated, sync it
+      if (updates.preferred_language) {
+        await languageSyncService.applyProfileLanguage(
+          updates.preferred_language,
+          (profileUpdates) => updateProfileService(user.id, profileUpdates)
+        );
       }
+      
+      return updatedProfile;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Profile update error:', error);
       throw error;
     }
-  }, [user]);
+  };
 
-  const signOut = useCallback(async () => {
-    try {
-      await authSignOut();
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  }, []);
-
-  const value: AuthContextType = {
+  const contextValue: AuthContextType = {
     user,
     session,
     profile,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated,
     signInWithPhone,
     signOut,
     updateProfile,
-    checkUserExists
+    checkUserExists,
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
