@@ -3179,6 +3179,7 @@ export type Database = {
           app_install_date: string | null
           associated_tenants: string[] | null
           created_at: string | null
+          failed_login_attempts: number | null
           farm_type: string | null
           farmer_code: string | null
           farming_experience_years: number | null
@@ -3188,9 +3189,11 @@ export type Database = {
           has_tractor: boolean | null
           id: string
           irrigation_type: string | null
+          is_active: boolean | null
           is_verified: boolean | null
           language_preference: string | null
           last_app_open: string | null
+          last_failed_login: string | null
           last_login_at: string | null
           loan_amount: number | null
           login_attempts: number | null
@@ -3198,6 +3201,7 @@ export type Database = {
           mobile_number: string | null
           notes: string | null
           pin_hash: string | null
+          pin_updated_at: string | null
           preferred_contact_method: string | null
           preferred_dealer_id: string | null
           primary_crops: string[] | null
@@ -3217,6 +3221,7 @@ export type Database = {
           app_install_date?: string | null
           associated_tenants?: string[] | null
           created_at?: string | null
+          failed_login_attempts?: number | null
           farm_type?: string | null
           farmer_code?: string | null
           farming_experience_years?: number | null
@@ -3226,9 +3231,11 @@ export type Database = {
           has_tractor?: boolean | null
           id?: string
           irrigation_type?: string | null
+          is_active?: boolean | null
           is_verified?: boolean | null
           language_preference?: string | null
           last_app_open?: string | null
+          last_failed_login?: string | null
           last_login_at?: string | null
           loan_amount?: number | null
           login_attempts?: number | null
@@ -3236,6 +3243,7 @@ export type Database = {
           mobile_number?: string | null
           notes?: string | null
           pin_hash?: string | null
+          pin_updated_at?: string | null
           preferred_contact_method?: string | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
@@ -3255,6 +3263,7 @@ export type Database = {
           app_install_date?: string | null
           associated_tenants?: string[] | null
           created_at?: string | null
+          failed_login_attempts?: number | null
           farm_type?: string | null
           farmer_code?: string | null
           farming_experience_years?: number | null
@@ -3264,9 +3273,11 @@ export type Database = {
           has_tractor?: boolean | null
           id?: string
           irrigation_type?: string | null
+          is_active?: boolean | null
           is_verified?: boolean | null
           language_preference?: string | null
           last_app_open?: string | null
+          last_failed_login?: string | null
           last_login_at?: string | null
           loan_amount?: number | null
           login_attempts?: number | null
@@ -3274,6 +3285,7 @@ export type Database = {
           mobile_number?: string | null
           notes?: string | null
           pin_hash?: string | null
+          pin_updated_at?: string | null
           preferred_contact_method?: string | null
           preferred_dealer_id?: string | null
           primary_crops?: string[] | null
@@ -11738,6 +11750,10 @@ export type Database = {
           role: string
           valid: boolean
         }[]
+      }
+      validate_farmer_pin: {
+        Args: { p_mobile_number: string; p_pin_hash: string }
+        Returns: boolean
       }
       validate_invitation_token: {
         Args: { token: string }

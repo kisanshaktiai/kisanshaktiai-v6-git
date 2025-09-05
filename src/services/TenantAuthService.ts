@@ -50,8 +50,15 @@ export class TenantAuthService {
     try {
       console.log('=== TENANT AUTH: FARMER REGISTRATION ===');
       
-      // Detect tenant if not provided
-      const tenantId = data.tenantId || await this.tenantDetectionService.detectCurrentTenant();
+      // Detect tenant if not provided - get from URL/domain
+      let tenantId = data.tenantId;
+      if (!tenantId) {
+        const currentHost = window.location.hostname;
+        const { data: tenantData } = await supabase.functions.invoke('detect-tenant', {
+          body: { domain: currentHost }
+        });
+        tenantId = tenantData?.tenant?.id;
+      }
       
       if (!tenantId) {
         console.error('No tenant detected for registration');
@@ -398,12 +405,15 @@ export class TenantAuthService {
       await secureStorage.remove(STORAGE_KEYS.USER_ID);
       await secureStorage.remove(STORAGE_KEYS.MOBILE_NUMBER);
       
-      // Clear all PIN hashes
-      const keys = await secureStorage.getAllKeys();
-      for (const key of keys) {
-        if (key.startsWith(STORAGE_KEYS.PIN_HASH)) {
-          await secureStorage.remove(key);
+      // Clear PIN hashes - try to clear known mobile numbers
+      // Since we can't get all keys, clear the current user's PIN hash
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.mobile_number) {
+          await secureStorage.remove(`${STORAGE_KEYS.PIN_HASH}_${user.user_metadata.mobile_number}`);
         }
+      } catch (e) {
+        console.log('Could not clear PIN hash');
       }
 
       // Sign out from Supabase

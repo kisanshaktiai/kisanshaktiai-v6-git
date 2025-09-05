@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   USER_METADATA: 'user_metadata',
   OTP_PREFIX: 'otp_',
   OTP_TIMESTAMP_PREFIX: 'otp_timestamp_',
+  CURRENT_TENANT: 'current_tenant',
 };
 
 export const API_ENDPOINTS = {
