@@ -344,14 +344,10 @@ export const EnhancedChatInterface: React.FC = () => {
   const speakMessage = async (text: string) => {
     try {
       setIsSpeaking(true);
-      const audioBase64 = await voiceService.synthesizeSpeech(
+      await voiceService.speak(
         text,
         profile?.preferred_language || 'hi'
       );
-      
-      if (audioBase64) {
-        await voiceService.playAudioFromBase64(audioBase64);
-      }
     } catch (error) {
       console.error('Error speaking message:', error);
     } finally {
