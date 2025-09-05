@@ -9507,6 +9507,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_mobile_number_exists: {
+        Args: { mobile_num: string }
+        Returns: {
+          profile: Json
+          user_exists: boolean
+        }[]
+      }
       check_registration_status: {
         Args: { p_email?: string; p_token?: string }
         Returns: Json

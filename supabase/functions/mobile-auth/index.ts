@@ -75,7 +75,7 @@ serve(async (req) => {
           existingUser = profileCheck
           isNewUser = false
         }
-      } else if (checkResult?.exists) {
+      } else if (checkResult?.user_exists) {
         existingUser = checkResult.profile
         isNewUser = false
       }
