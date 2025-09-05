@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
 import { AppProviders } from '@/providers/AppProviders';
 import { MobileApp } from '@/components';
 import { ErrorBoundary } from '@/components';
 import { Toaster } from './components/ui/sonner';
+import { EnhancedSplashScreen } from '@/components/splash/EnhancedSplashScreen';
 import './i18n';
 import './App.css';
 
@@ -29,6 +30,27 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const [initialized, setInitialized] = useState(false);
+  const [initResult, setInitResult] = useState<any>(null);
+
+  const handleInitialization = (result: any) => {
+    setInitResult(result);
+    setInitialized(true);
+    
+    // Store tenant info in session storage for quick access
+    if (result.tenant) {
+      sessionStorage.setItem('current_tenant', JSON.stringify(result.tenant));
+    }
+    if (result.branding) {
+      sessionStorage.setItem('tenant_branding', JSON.stringify(result.branding));
+    }
+  };
+
+  // Show splash screen during initialization
+  if (!initialized) {
+    return <EnhancedSplashScreen onInitialized={handleInitialization} />;
+  }
+
   return (
     <ErrorBoundary>
       <AppProviders queryClient={queryClient}>
