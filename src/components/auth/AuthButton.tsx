@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useUnifiedTenantData } from '@/hooks';
+import { tenantTheme } from '@/services/TenantThemeService';
 
 interface AuthButtonProps {
   loading: boolean;
@@ -23,7 +24,7 @@ export const AuthButton = ({
   const { branding } = useUnifiedTenantData();
   
   const isDisabled = loading || phone.length < 10 || checkingUser;
-  const primaryColor = branding?.primary_color || '#8BC34A';
+  const primaryColor = branding?.primary_color || tenantTheme.getColorHex('primary');
   
   // Show different text based on state
   const getButtonText = () => {
@@ -44,12 +45,9 @@ export const AuthButton = ({
       type="submit" 
       className={`w-full h-12 text-base font-medium rounded-xl transition-all duration-200 ${
         isDisabled 
-          ? 'bg-gray-200 text-gray-500 cursor-not-allowed hover:bg-gray-200' 
-          : `text-white hover:opacity-90`
+          ? 'bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted' 
+          : `bg-primary text-primary-foreground hover:bg-primary/90`
       }`}
-      style={{
-        backgroundColor: isDisabled ? undefined : primaryColor,
-      }}
       disabled={isDisabled}
     >
       {loading ? (

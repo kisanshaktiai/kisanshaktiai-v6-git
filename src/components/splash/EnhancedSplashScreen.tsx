@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MultiTenantInitializer } from '@/services/MultiTenantInitializer';
+import { WhiteLabelConfigService } from '@/services/WhiteLabelConfigService';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 
@@ -11,11 +12,12 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onIn
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('Initializing...');
   const [brandingLoaded, setBrandingLoaded] = useState(false);
-  const [branding, setBranding] = useState<any>(null);
+  const [config, setConfig] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializer = MultiTenantInitializer.getInstance();
+    const whiteLabelService = WhiteLabelConfigService.getInstance();
     
     // Subscribe to progress updates
     initializer.onProgress((progressData) => {
@@ -25,6 +27,11 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onIn
       // Apply branding as soon as it's loaded
       if (progressData.stage === 'branding_apply' && progressData.progress >= 30) {
         setBrandingLoaded(true);
+        // Get the loaded config
+        const loadedConfig = whiteLabelService.getConfig();
+        if (loadedConfig) {
+          setConfig(loadedConfig);
+        }
       }
     });
 
@@ -34,7 +41,10 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onIn
         const result = await initializer.initialize();
         
         if (result.success) {
-          setBranding(result.branding);
+          // Get the final config after initialization
+          const finalConfig = whiteLabelService.getConfig();
+          setConfig(finalConfig);
+          
           // Add a small delay to show 100% completion
           setProgress(100);
           setMessage('Welcome!');
@@ -71,36 +81,24 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onIn
     initialize();
   }, [onInitialized]);
 
-  // Dynamic background based on branding
+  // Use tenant-specific config
   const getBackgroundStyle = () => {
-    if (branding?.background_color) {
-      return { backgroundColor: branding.background_color };
+    if (config?.background_color) {
+      return { backgroundColor: config.background_color };
     }
     return {};
   };
 
-  // Dynamic logo
   const getLogo = () => {
-    if (branding?.logo_url) {
-      return branding.logo_url;
-    }
-    return '/lovable-uploads/b75563a8-f082-47af-90f0-95838d69b700.png';
+    return config?.logo_url || '/lovable-uploads/b75563a8-f082-47af-90f0-95838d69b700.png';
   };
 
-  // Dynamic app name
   const getAppName = () => {
-    if (branding?.app_name) {
-      return branding.app_name;
-    }
-    return 'KisanShakti AI';
+    return config?.app_name || 'Agricultural Platform';
   };
 
-  // Dynamic tagline
   const getTagline = () => {
-    if (branding?.app_tagline) {
-      return branding.app_tagline;
-    }
-    return 'कृषि का डिजिटल साथी | Your Digital Farming Companion';
+    return config?.app_tagline || 'Your Digital Farming Companion';
   };
 
   return (
@@ -172,15 +170,15 @@ export const EnhancedSplashScreen: React.FC<EnhancedSplashScreenProps> = ({ onIn
             }`}
           >
             <div className="flex items-center space-x-1">
-              <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
               <span>AI Assistant</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-info" />
               <span>Weather</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-warning" />
               <span>Analytics</span>
             </div>
           </div>

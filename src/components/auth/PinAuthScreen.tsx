@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Lock, Shield, Smartphone } from 'lucide-react';
 import { tenantAuthService } from '@/services/TenantAuthService';
+import { tenantTheme } from '@/services/TenantThemeService';
+import { useUnifiedTenantData } from '@/hooks';
 
 interface PinAuthScreenProps {
   phoneNumber: string;
@@ -21,6 +23,11 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { branding } = useUnifiedTenantData();
+  
+  // Get tenant-specific branding
+  const themeBranding = tenantTheme.getBranding();
+  const appName = branding?.app_name || themeBranding.appName;
 
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -73,7 +80,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
         }));
         
         toast.success(isNewUser ? 
-          '🌱 Welcome to KisanShakti AI! Registration successful!' : 
+          `🌱 Welcome to ${appName}! Registration successful!` : 
           '🌱 Welcome back! Login successful.'
         );
         
@@ -90,11 +97,11 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border-border/50">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="w-8 h-8 text-green-600" />
+          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <Shield className="w-8 h-8 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold">
             {isNewUser ? 'Create Your PIN' : 'Enter Your PIN'}
@@ -176,7 +183,7 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
               <Button 
                 type="submit"
                 disabled={isLoading || !pin || (isNewUser && (!confirmPin || !fullName))}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
                 {isLoading ? (
                   <>
