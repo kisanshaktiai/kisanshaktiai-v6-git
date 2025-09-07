@@ -303,6 +303,8 @@ async function handleLogin(supabase: any, params: any) {
       )
     }
 
+    console.log('Login attempt for mobile:', mobile_number.replace(/\d/g, '*'))
+    
     // Get farmer with PIN
     const { data: farmer, error: farmerError } = await supabase
       .from('farmers')
@@ -321,7 +323,7 @@ async function handleLogin(supabase: any, params: any) {
       .single()
 
     if (farmerError || !farmer) {
-      console.error('Farmer not found:', farmerError)
+      console.error('Farmer not found for mobile:', mobile_number.replace(/\d/g, '*'), farmerError)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -329,6 +331,29 @@ async function handleLogin(supabase: any, params: any) {
         }), 
         { 
           status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+    
+    console.log('Farmer found:', { 
+      id: farmer.id, 
+      hasPIN: !!farmer.pin,
+      hasPINHash: !!farmer.pin_hash,
+      tenantId: farmer.tenant_id 
+    })
+
+    // Check if farmer has a PIN set
+    if (!farmer.pin && !farmer.pin_hash) {
+      console.log('No PIN set for mobile:', mobile_number.replace(/\d/g, '*'))
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'PIN not set. Please register first or reset your PIN.',
+          needsRegistration: true
+        }), 
+        { 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
