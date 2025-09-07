@@ -335,13 +335,15 @@ async function handleLogin(supabase: any, params: any) {
     }
 
     // Verify PIN directly against plain PIN column (for demo - in production, use hash!)
-    const isPinValid = farmer.pin === pin
+    let isPinValid = farmer.pin === pin
     
-    // Also try bcrypt compare for backward compatibility
+    // Also try bcrypt compare for backward compatibility if plain PIN doesn't match
     if (!isPinValid && farmer.pin_hash) {
-      const isPinHashValid = await bcrypt.compare(pin, farmer.pin_hash)
-      if (!isPinHashValid) {
-        console.log('Invalid PIN for mobile:', mobile_number.replace(/\d/g, '*'))
+      isPinValid = await bcrypt.compare(pin, farmer.pin_hash)
+    }
+    
+    if (!isPinValid) {
+      console.log('Invalid PIN for mobile:', mobile_number.replace(/\d/g, '*'))
       
       // Increment failed attempts
       await supabase
@@ -352,30 +354,16 @@ async function handleLogin(supabase: any, params: any) {
         })
         .eq('id', farmer.id)
 
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'Invalid mobile number or PIN' 
-            }), 
-            { 
-              status: 401, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          )
-      } else {
-        console.log('Invalid PIN for mobile:', mobile_number.replace(/\d/g, '*'))
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Invalid mobile number or PIN' 
-          }), 
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-    }
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid mobile number or PIN' 
+        }), 
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Check if tenant is active
