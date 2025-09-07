@@ -69,6 +69,9 @@ verify_jwt = false
 [functions.mobile-auth]
 verify_jwt = false
 
+[functions.mobile-auth-pin]
+verify_jwt = false
+
 [functions.satellite-processor]
 verify_jwt = false
 
