@@ -106,12 +106,12 @@ async function handleRegistration(supabase: any, params: any) {
   const { mobile_number, pin, tenant_id, full_name, location, preferred_language } = params
 
   try {
-    // Validate PIN
-    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    // Validate PIN (4 digits as per database)
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'PIN must be exactly 6 digits' 
+          error: 'PIN must be exactly 4 digits' 
         }), 
         { 
           status: 400, 
@@ -288,12 +288,12 @@ async function handleLogin(supabase: any, params: any) {
   const { mobile_number, pin } = params
 
   try {
-    // Validate PIN format
-    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    // Validate PIN format (4 digits as per database)
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid PIN format' 
+          error: 'Invalid PIN format - must be 4 digits' 
         }), 
         { 
           status: 400, 
@@ -455,12 +455,12 @@ async function handleUpdatePin(supabase: any, params: any) {
   const { mobile_number, old_pin, new_pin } = params
 
   try {
-    // Validate PINs
-    if (!old_pin || !new_pin || old_pin.length !== 6 || new_pin.length !== 6) {
+    // Validate PINs (4 digits as per database)
+    if (!old_pin || !new_pin || old_pin.length !== 4 || new_pin.length !== 4) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Both old and new PIN must be exactly 6 digits' 
+          error: 'Both old and new PIN must be exactly 4 digits' 
         }), 
         { 
           status: 400, 
@@ -564,12 +564,12 @@ async function handleResetPin(supabase: any, params: any) {
   const { mobile_number, otp, new_pin } = params
 
   try {
-    // Validate inputs
-    if (!otp || !new_pin || new_pin.length !== 6) {
+    // Validate inputs (4 digit PIN as per database)
+    if (!otp || !new_pin || new_pin.length !== 4) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid OTP or PIN format' 
+          error: 'Invalid OTP or PIN format - PIN must be 4 digits' 
         }), 
         { 
           status: 400, 

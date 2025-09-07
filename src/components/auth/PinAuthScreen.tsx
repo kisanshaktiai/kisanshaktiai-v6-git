@@ -37,9 +37,9 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate PIN
-    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
-      toast.error('PIN must be exactly 6 digits');
+    // Validate PIN (4 digits as per database)
+    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      toast.error('PIN must be exactly 4 digits');
       return;
     }
 
@@ -130,19 +130,19 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
             
             <div>
               <Label htmlFor="pin">
-                {isNewUser ? 'Create 6-digit PIN' : '6-digit PIN'}
+                {isNewUser ? 'Create 4-digit PIN' : '4-digit PIN'}
               </Label>
               <Input
                 id="pin"
                 type="password"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                maxLength={6}
-                placeholder="••••••"
+                maxLength={4}
+                placeholder="••••"
                 value={pin}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
-                  if (value.length <= 6) setPin(value);
+                  if (value.length <= 4) setPin(value);
                 }}
                 disabled={isLoading}
                 className="mt-1 text-center text-2xl tracking-widest"
@@ -157,12 +157,12 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
                   type="password"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  maxLength={6}
-                  placeholder="••••••"
+                  maxLength={4}
+                  placeholder="••••"
                   value={confirmPin}
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, '');
-                    if (value.length <= 6) setConfirmPin(value);
+                    if (value.length <= 4) setConfirmPin(value);
                   }}
                   disabled={isLoading}
                   className="mt-1 text-center text-2xl tracking-widest"

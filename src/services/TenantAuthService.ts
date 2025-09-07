@@ -79,11 +79,11 @@ export class TenantAuthService {
         };
       }
 
-      // Validate PIN
-      if (data.pin.length !== 6 || !/^\d{6}$/.test(data.pin)) {
+      // Validate PIN (4 digits as per database)
+      if (data.pin.length !== 4 || !/^\d{4}$/.test(data.pin)) {
         return {
           success: false,
-          error: 'PIN must be exactly 6 digits'
+          error: 'PIN must be exactly 4 digits'
         };
       }
 
@@ -166,10 +166,10 @@ export class TenantAuthService {
         };
       }
 
-      if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
         return {
           success: false,
-          error: 'Invalid PIN format'
+          error: 'Invalid PIN format - must be 4 digits'
         };
       }
 
@@ -275,11 +275,11 @@ export class TenantAuthService {
     try {
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      // Validate new PIN
-      if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+      // Validate new PIN (4 digits as per database)
+      if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
         return {
           success: false,
-          error: 'New PIN must be exactly 6 digits'
+          error: 'New PIN must be exactly 4 digits'
         };
       }
 
@@ -323,11 +323,11 @@ export class TenantAuthService {
     try {
       const cleanMobile = mobileNumber.replace(/\D/g, '');
       
-      // Validate new PIN
-      if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+      // Validate new PIN (4 digits as per database)
+      if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
         return {
           success: false,
-          error: 'New PIN must be exactly 6 digits'
+          error: 'New PIN must be exactly 4 digits'
         };
       }
 
