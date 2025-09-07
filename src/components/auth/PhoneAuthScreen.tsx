@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { PhoneInput } from './PhoneInput';
@@ -6,6 +5,7 @@ import { UserStatusIndicator } from './UserStatusIndicator';
 import { AuthButton } from './AuthButton';
 import { AuthHeader } from './AuthHeader';
 import { FeaturesInfo } from './FeaturesInfo';
+import { PinAuthScreen } from './PinAuthScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { UserPlus, LogIn, Wifi, WifiOff } from 'lucide-react';
@@ -22,249 +22,120 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   const [checkingUser, setCheckingUser] = useState(false);
   const [userCheckComplete, setUserCheckComplete] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [showPinScreen, setShowPinScreen] = useState(false);
   
-  const { checkUserExists, signInWithPhone } = useAuth();
+  const { checkUserExists } = useAuth();
   const checkingRef = useRef<boolean>(false);
   const lastCheckedPhone = useRef<string>('');
 
-  // Optimized phone change handler with debouncing
   const handlePhoneChange = useCallback(async (value: string) => {
     setPhone(value);
     
-    // Reset states when phone changes
     if (value !== lastCheckedPhone.current) {
       setUserCheckComplete(false);
       setIsNewUser(false);
       setConnectionError(null);
     }
 
-    // Only check user existence when we have exactly 10 digits and it's different from last checked
     if (value.length === 10 && value !== lastCheckedPhone.current && !checkingRef.current) {
       checkingRef.current = true;
       setCheckingUser(true);
       
       try {
-        console.log('=== PHONE INPUT USER CHECK ===');
-        console.log('Checking if user exists for phone:', value.replace(/\d/g, '*'));
-        
-        const startTime = Date.now();
         const userExists = await checkUserExists(value);
-        const checkTime = Date.now() - startTime;
-        
-        lastCheckedPhone.current = value;
         setIsNewUser(!userExists);
         setUserCheckComplete(true);
+        lastCheckedPhone.current = value;
         
-        console.log('Phone input user check result:', {
-          phone: value.replace(/\d/g, '*'),
-          exists: userExists,
-          isNewUser: !userExists,
-          checkTime: `${checkTime}ms`
-        });
-
-        // Show appropriate feedback toast
         if (userExists) {
-          toast.success('Welcome back! Ready to continue', {
-            duration: 2000,
-            icon: <LogIn className="w-4 h-4" />
-          });
+          toast.info('Welcome back! Please enter your PIN.');
         } else {
-          toast.info('Ready to get started with KisanShakti AI!', {
-            duration: 2000,
-            icon: <UserPlus className="w-4 h-4" />
-          });
+          toast.info('New user detected. Please create an account.');
         }
       } catch (error) {
-        console.error('Error checking user existence:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Connection failed';
-        
-        if (errorMessage.includes('connect') || errorMessage.includes('network') || errorMessage.includes('fetch')) {
-          setConnectionError('Unable to connect to KisanShakti AI servers. Please check your internet connection.');
-        } else {
-          setConnectionError('Service temporarily unavailable. Please try again in a moment.');
-        }
-        
-        setIsNewUser(true);
-        setUserCheckComplete(false);
-        
-        toast.error('Connection issue detected', {
-          duration: 3000,
-          icon: <WifiOff className="w-4 h-4" />
-        });
+        console.error('Error checking user:', error);
+        setConnectionError('Unable to verify phone number. Please check your connection.');
       } finally {
         setCheckingUser(false);
         checkingRef.current = false;
       }
-    } else if (value.length < 10) {
-      // Reset states when phone number is incomplete
-      setIsNewUser(false);
-      setUserCheckComplete(false);
-      setConnectionError(null);
-      lastCheckedPhone.current = '';
     }
   }, [checkUserExists]);
 
-  const retryConnection = async () => {
-    if (phone.length === 10 && !checkingRef.current) {
-      setRetryCount(prev => prev + 1);
-      lastCheckedPhone.current = ''; // Force recheck
-      await handlePhoneChange(phone);
-    }
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!phone || phone.length !== 10) {
-      toast.error('Please enter a complete 10-digit phone number');
+    if (phone.length !== 10) {
+      toast.error('Please enter a valid 10-digit phone number');
       return;
     }
-
-    // Allow auth even if user check failed (connection issues)
-    if (connectionError && !userCheckComplete) {
-      console.log('Proceeding with auth despite connection issues...');
-    }
-
-    setLoading(true);
-    setConnectionError(null);
-    
-    try {
-      console.log('Starting KisanShakti AI authentication for phone:', phone.replace(/\d/g, '*'));
-      const startTime = Date.now();
-      
-      await signInWithPhone(phone);
-      
-      const authTime = Date.now() - startTime;
-      console.log(`Authentication completed in ${authTime}ms`);
-      
-      // Success message based on whether we know if user is new
-      if (userCheckComplete) {
-        if (isNewUser) {
-          toast.success('🌱 Welcome to KisanShakti AI! Account created successfully!', {
-            duration: 4000
-          });
-        } else {
-          toast.success('🌱 Welcome back to KisanShakti AI! Login successful.', {
-            duration: 4000
-          });
-        }
-      } else {
-        toast.success('🌱 Welcome to KisanShakti AI! Authentication successful.', {
-          duration: 4000
-        });
-      }
-      
-      onComplete();
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      const errorMessage = error?.message || 'Authentication failed';
-      
-      if (errorMessage.includes('connect') || errorMessage.includes('network') || errorMessage.includes('servers')) {
-        setConnectionError('Unable to connect to KisanShakti AI servers. Please check your internet connection and try again.');
-        toast.error('Connection failed - Please check your internet connection', {
-          duration: 5000,
-          icon: <WifiOff className="w-4 h-4" />
-        });
-      } else if (errorMessage.includes('timeout')) {
-        setConnectionError('Request timed out. Please try again.');
-        toast.error('Connection timeout - Please try again', {
-          duration: 5000
-        });
-      } else if (errorMessage.includes('maintenance')) {
-        setConnectionError('KisanShakti AI is currently under maintenance. Please try again in a few minutes.');
-        toast.error('Service temporarily unavailable', {
-          duration: 5000
-        });
-      } else {
-        // Generic error handling
-        if (userCheckComplete && isNewUser) {
-          if (errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
-            toast.error('Account already exists on KisanShakti AI', {
-              duration: 5000
-            });
-          } else {
-            toast.error('Account creation failed - ' + errorMessage, {
-              duration: 5000
-            });
-          }
-        } else if (userCheckComplete && !isNewUser) {
-          if (errorMessage.includes('User not found') || errorMessage.includes('Invalid')) {
-            toast.error('Account not found on KisanShakti AI', {
-              duration: 5000
-            });
-          } else {
-            toast.error('Login failed - ' + errorMessage, {
-              duration: 5000
-            });
-          }
-        } else {
-          toast.error('Authentication failed - ' + errorMessage, {
-            duration: 5000
-          });
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
+    setShowPinScreen(true);
   };
 
+  const retryConnection = () => {
+    setConnectionError(null);
+    handlePhoneChange(phone);
+  };
+
+  if (showPinScreen) {
+    return (
+      <PinAuthScreen
+        phoneNumber={phone}
+        onBack={() => setShowPinScreen(false)}
+        isNewUser={isNewUser}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-full max-w-sm mx-auto px-4">
-        <Card className="border-0 shadow-none bg-transparent">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+      <Card className="w-full max-w-md shadow-xl border-border/50">
+        <CardContent className="p-6">
           <AuthHeader userCheckComplete={userCheckComplete} isNewUser={isNewUser} />
           
-          <CardContent className="px-0">
-            <form onSubmit={handleAuth} className="space-y-4">
-              <PhoneInput
-                phone={phone}
-                onPhoneChange={handlePhoneChange}
-                loading={loading}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete}
-                isNewUser={isNewUser}
-              />
-              
-              {connectionError && (
-                <Alert variant="destructive">
-                  <WifiOff className="w-4 h-4" />
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>{connectionError}</span>
-                    {phone.length === 10 && (
-                      <button
-                        type="button"
-                        onClick={retryConnection}
-                        className="ml-2 text-sm underline hover:no-underline"
-                        disabled={checkingUser}
-                      >
-                        {checkingUser ? 'Retrying...' : 'Retry'}
-                      </button>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <UserStatusIndicator
-                phone={phone}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete}
-                isNewUser={isNewUser}
-              />
-              
-              <AuthButton
-                loading={loading}
-                phone={phone}
-                checkingUser={checkingUser}
-                userCheckComplete={userCheckComplete || Boolean(connectionError)}
-                isNewUser={isNewUser}
-              />
-            </form>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <PhoneInput 
+              phone={phone} 
+              onPhoneChange={handlePhoneChange}
+              loading={checkingUser}
+            />
             
-            <FeaturesInfo />
-          </CardContent>
-        </Card>
-      </div>
+            {userCheckComplete && (
+              <UserStatusIndicator 
+                isNewUser={isNewUser} 
+                phone={phone}
+                checkingUser={checkingUser}
+                userCheckComplete={userCheckComplete}
+              />
+            )}
+
+            {connectionError && (
+              <Alert className="border-orange-200 bg-orange-50">
+                <WifiOff className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  {connectionError}
+                  <button
+                    type="button"
+                    onClick={retryConnection}
+                    className="ml-2 text-orange-600 underline hover:text-orange-700"
+                  >
+                    Retry
+                  </button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <AuthButton 
+              loading={loading}
+              phone={phone}
+              checkingUser={checkingUser}
+              userCheckComplete={userCheckComplete}
+              isNewUser={isNewUser}
+            />
+          </form>
+
+          <FeaturesInfo />
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { WhiteLabelConfigService } from './WhiteLabelConfigService';
 
 interface TenantConfig {
   id: string;
@@ -107,13 +108,19 @@ export class MultiTenantInitializer {
         throw new Error('No tenant configuration found');
       }
 
-      // Stage 2: Load tenant branding (20%)
+      // Stage 2: Load white label config (20%)
       this.notifyProgress('branding_load', 20, 'Loading brand settings...');
+      const whiteLabelService = WhiteLabelConfigService.getInstance();
+      const whiteLabelConfig = await whiteLabelService.loadConfig(tenant.id);
+      
+      // Also load tenant branding as fallback
       const branding = await this.loadTenantBranding(tenant.id);
       
-      // Stage 3: Apply branding immediately (30%)
+      // Stage 3: Apply white label config or branding (30%)
       this.notifyProgress('branding_apply', 30, 'Applying brand theme...');
-      if (branding) {
+      if (whiteLabelConfig) {
+        whiteLabelService.applyConfig(whiteLabelConfig);
+      } else if (branding) {
         this.applyBranding(branding);
       }
 
