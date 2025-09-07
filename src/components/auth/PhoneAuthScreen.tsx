@@ -96,7 +96,10 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
             <PhoneInput 
               phone={phone} 
               onPhoneChange={handlePhoneChange}
-              loading={checkingUser}
+              loading={loading}
+              checkingUser={checkingUser}
+              userCheckComplete={userCheckComplete}
+              isNewUser={isNewUser}
             />
             
             {userCheckComplete && (
