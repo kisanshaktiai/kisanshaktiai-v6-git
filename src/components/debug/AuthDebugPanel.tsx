@@ -7,6 +7,7 @@ import { authHealthService } from '@/services/authHealthService';
 import { sessionService } from '@/services/sessionService';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { EdgeFunctionDiagnostic } from './EdgeFunctionDiagnostic';
 
 interface AuthHealthCheck {
   status: 'healthy' | 'warning' | 'error';
@@ -259,6 +260,9 @@ Recommendations: ${diagnosis.recommendations.join(', ') || 'None'}`);
           </div>
         </CardContent>
       </Card>
+
+      {/* Edge Function Diagnostic */}
+      <EdgeFunctionDiagnostic />
 
       {/* Recent Debug Logs */}
       <Card>

@@ -90,6 +90,7 @@ export class TenantAuthService {
       console.log('Registering farmer for tenant:', tenantId);
 
       // Call the enhanced mobile-auth-pin edge function
+      console.log('Invoking mobile-auth-pin function for registration');
       const { data: authData, error: authError } = await supabase.functions.invoke('mobile-auth-pin', {
         body: {
           action: 'register',
@@ -101,6 +102,8 @@ export class TenantAuthService {
           preferred_language: data.preferredLanguage || 'hi'
         }
       });
+      
+      console.log('Registration response:', { success: authData?.success, error: authError });
 
       if (authError || !authData?.success) {
         console.error('Registration failed:', authError || authData?.error);
@@ -181,6 +184,7 @@ export class TenantAuthService {
       }
 
       // Call the enhanced mobile-auth-pin edge function
+      console.log('Invoking mobile-auth-pin function for login');
       const { data: authData, error: authError } = await supabase.functions.invoke('mobile-auth-pin', {
         body: {
           action: 'login',
@@ -188,6 +192,8 @@ export class TenantAuthService {
           pin: pin
         }
       });
+      
+      console.log('Login response:', { success: authData?.success, error: authError });
 
       if (authError || !authData?.success) {
         console.error('Authentication failed:', authError || authData?.error);
