@@ -738,57 +738,180 @@ export type Database = {
       appearance_settings: {
         Row: {
           accent_color: string
+          advanced_settings: Json | null
+          analytics_config: Json | null
+          animations_enabled: boolean | null
+          api_settings: Json | null
+          app_icon: string | null
+          app_name: string | null
+          app_splash_screen: string | null
+          applied_at: string | null
+          applied_by: string | null
+          applies_to: string | null
           background_color: string
           border_color: string | null
+          button_style: string | null
+          card_style: string | null
           created_at: string | null
           custom_css: string | null
+          custom_fonts: Json | null
+          custom_scripts: Json | null
+          email_templates: Json | null
+          environment: string | null
+          error_color: string | null
+          favicon_url: string | null
+          feature_toggles: Json | null
           font_family: string
+          footer_links: Json | null
+          footer_text: string | null
+          header_config: Json | null
           id: string
+          info_color: string | null
+          input_style: string | null
+          is_active: boolean | null
+          language_settings: Json | null
+          layout_config: Json | null
           logo_override_url: string | null
+          maintenance_message: string | null
+          maintenance_mode: boolean | null
+          mobile_config: Json | null
           muted_color: string | null
+          navigation_style: string | null
+          notification_settings: Json | null
+          preview_url: string | null
           primary_color: string
+          primary_gradient: string | null
           secondary_color: string
+          secondary_gradient: string | null
+          seo_config: Json | null
+          show_powered_by: boolean | null
           sidebar_background_color: string | null
+          social_links: Json | null
+          success_color: string | null
           tenant_id: string
           text_color: string
           theme_mode: string
           updated_at: string | null
+          version: number | null
+          warning_color: string | null
         }
         Insert: {
           accent_color?: string
+          advanced_settings?: Json | null
+          analytics_config?: Json | null
+          animations_enabled?: boolean | null
+          api_settings?: Json | null
+          app_icon?: string | null
+          app_name?: string | null
+          app_splash_screen?: string | null
+          applied_at?: string | null
+          applied_by?: string | null
+          applies_to?: string | null
           background_color?: string
           border_color?: string | null
+          button_style?: string | null
+          card_style?: string | null
           created_at?: string | null
           custom_css?: string | null
+          custom_fonts?: Json | null
+          custom_scripts?: Json | null
+          email_templates?: Json | null
+          environment?: string | null
+          error_color?: string | null
+          favicon_url?: string | null
+          feature_toggles?: Json | null
           font_family?: string
+          footer_links?: Json | null
+          footer_text?: string | null
+          header_config?: Json | null
           id?: string
+          info_color?: string | null
+          input_style?: string | null
+          is_active?: boolean | null
+          language_settings?: Json | null
+          layout_config?: Json | null
           logo_override_url?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          mobile_config?: Json | null
           muted_color?: string | null
+          navigation_style?: string | null
+          notification_settings?: Json | null
+          preview_url?: string | null
           primary_color?: string
+          primary_gradient?: string | null
           secondary_color?: string
+          secondary_gradient?: string | null
+          seo_config?: Json | null
+          show_powered_by?: boolean | null
           sidebar_background_color?: string | null
+          social_links?: Json | null
+          success_color?: string | null
           tenant_id: string
           text_color?: string
           theme_mode?: string
           updated_at?: string | null
+          version?: number | null
+          warning_color?: string | null
         }
         Update: {
           accent_color?: string
+          advanced_settings?: Json | null
+          analytics_config?: Json | null
+          animations_enabled?: boolean | null
+          api_settings?: Json | null
+          app_icon?: string | null
+          app_name?: string | null
+          app_splash_screen?: string | null
+          applied_at?: string | null
+          applied_by?: string | null
+          applies_to?: string | null
           background_color?: string
           border_color?: string | null
+          button_style?: string | null
+          card_style?: string | null
           created_at?: string | null
           custom_css?: string | null
+          custom_fonts?: Json | null
+          custom_scripts?: Json | null
+          email_templates?: Json | null
+          environment?: string | null
+          error_color?: string | null
+          favicon_url?: string | null
+          feature_toggles?: Json | null
           font_family?: string
+          footer_links?: Json | null
+          footer_text?: string | null
+          header_config?: Json | null
           id?: string
+          info_color?: string | null
+          input_style?: string | null
+          is_active?: boolean | null
+          language_settings?: Json | null
+          layout_config?: Json | null
           logo_override_url?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          mobile_config?: Json | null
           muted_color?: string | null
+          navigation_style?: string | null
+          notification_settings?: Json | null
+          preview_url?: string | null
           primary_color?: string
+          primary_gradient?: string | null
           secondary_color?: string
+          secondary_gradient?: string | null
+          seo_config?: Json | null
+          show_powered_by?: boolean | null
           sidebar_background_color?: string | null
+          social_links?: Json | null
+          success_color?: string | null
           tenant_id?: string
           text_color?: string
           theme_mode?: string
           updated_at?: string | null
+          version?: number | null
+          warning_color?: string | null
         }
         Relationships: [
           {
@@ -3200,6 +3323,7 @@ export type Database = {
           metadata: Json | null
           mobile_number: string | null
           notes: string | null
+          pin: string | null
           pin_hash: string | null
           pin_updated_at: string | null
           preferred_contact_method: string | null
@@ -3242,6 +3366,7 @@ export type Database = {
           metadata?: Json | null
           mobile_number?: string | null
           notes?: string | null
+          pin?: string | null
           pin_hash?: string | null
           pin_updated_at?: string | null
           preferred_contact_method?: string | null
@@ -3284,6 +3409,7 @@ export type Database = {
           metadata?: Json | null
           mobile_number?: string | null
           notes?: string | null
+          pin?: string | null
           pin_hash?: string | null
           pin_updated_at?: string | null
           preferred_contact_method?: string | null
@@ -4798,6 +4924,342 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      master_companies: {
+        Row: {
+          address: Json | null
+          annual_revenue: number | null
+          certifications: Json | null
+          company_type: string | null
+          converted_to_tenant: boolean | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          email: string | null
+          financials: Json | null
+          founded_year: number | null
+          founder: string | null
+          gst_number: string | null
+          headquarters_address: Json | null
+          hq_location: string | null
+          id: string
+          industry_category: string | null
+          industry_subtype: string | null
+          is_potential_tenant: boolean | null
+          listing_status: string | null
+          logo_url: string | null
+          metadata: Json | null
+          name: string
+          num_employees: number | null
+          ownership: string | null
+          ownership_structure: string | null
+          pan_number: string | null
+          phone: string | null
+          product_categories: string[] | null
+          sector: string | null
+          slug: string
+          status: string | null
+          subsidiaries: Json | null
+          subtype: string | null
+          tenant_id: string | null
+          updated_at: string | null
+          volume_metrics: Json | null
+          website: string | null
+          year_of_incorporation: number | null
+        }
+        Insert: {
+          address?: Json | null
+          annual_revenue?: number | null
+          certifications?: Json | null
+          company_type?: string | null
+          converted_to_tenant?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          financials?: Json | null
+          founded_year?: number | null
+          founder?: string | null
+          gst_number?: string | null
+          headquarters_address?: Json | null
+          hq_location?: string | null
+          id?: string
+          industry_category?: string | null
+          industry_subtype?: string | null
+          is_potential_tenant?: boolean | null
+          listing_status?: string | null
+          logo_url?: string | null
+          metadata?: Json | null
+          name: string
+          num_employees?: number | null
+          ownership?: string | null
+          ownership_structure?: string | null
+          pan_number?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          sector?: string | null
+          slug: string
+          status?: string | null
+          subsidiaries?: Json | null
+          subtype?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          volume_metrics?: Json | null
+          website?: string | null
+          year_of_incorporation?: number | null
+        }
+        Update: {
+          address?: Json | null
+          annual_revenue?: number | null
+          certifications?: Json | null
+          company_type?: string | null
+          converted_to_tenant?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          email?: string | null
+          financials?: Json | null
+          founded_year?: number | null
+          founder?: string | null
+          gst_number?: string | null
+          headquarters_address?: Json | null
+          hq_location?: string | null
+          id?: string
+          industry_category?: string | null
+          industry_subtype?: string | null
+          is_potential_tenant?: boolean | null
+          listing_status?: string | null
+          logo_url?: string | null
+          metadata?: Json | null
+          name?: string
+          num_employees?: number | null
+          ownership?: string | null
+          ownership_structure?: string | null
+          pan_number?: string | null
+          phone?: string | null
+          product_categories?: string[] | null
+          sector?: string | null
+          slug?: string
+          status?: string | null
+          subsidiaries?: Json | null
+          subtype?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          volume_metrics?: Json | null
+          website?: string | null
+          year_of_incorporation?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_companies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_product_categories: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          parent_id: string | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          parent_id?: string | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "master_product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      master_products: {
+        Row: {
+          active_ingredients: Json | null
+          ai_metadata: Json | null
+          ai_recommendable: boolean | null
+          application_method: string | null
+          approval_authority: string | null
+          approved_at: string | null
+          approved_by: string | null
+          brand: string | null
+          category_id: string
+          company_id: string
+          composition: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          distributor_id: string | null
+          documents: Json | null
+          dosage_instructions: string | null
+          effectiveness_rating: number | null
+          expiry_date: string | null
+          id: string
+          images: Json | null
+          manufacturer_id: string | null
+          metadata: Json | null
+          name: string
+          organic_certified: boolean | null
+          origin_country: string | null
+          packaging_options: Json | null
+          price_range: Json | null
+          product_type: string | null
+          registration_number: string | null
+          safety_level: string | null
+          sku: string
+          status: string | null
+          suitable_crops: Json | null
+          suitable_soil_types: Json | null
+          translations: Json | null
+          updated_at: string | null
+          weather_conditions: Json | null
+        }
+        Insert: {
+          active_ingredients?: Json | null
+          ai_metadata?: Json | null
+          ai_recommendable?: boolean | null
+          application_method?: string | null
+          approval_authority?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          brand?: string | null
+          category_id: string
+          company_id: string
+          composition?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          distributor_id?: string | null
+          documents?: Json | null
+          dosage_instructions?: string | null
+          effectiveness_rating?: number | null
+          expiry_date?: string | null
+          id?: string
+          images?: Json | null
+          manufacturer_id?: string | null
+          metadata?: Json | null
+          name: string
+          organic_certified?: boolean | null
+          origin_country?: string | null
+          packaging_options?: Json | null
+          price_range?: Json | null
+          product_type?: string | null
+          registration_number?: string | null
+          safety_level?: string | null
+          sku: string
+          status?: string | null
+          suitable_crops?: Json | null
+          suitable_soil_types?: Json | null
+          translations?: Json | null
+          updated_at?: string | null
+          weather_conditions?: Json | null
+        }
+        Update: {
+          active_ingredients?: Json | null
+          ai_metadata?: Json | null
+          ai_recommendable?: boolean | null
+          application_method?: string | null
+          approval_authority?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          brand?: string | null
+          category_id?: string
+          company_id?: string
+          composition?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          distributor_id?: string | null
+          documents?: Json | null
+          dosage_instructions?: string | null
+          effectiveness_rating?: number | null
+          expiry_date?: string | null
+          id?: string
+          images?: Json | null
+          manufacturer_id?: string | null
+          metadata?: Json | null
+          name?: string
+          organic_certified?: boolean | null
+          origin_country?: string | null
+          packaging_options?: Json | null
+          price_range?: Json | null
+          product_type?: string | null
+          registration_number?: string | null
+          safety_level?: string | null
+          sku?: string
+          status?: string | null
+          suitable_crops?: Json | null
+          suitable_soil_types?: Json | null
+          translations?: Json | null
+          updated_at?: string | null
+          weather_conditions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "master_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "master_product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "master_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_products_distributor_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "master_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "master_products_manufacturer_fkey"
+            columns: ["manufacturer_id"]
+            isOneToOne: false
+            referencedRelation: "master_companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_channels: {
         Row: {
@@ -7900,6 +8362,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          activated_at: string | null
           archived_at: string | null
           branding_updated_at: string | null
           branding_version: number | null
@@ -7919,6 +8382,8 @@ export type Database = {
           max_storage_gb: number | null
           metadata: Json | null
           name: string
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
           owner_email: string | null
           owner_name: string | null
           owner_phone: string | null
@@ -7939,6 +8404,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          activated_at?: string | null
           archived_at?: string | null
           branding_updated_at?: string | null
           branding_version?: number | null
@@ -7958,6 +8424,8 @@ export type Database = {
           max_storage_gb?: number | null
           metadata?: Json | null
           name: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
@@ -7978,6 +8446,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          activated_at?: string | null
           archived_at?: string | null
           branding_updated_at?: string | null
           branding_version?: number | null
@@ -7997,6 +8466,8 @@ export type Database = {
           max_storage_gb?: number | null
           metadata?: Json | null
           name?: string
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           owner_email?: string | null
           owner_name?: string | null
           owner_phone?: string | null
@@ -9109,10 +9580,15 @@ export type Database = {
       }
       white_label_configs: {
         Row: {
+          app_customization: Json | null
           app_store_config: Json | null
           brand_identity: Json | null
+          content_management: Json | null
           created_at: string | null
+          css_injection: Json | null
+          distribution: Json | null
           domain_config: Json | null
+          domain_health: Json | null
           email_templates: Json | null
           id: string
           pwa_config: Json | null
@@ -9121,10 +9597,15 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          app_customization?: Json | null
           app_store_config?: Json | null
           brand_identity?: Json | null
+          content_management?: Json | null
           created_at?: string | null
+          css_injection?: Json | null
+          distribution?: Json | null
           domain_config?: Json | null
+          domain_health?: Json | null
           email_templates?: Json | null
           id?: string
           pwa_config?: Json | null
@@ -9133,10 +9614,15 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          app_customization?: Json | null
           app_store_config?: Json | null
           brand_identity?: Json | null
+          content_management?: Json | null
           created_at?: string | null
+          css_injection?: Json | null
+          distribution?: Json | null
           domain_config?: Json | null
+          domain_health?: Json | null
           email_templates?: Json | null
           id?: string
           pwa_config?: Json | null
@@ -10374,6 +10860,10 @@ export type Database = {
       mark_invite_used: {
         Args: { invite_token: string }
         Returns: boolean
+      }
+      migrate_theme_data_to_appearance_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       path: {
         Args: { "": unknown }
