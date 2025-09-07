@@ -6,7 +6,7 @@ import { AuthButton } from './AuthButton';
 import { AuthHeader } from './AuthHeader';
 import { FeaturesInfo } from './FeaturesInfo';
 import { PinAuthScreen } from './PinAuthScreen';
-import { useAuth } from '@/hooks/useAuth';
+import { simpleFarmerAuth } from '@/services/SimpleFarmerAuthService';
 import { toast } from 'sonner';
 import { UserPlus, LogIn, Wifi, WifiOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -24,7 +24,6 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [showPinScreen, setShowPinScreen] = useState(false);
   
-  const { checkUserExists } = useAuth();
   const checkingRef = useRef<boolean>(false);
   const lastCheckedPhone = useRef<string>('');
 
@@ -42,7 +41,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
       setCheckingUser(true);
       
       try {
-        const userExists = await checkUserExists(value);
+        const userExists = await simpleFarmerAuth.checkFarmerExists(value);
         setIsNewUser(!userExists);
         setUserCheckComplete(true);
         lastCheckedPhone.current = value;
@@ -60,7 +59,7 @@ export const PhoneAuthScreen = ({ onComplete }: PhoneAuthScreenProps) => {
         checkingRef.current = false;
       }
     }
-  }, [checkUserExists]);
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();

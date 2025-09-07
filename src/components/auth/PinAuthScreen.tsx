@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, Lock, Shield, Smartphone } from 'lucide-react';
-import { tenantAuthService } from '@/services/TenantAuthService';
+import { simpleFarmerAuth } from '@/services/SimpleFarmerAuthService';
 import { tenantTheme } from '@/services/TenantThemeService';
 import { useUnifiedTenantData } from '@/hooks';
 
@@ -62,20 +62,21 @@ export const PinAuthScreen: React.FC<PinAuthScreenProps> = ({ phoneNumber, onBac
       
       if (isNewUser) {
         // Register new farmer
-        result = await tenantAuthService.registerFarmer({
-          mobileNumber: phoneNumber,
-          pin: pin,
-          fullName: fullName.trim(),
-          preferredLanguage: 'hi'
+        result = await simpleFarmerAuth.register(phoneNumber, pin, {
+          full_name: fullName.trim(),
+          tenant_id: 'emergency-tenant',
+          preferred_language: 'hi'
         });
       } else {
         // Authenticate existing farmer
-        result = await tenantAuthService.authenticateFarmer(phoneNumber, pin);
+        result = await simpleFarmerAuth.login(phoneNumber, pin);
       }
 
       if (result.success) {
+        // Store session in localStorage (handled by SimpleFarmerAuthService)
+        
         dispatch(setAuthenticated({ 
-          userId: result.userId, 
+          userId: result.farmer?.id || result.session?.farmer_id, 
           phoneNumber 
         }));
         
