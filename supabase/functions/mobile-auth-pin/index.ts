@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -203,14 +202,13 @@ async function handleRegistration(supabase: any, params: any) {
     const userId = authUser.user?.id
     console.log('Auth user created:', userId)
 
-    // Store plain PIN in farmers table (not recommended for production!)
+    // Store PIN in farmers table (using simple pin column)
     const { data: farmer, error: farmerError } = await supabase
       .from('farmers')
       .insert({
         id: userId,
         mobile_number: mobile_number,
-        pin: pin, // Store plain PIN (for demo only!)
-        pin_hash: await bcrypt.hash(pin), // Keep hash for compatibility
+        pin: pin, // Using simple pin column
         tenant_id: tenant_id,
         full_name: full_name || 'Farmer',
         location: location || {},
@@ -339,12 +337,11 @@ async function handleLogin(supabase: any, params: any) {
     console.log('Farmer found:', { 
       id: farmer.id, 
       hasPIN: !!farmer.pin,
-      hasPINHash: !!farmer.pin_hash,
       tenantId: farmer.tenant_id 
     })
 
-    // Check if farmer has a PIN set
-    if (!farmer.pin && !farmer.pin_hash) {
+    // Check if farmer has a PIN set (using simple pin column)
+    if (!farmer.pin) {
       console.log('No PIN set for mobile:', mobile_number.replace(/\d/g, '*'))
       return new Response(
         JSON.stringify({ 
@@ -359,13 +356,8 @@ async function handleLogin(supabase: any, params: any) {
       )
     }
 
-    // Verify PIN directly against plain PIN column (for demo - in production, use hash!)
-    let isPinValid = farmer.pin === pin
-    
-    // Also try bcrypt compare for backward compatibility if plain PIN doesn't match
-    if (!isPinValid && farmer.pin_hash) {
-      isPinValid = await bcrypt.compare(pin, farmer.pin_hash)
-    }
+    // Verify PIN directly against simple pin column only
+    const isPinValid = farmer.pin === pin
     
     if (!isPinValid) {
       console.log('Invalid PIN for mobile:', mobile_number.replace(/\d/g, '*'))
@@ -521,11 +513,8 @@ async function handleUpdatePin(supabase: any, params: any) {
       )
     }
 
-    // Verify old PIN (check plain PIN first, then hash for compatibility)
-    let isOldPinValid = farmer.pin === old_pin
-    if (!isOldPinValid && farmer.pin_hash) {
-      isOldPinValid = await bcrypt.compare(old_pin, farmer.pin_hash)
-    }
+    // Verify old PIN (using simple pin column only)
+    const isOldPinValid = farmer.pin === old_pin
     
     if (!isOldPinValid) {
       return new Response(
@@ -540,12 +529,11 @@ async function handleUpdatePin(supabase: any, params: any) {
       )
     }
 
-    // Update PIN (both plain and hash)
+    // Update PIN (using simple pin column only)
     const { error: updateError } = await supabase
       .from('farmers')
       .update({ 
-        pin: new_pin, // Store plain PIN (for demo only!)
-        pin_hash: await bcrypt.hash(new_pin), // Keep hash for compatibility
+        pin: new_pin, // Using simple pin column
         pin_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -638,8 +626,7 @@ async function handleResetPin(supabase: any, params: any) {
     const { error: updateError } = await supabase
       .from('farmers')
       .update({ 
-        pin: new_pin, // Store plain PIN (for demo only!)
-        pin_hash: await bcrypt.hash(new_pin), // Keep hash for compatibility
+        pin: new_pin, // Using simple pin column
         pin_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
