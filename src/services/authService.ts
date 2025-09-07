@@ -147,52 +147,70 @@ export const signInWithPhone = async (phone: string, tenantId?: string) => {
     const preferredLanguage = await languageSyncService.getLanguageForRegistration();
 
     const startTime = Date.now();
-    const { data, error } = await supabase.functions.invoke('mobile-auth', {
-      body: {
-        mobile_number: cleanPhone,
-        tenantId: tenantId || null,
-        preferredLanguage: preferredLanguage
-      }
-    });
-
-    const authTime = Date.now() - startTime;
-    console.log(`Mobile auth edge function completed in ${authTime}ms`);
-
-    if (error) {
-      console.error('Error from mobile-auth function:', error);
-      throw new Error(error.message || 'Authentication failed');
-    }
-
-    if (!data?.success) {
-      console.error('Authentication failed:', data?.error);
-      throw new Error(data?.error || 'Authentication failed');
-    }
-
-    // Clear cache since user status might have changed
-    userExistenceCache.clear();
-
-    // Sign in with the temporary credentials
-    const signInStartTime = Date.now();
-    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: data.credentials.email,
-      password: data.credentials.password,
-    });
-
-    const signInTime = Date.now() - signInStartTime;
-    console.log(`Supabase sign in completed in ${signInTime}ms`);
-
-    if (signInError) {
-      console.error('Error signing in with credentials:', signInError);
-      throw new Error('Failed to sign in: ' + signInError.message);
-    }
-
-    console.log('Authentication successful for user:', data.userId);
     
-    return {
-      ...data,
-      session: authData.session,
-      user: authData.user
-    };
+    // Try direct URL approach for better reliability
+    const functionUrl = 'https://qfklkkzxemsbeniyugiz.supabase.co/functions/v1/mobile-auth';
+    console.log('Calling mobile auth at:', functionUrl);
+    
+    try {
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
+        },
+        body: JSON.stringify({
+          mobile_number: cleanPhone,
+          tenantId: tenantId || null,
+          preferredLanguage: preferredLanguage
+        })
+      });
+
+      const authTime = Date.now() - startTime;
+      console.log(`Mobile auth edge function completed in ${authTime}ms`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Mobile auth HTTP error:', response.status, errorText);
+        throw new Error(`Authentication failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data?.success) {
+        console.error('Authentication failed:', data?.error);
+        throw new Error(data?.error || 'Authentication failed');
+      }
+      
+      // Clear cache and continue with sign in
+      userExistenceCache.clear();
+      
+      // Sign in with the temporary credentials
+      const signInStartTime = Date.now();
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.credentials.email,
+        password: data.credentials.password,
+      });
+
+      const signInTime = Date.now() - signInStartTime;
+      console.log(`Supabase sign in completed in ${signInTime}ms`);
+
+      if (signInError) {
+        console.error('Error signing in with credentials:', signInError);
+        throw new Error('Failed to sign in: ' + signInError.message);
+      }
+
+      console.log('Authentication successful for user:', data.userId);
+      
+      return {
+        ...data,
+        session: authData.session,
+        user: authData.user
+      };
+    } catch (error) {
+      console.error('Error from mobile-auth function:', error);
+      throw error;
+    }
   } catch (error) {
     console.error('Error in signInWithPhone:', error);
     throw error;

@@ -92,15 +92,22 @@ export class AuthHealthService {
       }
     }
 
-    // Test edge function reachability
+    // Test edge function reachability with direct URL
     try {
-      const { data, error } = await supabase.functions.invoke('mobile-auth-check', {
-        body: { phone: '0000000000', checkOnly: true }
+      const functionUrl = 'https://qfklkkzxemsbeniyugiz.supabase.co/functions/v1/mobile-auth-check';
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma2xra3p4ZW1zYmVuaXl1Z2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MjcxNjUsImV4cCI6MjA2ODAwMzE2NX0.dUnGp7wbwYom1FPbn_4EGf3PWjgmr8mXwL2w2SdYOh4',
+        },
+        body: JSON.stringify({ phone: '0000000000', checkOnly: true })
       });
       
-      healthCheck.checks.edgeFunctionReachable = !error;
-      if (error) {
-        healthCheck.errors.push(`Edge function test failed: ${error.message}`);
+      healthCheck.checks.edgeFunctionReachable = response.ok;
+      if (!response.ok) {
+        const errorText = await response.text();
+        healthCheck.errors.push(`Edge function test failed: ${response.status} - ${errorText}`);
         healthCheck.status = 'warning';
       }
     } catch (error) {

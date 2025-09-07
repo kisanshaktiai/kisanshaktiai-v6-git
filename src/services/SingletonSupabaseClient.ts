@@ -15,6 +15,11 @@ class SingletonSupabaseClient {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true
+        },
+        global: {
+          headers: {
+            'x-client-info': 'kisanshakti-app',
+          }
         }
       });
     }
